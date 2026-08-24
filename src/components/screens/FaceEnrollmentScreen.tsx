@@ -12,6 +12,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImageManipulator from "expo-image-manipulator";
 import { CheckCircle2, Circle, Camera, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -86,11 +87,25 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
   }
 
+  // Downscale ke max 800px sisi terpanjang SEBELUM base64 (2026-08-25) -
+  // takePictureAsync skipProcessing:true menangkap resolusi SENSOR ASLI
+  // (bisa 12MP+), deteksi yaw/pitch/liveness sama sekali tidak butuh itu.
+  // Ditemukan lewat log produksi: payload base64 tembus 4.5-4.9MB tanpa
+  // ini, sempat bikin request ditolak server (PayloadTooLargeError) -
+  // limit body sudah dinaikkan sbg mitigasi cepat, TAPI downscale di sini
+  // solusi akar-masalahnya (payload jauh lebih kecil, tiap poll ~600ms
+  // jadi lebih ringan jg, bukan cuma menghindari batas).
   const captureFrame = useCallback(async (): Promise<string | null> => {
     if (!cameraRef.current) return null;
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.6, skipProcessing: true });
-      return photo?.base64 ? `data:image/jpeg;base64,${photo.base64}` : null;
+      const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true });
+      if (!photo?.uri) return null;
+      const manipulated = await ImageManipulator.manipulateAsync(
+        photo.uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      return manipulated.base64 ? `data:image/jpeg;base64,${manipulated.base64}` : null;
     } catch {
       return null;
     }
