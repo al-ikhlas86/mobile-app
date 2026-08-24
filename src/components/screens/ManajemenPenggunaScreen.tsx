@@ -12,6 +12,10 @@ import { getActiveSession } from "../../services/authService";
 interface AdminUser { id: number; username: string; phone: string | null; full_name: string; role: string; is_active: 0 | 1; employee_cache_id: number | null; }
 interface AccountLinkReview { id: number; nama: string; jabatan: string | null; role: string; phone: string; existing_full_name: string; existing_phone: string | null; status: string; }
 
+// SUMBER KEBENARAN: backend/src/utils/roles.js (ASSIGNABLE_ROLES) di repo
+// mobile-app. Native tidak bisa import langsung dari situ (repo/bundler
+// terpisah) - kalau daftar ini berubah, update JUGA salinan di webview
+// (src/app/components/screens/ManajemenPenggunaScreen.tsx).
 const ASSIGNABLE_ROLES = ["admin_it", "supervisor", "admin_tu_sd", "admin_media_sd", "admin_tu_tk", "admin_media_tk", "keuangan"];
 const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
