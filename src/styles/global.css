@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light Theme - Layanan Digital Sekolah (sama persis dgn versi web,
+     lihat src/styles/theme.css di proyek Mobile-app/webview) */
+  --background: #F7F7F3;
+  --foreground: #17201B;
+  --card: #FFFFFF;
+  --card-foreground: #17201B;
+  --popover: #FFFFFF;
+  --popover-foreground: #17201B;
+  --primary: #356447;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EAF0E9;
+  --secondary-foreground: #274D36;
+  --muted: #EEEFEA;
+  --muted-foreground: #6E776F;
+  --accent: #E4ECD9;
+  --accent-foreground: #31513A;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(33, 57, 41, 0.10);
+  --input: transparent;
+  --input-background: #F3F4EF;
+  --ring: #4F7D5D;
+  --radius: 16px;
+  --sidebar: #FCFCF9;
+  --sidebar-foreground: #243128;
+  --sidebar-primary: #356447;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EAF0E9;
+  --sidebar-accent-foreground: #274D36;
+  --sidebar-border: rgba(33, 57, 41, 0.09);
+}
+
+.dark {
+  --background: #101012;
+  --foreground: #F1F1F2;
+  --card: #19191C;
+  --card-foreground: #F1F1F2;
+  --popover: #202024;
+  --popover-foreground: #F1F1F2;
+  --primary: #D0AF68;
+  --primary-foreground: #1A1710;
+  --secondary: #27272B;
+  --secondary-foreground: #E7D7B1;
+  --muted: #242428;
+  --muted-foreground: #A3A3AA;
+  --accent: #303036;
+  --accent-foreground: #F0E3C4;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.10);
+  --input: transparent;
+  --input-background: #222226;
+  --ring: #D0AF68;
+  --sidebar: #151518;
+  --sidebar-foreground: #ECECEF;
+  --sidebar-primary: #D0AF68;
+  --sidebar-primary-foreground: #1A1710;
+  --sidebar-accent: #28282D;
+  --sidebar-accent-foreground: #F1E4C6;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+}

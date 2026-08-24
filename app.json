@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "Al-Ikhlas 86",
+    "slug": "al-ikhlas-86",
+    "scheme": "alikhlas86",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alikhlas86.mobileapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Kamera dipakai untuk mendaftarkan wajah (presensi otomatis) dan mengambil foto profil.",
+        "NSLocationWhenInUseUsageDescription": "Lokasi dipakai untuk memvalidasi bahwa presensi dilakukan di area Yayasan."
+      }
+    },
+    "android": {
+      "package": "com.alikhlas86.mobileapp",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#356447",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [],
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+      [
+        "expo-navigation-bar",
+        { "enforceContrast": false }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kamera dipakai untuk mendaftarkan wajah (presensi otomatis) dan mengambil foto profil."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lokasi dipakai untuk memvalidasi bahwa presensi dilakukan di area Yayasan."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#356447"
+        }
+      ],
+      "./plugins/withNotificationManifestFix.js",
+      "expo-sharing"
+    ],
+    "extra": {
+      "apiUrl": "http://168.110.196.103/mobile-api"
+    }
+  }
+}
