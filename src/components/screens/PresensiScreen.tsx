@@ -11,6 +11,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
+import { getTodayLocal } from "../../utils/formatters";
 
 interface Props {
   role: string;
@@ -62,7 +63,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
   const [checkinBusy, setCheckinBusy] = useState<"masuk" | "pulang" | null>(null);
   const [checkinMessage, setCheckinMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const [izinTanggal, setIzinTanggal] = useState(new Date().toISOString().slice(0, 10));
+  const [izinTanggal, setIzinTanggal] = useState(getTodayLocal());
   const [izinJenis, setIzinJenis] = useState<"sakit" | "izin">("sakit");
   const [izinKeterangan, setIzinKeterangan] = useState("");
   const [izinFoto, setIzinFoto] = useState<{ uri: string; mimeType?: string; name: string } | null>(null);
@@ -137,7 +138,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayLocal();
   const todayRecord = records.find((r) => r.tanggal === today);
 
   return (

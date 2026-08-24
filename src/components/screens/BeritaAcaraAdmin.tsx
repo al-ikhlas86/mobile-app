@@ -9,6 +9,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import { Plus, Edit2, Trash2, Eye, Upload, CheckCircle, ImageIcon, Send, Save, ArrowLeft, X, Link2 } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../../services/api";
+import { getTodayLocal } from "../../utils/formatters";
 import { SimplePicker } from "../ui/SimplePicker";
 import type { RoleName } from "../../services/authService";
 
@@ -56,7 +57,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   const [formAuthorName, setFormAuthorName] = useState("");
   const [formCategory, setFormCategory] = useState(CATEGORIES[0]);
   const [formUnitScope, setFormUnitScope] = useState("ALL");
-  const [formActivityDate, setFormActivityDate] = useState(new Date().toISOString().slice(0, 10));
+  const [formActivityDate, setFormActivityDate] = useState(getTodayLocal());
   const [formSaving, setFormSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [uploadingThumb, setUploadingThumb] = useState(false);
@@ -69,14 +70,14 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
     setEditingId(null); setEditingMedia([]); setEditingLinks([]); setNewLinkUrl("");
     setFormTitle(""); setFormDescription(""); setFormAuthorName("");
     setFormCategory(CATEGORIES[0]); setFormUnitScope("ALL");
-    setFormActivityDate(new Date().toISOString().slice(0, 10)); setFormMessage("");
+    setFormActivityDate(getTodayLocal()); setFormMessage("");
   }
   function openCreate() { resetForm(); setView("form"); }
   function openEdit(item: BeritaItem) {
     setEditingId(item.id); setEditingMedia(item.media); setEditingLinks(item.links); setNewLinkUrl("");
     setFormTitle(item.title); setFormDescription(item.description ?? ""); setFormAuthorName(item.author_name ?? "");
     setFormCategory(item.category ?? CATEGORIES[0]); setFormUnitScope(item.unit_scope);
-    setFormActivityDate(item.activity_date ?? new Date().toISOString().slice(0, 10));
+    setFormActivityDate(item.activity_date ?? getTodayLocal());
     setFormMessage(""); setView("form");
   }
 

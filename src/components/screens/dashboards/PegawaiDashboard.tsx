@@ -8,6 +8,7 @@ import { SemuaMenuView } from "../../SemuaMenuView";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
+import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
@@ -38,7 +39,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     }, [])
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayLocal();
   const hadirHariIni = records.some((r) => r.tanggal === today);
   const hadirBulanIni = records.filter((r) => r.tanggal.startsWith(today.slice(0, 7))).length;
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });

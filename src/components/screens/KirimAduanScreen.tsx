@@ -8,6 +8,7 @@ import { Badge } from "../ui/Badge";
 import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
+import { getTodayLocal } from "../../utils/formatters";
 
 interface ChildData { id: number; nama: string; }
 interface AduanRow { id: number; kategori: string; isi: string; bukti_foto_path: string | null; status: string; created_at: string; }
@@ -89,7 +90,7 @@ export function KirimAduanScreen() {
     );
   }
 
-  const alreadySentToday = riwayat.some((r) => r.created_at.slice(0, 10) === new Date().toISOString().slice(0, 10));
+  const alreadySentToday = riwayat.some((r) => r.created_at.slice(0, 10) === getTodayLocal());
 
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>

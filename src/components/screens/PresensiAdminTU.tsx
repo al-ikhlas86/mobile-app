@@ -7,6 +7,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
+import { getTodayLocal } from "../../utils/formatters";
 import type { RoleName } from "../../services/authService";
 
 type TabType = "Siswa" | "Guru" | "Pegawai";
@@ -43,7 +44,7 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getTodayLocal());
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState(""); // "tingkat|kelas" atau "" = semua
 

@@ -288,6 +288,7 @@ export const api = {
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),
   adminCreateAnnouncement: (data: { title: string; message: string; target_role: string }) =>
     authedFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(data) }),
+  backupStatus: () => authedFetch("/api/admin/backup/status"),
 
   beritaAcaraList: () => authedFetch("/api/berita-acara"),
   beritaAcaraDetail: (id: number) => authedFetch(`/api/berita-acara/${id}`),

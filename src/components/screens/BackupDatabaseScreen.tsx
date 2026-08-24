@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { DatabaseBackup, Download } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { API_URL } from "../../services/api";
+import { API_URL, api } from "../../services/api";
 import { getActiveToken } from "../../services/authService";
+
+function formatWaktu(iso: string | null): string {
+  if (!iso) return "Belum pernah";
+  return new Date(iso).toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" });
+}
 
 // Download backup database - di native tidak ada elemen <a download> spt
 // web, jadi file diunduh ke storage sementara app (expo-file-system) lalu
@@ -15,6 +20,13 @@ import { getActiveToken } from "../../services/authService";
 export function BackupDatabaseScreen() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState<{ last_manual_backup_at: string | null; last_auto_backup_at: string | null } | null>(null);
+
+  const loadStatus = async () => {
+    const res = await api.backupStatus();
+    if (res.success) setStatus(res.data);
+  };
+  useEffect(() => { loadStatus(); }, []);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -29,6 +41,7 @@ export function BackupDatabaseScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(result.uri, { mimeType: "application/sql", dialogTitle: "Simpan Backup Database" });
       }
+      loadStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuat backup.");
     } finally {
@@ -38,11 +51,18 @@ export function BackupDatabaseScreen() {
 
   return (
     <View className="flex-1 bg-background px-4 pt-5 gap-5">
-      <Text className="text-xs text-muted-foreground">
-        Tombol ini membuat salinan LENGKAP database aplikasi ini (akun, notifikasi, cache data siswa/pegawai, dst) dan
-        mengunduhnya. Ini melengkapi, bukan menggantikan, backup otomatis yang berjalan di server - simpan file yang
-        diunduh di tempat lain (Google Drive, dst) secara berkala.
-      </Text>
+      <Card padding="md">
+        <View className="gap-2">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-xs text-muted-foreground">Terakhir backup otomatis</Text>
+            <Text className="text-xs font-medium text-foreground">{status ? formatWaktu(status.last_auto_backup_at) : "..."}</Text>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-xs text-muted-foreground">Terakhir backup manual</Text>
+            <Text className="text-xs font-medium text-foreground">{status ? formatWaktu(status.last_manual_backup_at) : "..."}</Text>
+          </View>
+        </View>
+      </Card>
       {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
       <Card padding="lg">
         <View className="items-center py-4">

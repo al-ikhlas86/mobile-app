@@ -9,6 +9,7 @@ import { Card } from "../../ui/Card";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
+import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
@@ -54,7 +55,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayLocal();
   const hadirHariIni = attendance.some((a) => a.student_cache_id === child.id && a.tanggal === today && a.status === "Hadir");
   const totalHadirBulanIni = attendance.filter((a) => a.student_cache_id === child.id && a.status === "Hadir" && a.tanggal.slice(0, 7) === today.slice(0, 7)).length;
 

@@ -9,6 +9,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
+import { getTodayLocal } from "../../utils/formatters";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
 interface AttendanceRow { student_cache_id: number; tanggal: string; check_in_time: string | null; check_out_time: string | null; status: string; }
@@ -37,7 +38,7 @@ export function PresensiAnak() {
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [statistik, setStatistik] = useState<Statistik | null>(null);
 
-  const [izinTanggal, setIzinTanggal] = useState(new Date().toISOString().slice(0, 10));
+  const [izinTanggal, setIzinTanggal] = useState(getTodayLocal());
   const [izinJenis, setIzinJenis] = useState<"sakit" | "izin">("sakit");
   const [izinKeterangan, setIzinKeterangan] = useState("");
   const [izinFoto, setIzinFoto] = useState<{ uri: string; mimeType?: string; name: string } | null>(null);
@@ -104,7 +105,7 @@ export function PresensiAnak() {
   }
 
   const childRecords = records.filter((r) => r.student_cache_id === child.id).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayLocal();
   const todayRecord = childRecords.find((r) => r.tanggal === today);
 
   return (
