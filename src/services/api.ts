@@ -14,7 +14,7 @@ import {
 export const API_URL: string =
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ||
   process.env.EXPO_PUBLIC_API_URL ||
-  "http://168.110.196.103/mobile-api";
+  "https://alikhlas86.duckdns.org/mobile-api";
 
 export const SESSION_EXPIRED_EVENT = "session-expired";
 
