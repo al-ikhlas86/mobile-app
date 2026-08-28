@@ -188,6 +188,10 @@ export const api = {
   myChildren: () => authedFetch("/api/students/my-children"),
   students: () => authedFetch("/api/students"),
   employees: () => authedFetch("/api/employees"),
+  psbList: (status?: "menunggu" | "diterima" | "ditolak" | "semua") => authedFetch(`/api/psb${status ? `?status=${status}` : ""}`),
+  psbKelas: () => authedFetch("/api/psb/kelas"),
+  psbKeputusan: (hubId: number, body: { keputusan: "terima" | "tolak"; nis?: string; kelasSourceId?: number; catatan?: string }) =>
+    authedFetch(`/api/psb/${hubId}/keputusan`, { method: "POST", body: JSON.stringify(body) }),
   notifications: () => authedFetch("/api/notifications"),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),

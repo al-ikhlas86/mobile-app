@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search } from "lucide-react-native";
+import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search, UserPlus } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -29,6 +29,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Operasional", items: [
+      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#2563eb" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Berita Acara", icon: <FileText size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
