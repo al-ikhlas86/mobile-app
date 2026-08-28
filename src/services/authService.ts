@@ -56,13 +56,68 @@ let cachedAccounts: SavedAccount[] = [];
 let cachedSession: ActiveSession | null = null;
 let loaded = false;
 
+// Admin IT SENGAJA TIDAK "selamat" dari app DITUTUP TOTAL (proses dimatikan
+// OS lalu dibuka lagi) - beda dari role lain yg tetap persisten. Dicek di
+// SINI (bukan pakai flag terpisah spt sessionStorage di web) krn
+// loadAuthState() ini SENDIRI cuma dipanggil SEKALI per app.tsx mount, dan
+// App.tsx cuma remount kalau JS engine benar2 dimulai ulang dari nol
+// (kill+buka lagi) - sekadar minimize/background (tanpa dimatikan OS)
+// TIDAK memicu remount App.tsx sama sekali, jadi otomatis "selamat" spt
+// yang diinginkan (persis semantik sessionStorage utk kebutuhan ini).
+// Selalu balikin state FINAL yang benar (accounts + session) baik ada
+// Admin IT yang perlu dibersihkan maupun tidak - pemanggil (loadAuthState)
+// tinggal pakai apa adanya, tidak perlu logic tambahan apa pun lagi.
+async function purgeAdminItOnColdStart(
+  accounts: SavedAccount[],
+  session: ActiveSession | null
+): Promise<{ accounts: SavedAccount[]; session: ActiveSession | null }> {
+  const withoutAdminIt = accounts.filter((a) => a.role !== "Admin IT");
+  if (withoutAdminIt.length === accounts.length) {
+    return { accounts, session }; // tidak ada Admin IT tersimpan, tidak ada yg berubah
+  }
+
+  await AsyncStorage.setItem(KEYS.savedAccounts, JSON.stringify(withoutAdminIt));
+
+  if (session?.role !== "Admin IT") {
+    return { accounts: withoutAdminIt, session }; // Admin IT tersimpan tapi bukan yg aktif - sesi aktif tidak diganggu
+  }
+
+  // Admin IT SEDANG aktif pas app terakhir ditutup - gaya Instagram (sama
+  // pola dgn handleLogout di RootNavigator.tsx): pindah ke akun lain kalau
+  // masih ada, kalau tidak ada sama sekali balik ke layar login.
+  if (withoutAdminIt.length > 0) {
+    const next = withoutAdminIt[0];
+    const newSession: ActiveSession = {
+      accountId: next.id, role: next.role, username: next.username,
+      fullName: next.fullName, avatarInitials: next.avatarInitials,
+      avatarUrl: next.avatarUrl, loginAt: new Date().toISOString(),
+    };
+    await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(newSession));
+    await AsyncStorage.setItem(KEYS.activeAccountId, next.id);
+    return { accounts: withoutAdminIt, session: newSession };
+  }
+
+  await AsyncStorage.removeItem(KEYS.activeSession);
+  await AsyncStorage.removeItem(KEYS.activeAccountId);
+  return { accounts: withoutAdminIt, session: null };
+}
+
 export async function loadAuthState(): Promise<void> {
   const [accountsRaw, sessionRaw] = await Promise.all([
     AsyncStorage.getItem(KEYS.savedAccounts),
     AsyncStorage.getItem(KEYS.activeSession),
   ]);
-  try { cachedAccounts = accountsRaw ? JSON.parse(accountsRaw) : []; } catch { cachedAccounts = []; }
-  try { cachedSession = sessionRaw ? JSON.parse(sessionRaw) : null; } catch { cachedSession = null; }
+  let accounts: SavedAccount[] = [];
+  let session: ActiveSession | null = null;
+  try { accounts = accountsRaw ? JSON.parse(accountsRaw) : []; } catch { accounts = []; }
+  try { session = sessionRaw ? JSON.parse(sessionRaw) : null; } catch { session = null; }
+
+  const result = accounts.some((a) => a.role === "Admin IT")
+    ? await purgeAdminItOnColdStart(accounts, session)
+    : { accounts, session };
+
+  cachedAccounts = result.accounts;
+  cachedSession = result.session;
   loaded = true;
 }
 
