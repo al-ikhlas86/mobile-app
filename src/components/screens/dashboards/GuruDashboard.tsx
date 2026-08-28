@@ -5,6 +5,7 @@ import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, Clipboar
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession, type RoleName } from "../../../services/authService";
@@ -19,6 +20,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  useBackWhen(showAllMenu, () => setShowAllMenu(false));
   const session = getActiveSession();
   const news = useNewsList();
 

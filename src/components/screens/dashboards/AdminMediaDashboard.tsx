@@ -4,6 +4,7 @@ import { FileText, Plus, BookOpen, User, Ban, Heart, MessageCircle, BarChart3, C
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { type RoleName } from "../../../services/authService";
 import { DashboardLayout } from "../../DashboardLayout";
@@ -16,6 +17,7 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
   const unitLabel = isSD ? "SD" : "TK & Playground";
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const [showAllMenu, setShowAllMenu] = useState(false);
+  useBackWhen(showAllMenu, () => setShowAllMenu(false));
   const [stats, setStats] = useState<StatsSummary | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 

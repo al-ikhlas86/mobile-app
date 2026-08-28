@@ -4,6 +4,7 @@ import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, Gradu
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { DashboardLayout } from "../../DashboardLayout";
 
@@ -20,6 +21,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  useBackWhen(showAllMenu, () => setShowAllMenu(false));
 
   useEffect(() => {
     (async () => {

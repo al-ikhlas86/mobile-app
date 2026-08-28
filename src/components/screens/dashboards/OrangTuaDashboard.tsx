@@ -5,6 +5,7 @@ import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOp
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useBackWhen } from "../../../hooks/useBackWhen";
 import { Card } from "../../ui/Card";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
@@ -22,6 +23,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const [child, setChild] = useState<ChildData | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  useBackWhen(showAllMenu, () => setShowAllMenu(false));
   const session = getActiveSession();
   const news = useNewsList();
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });

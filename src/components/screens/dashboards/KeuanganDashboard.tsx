@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { Info, CreditCard, FileText, Clock, MessageSquareWarning } from "lucide-react-native";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useBackWhen } from "../../../hooks/useBackWhen";
 import { DashboardLayout } from "../../DashboardLayout";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
@@ -10,6 +11,7 @@ interface Props { onNavigate: (screen: string, params?: Record<string, unknown>)
 export function KeuanganDashboard({ onNavigate }: Props) {
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const [showAllMenu, setShowAllMenu] = useState(false);
+  useBackWhen(showAllMenu, () => setShowAllMenu(false));
 
   const menuCategories: MenuCategory[] = [
     { title: "Keuangan", items: [

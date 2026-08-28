@@ -3,9 +3,16 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { ArrowLeft, Search } from "lucide-react-native";
 import { Input } from "./ui/Input";
 import { QuickMenuButton, type MenuCategory } from "./QuickMenuGrid";
+import { useTheme } from "../context/ThemeContext";
 
 export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory[]; onBack: () => void }) {
   const [search, setSearch] = useState("");
+  // Sebelumnya warna panah kembali di-hardcode gelap (#17201B) - tak
+  // terlihat sama sekali di tema gelap (dilaporkan user via screenshot
+  // 2026-08-28: dibandingkan sisi-sisi tema terang vs gelap). Ikut pola
+  // warna adaptif yang sama dgn tombol tema di MainTabs.tsx.
+  const { isDark } = useTheme();
+  const backIconColor = isDark ? "#F1F1F2" : "#17201B";
 
   const filtered = categories
     .map((c) => ({ ...c, items: c.items.filter((i) => i.label.toLowerCase().includes(search.toLowerCase())) }))
@@ -15,7 +22,7 @@ export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory
     <ScrollView className="flex-1 bg-background px-4 pt-14" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
       <View className="flex-row items-center gap-2 -ml-1">
         <Pressable onPress={onBack} className="p-1.5 rounded-full">
-          <ArrowLeft size={18} color="#17201B" />
+          <ArrowLeft size={18} color={backIconColor} />
         </Pressable>
         <Text className="text-base font-bold text-foreground">Semua Menu</Text>
       </View>
