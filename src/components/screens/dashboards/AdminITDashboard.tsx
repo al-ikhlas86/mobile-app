@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning } from "lucide-react-native";
+import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -43,6 +43,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Pengguna Diblokir", icon: <Ban size={20} color="#be123c" />, colorScheme: "red", onPress: () => onNavigate("blokiran-komentar") },
     ] },
     { title: "Operasional", items: [
+      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#2563eb" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
       { label: "Keuangan", icon: <CreditCard size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
