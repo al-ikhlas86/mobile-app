@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X } from "lucide-react-native";
+import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X, Trash2 } from "lucide-react-native";
 import { api } from "../../services/api";
 import { resolveNavScreen } from "../../utils/navAlias";
 
@@ -71,6 +71,26 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
     unread.forEach((n) => markRead(n.id));
   };
 
+  const deleteOne = (id: number) => {
+    setItems((prev) => prev.filter((n) => n.id !== id));
+    api.deleteNotification(id).catch(() => {});
+  };
+
+  // Per-grup (tab) - "Hapus Semua" di Pengumuman tidak boleh diam-diam ikut
+  // menghapus Pemberitahuan, begitu juga sebaliknya (sama pola dgn webview).
+  const handleClearGroup = () => {
+    if (current.length === 0) return;
+    const label = tab === "pemberitahuan" ? "pemberitahuan" : "pengumuman";
+    Alert.alert(
+      `Hapus semua ${label}?`,
+      "Tindakan ini tidak bisa dibatalkan.",
+      [
+        { text: "Batal", style: "cancel" },
+        { text: "Hapus", style: "destructive", onPress: () => current.forEach((n) => deleteOne(n.id)) },
+      ]
+    );
+  };
+
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
 
   return (
@@ -84,10 +104,17 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
         </Pressable>
       </View>
 
-      {current.some((n) => !n.is_read) && (
-        <Pressable onPress={handleMarkAllRead} className="self-end mr-4 mt-3">
-          <Text className="text-sm text-primary font-medium">Tandai semua dibaca</Text>
-        </Pressable>
+      {current.length > 0 && (
+        <View className="flex-row justify-end gap-4 mr-4 mt-3">
+          {current.some((n) => !n.is_read) && (
+            <Pressable onPress={handleMarkAllRead}>
+              <Text className="text-sm text-primary font-medium">Tandai semua dibaca</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={handleClearGroup}>
+            <Text className="text-sm text-red-500 font-medium">Hapus Semua</Text>
+          </Pressable>
+        </View>
       )}
 
       <FlatList
@@ -116,6 +143,9 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
                 <Text numberOfLines={2} className="text-xs text-muted-foreground mt-1">{item.message}</Text>
                 <Text className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</Text>
               </View>
+              <Pressable onPress={() => deleteOne(item.id)} hitSlop={8} className="p-1">
+                <Trash2 size={16} color="#6E776F" />
+              </Pressable>
             </View>
           </Pressable>
         )}

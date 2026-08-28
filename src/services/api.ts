@@ -190,6 +190,7 @@ export const api = {
   notifications: () => authedFetch("/api/notifications"),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
+  deleteNotification: (id: number) => authedFetch(`/api/notifications/${id}`, { method: "DELETE" }),
   notificationPreferences: () => authedFetch("/api/notifications/preferences"),
   updateNotificationPreferences: (prefs: Partial<Record<"notif_komentar" | "notif_like" | "notif_presensi" | "notif_bayaran" | "notif_tagihan", boolean>>) =>
     authedFetch("/api/notifications/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
