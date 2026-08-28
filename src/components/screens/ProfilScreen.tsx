@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt } from "lucide-react-native";
+import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -16,11 +16,14 @@ interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
   onAvatarChanged: (url: string | null) => void;
   onOpenSwitcher: () => void;
+  canUseDemoMode: boolean;
+  demoActive: boolean;
+  onOpenDemoSwitcher: () => void;
 }
 
 const STAFF_ROLES: RoleName[] = ["Guru", "Guru Kelas", "Pegawai"];
 
-export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher }: Props) {
+export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
@@ -188,6 +191,15 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
           <Text className="text-sm font-medium text-foreground flex-1">Ganti Akun</Text>
           <ChevronRight size={16} color="#6E776F" />
         </Pressable>
+        {canUseDemoMode && (
+          <Pressable onPress={onOpenDemoSwitcher} className="flex-row items-center gap-3 py-1 mt-2">
+            <View className={`w-8 h-8 rounded-lg items-center justify-center ${demoActive ? "bg-amber-500" : "bg-amber-50"}`}>
+              <FlaskConical size={16} color={demoActive ? "#fff" : "#D0AF68"} />
+            </View>
+            <Text className="text-sm font-medium text-foreground flex-1">Mode Demo</Text>
+            <ChevronRight size={16} color="#6E776F" />
+          </Pressable>
+        )}
       </Card>
 
       <Card padding="md">

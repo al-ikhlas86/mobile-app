@@ -49,6 +49,9 @@ interface Props {
   onAvatarChanged: (url: string | null) => void;
   onOpenSwitcher: () => void;
   onNavigateStack: (screen: string, params?: Record<string, unknown>) => void;
+  canUseDemoMode: boolean;
+  demoActive: boolean;
+  onOpenDemoSwitcher: () => void;
 }
 
 // Bottom tabs 5 menu - persis strukturnya dgn BottomNav.tsx versi webview.
@@ -57,7 +60,7 @@ interface Props {
 // Presensi/Notifikasi/Profil kelihatan "kurang turun" (konten mepet ke
 // status bar tanpa judul layar spt versi web). Beranda TETAP headerShown:
 // false krn py header custom sendiri di dalam DashboardLayout (hero+ikon).
-export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNavigateStack }: Props) {
+export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNavigateStack, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const activeColor = isDark ? "#D0AF68" : "#356447";
@@ -132,6 +135,9 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNa
             onNavigate={onNavigateStack}
             onAvatarChanged={onAvatarChanged}
             onOpenSwitcher={onOpenSwitcher}
+            canUseDemoMode={canUseDemoMode}
+            demoActive={demoActive}
+            onOpenDemoSwitcher={onOpenDemoSwitcher}
           />
         )}
       </Tab.Screen>

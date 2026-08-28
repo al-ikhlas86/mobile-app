@@ -26,10 +26,13 @@ import { StatistikKontenScreen } from "../components/screens/StatistikKontenScre
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
 import { JadwalPelajaranScreen } from "../components/screens/JadwalPelajaranScreen";
-import { getActiveSession, getSavedAccounts, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
+import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
+import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, type DemoRoleOption } from "../services/demoService";
 import { useTheme } from "../context/ThemeContext";
 import { AccountSwitcherProvider } from "../context/AccountSwitcherContext";
 import { AccountSwitcher } from "../components/AccountSwitcher";
+import { DemoModeSwitcher } from "../components/DemoModeSwitcher";
+import { DemoModeBanner } from "../components/DemoModeBanner";
 import { initPushNotifications } from "../services/pushNotifications";
 import { resolveNavScreen } from "../utils/navAlias";
 
@@ -63,6 +66,48 @@ export function RootNavigator() {
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
+
+  // ---- Mode Demo - lihat catatan lengkap di App.tsx webview
+  // (authService.ts/demoService.ts) utk desain isolasi total.
+  const [showDemoSwitcher, setShowDemoSwitcher] = useState(false);
+  const [demoActive, setDemoActive] = useState(() => isDemoActive());
+  const [demoRoles, setDemoRoles] = useState<DemoRoleOption[]>([]);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const canUseDemoMode = getRealActiveSession()?.role === "Admin IT" || demoActive;
+
+  const handleLoadDemoRoles = async () => {
+    if (demoRoles.length > 0) return;
+    const token = getActiveToken();
+    if (!token) return;
+    const roles = await fetchDemoRoles(token);
+    setDemoRoles(roles);
+  };
+
+  const handlePickDemoRole = async (roleValue: string) => {
+    setDemoLoading(true);
+    setDemoError(null);
+    const token = getActiveToken();
+    const result = await startDemoSession(roleValue, token ?? "");
+    setDemoLoading(false);
+    if (!result.success) {
+      setDemoError(result.message);
+      return;
+    }
+    setDemoActive(true);
+    setShowDemoSwitcher(false);
+    const s = getActiveSession();
+    if (s) applySession(s);
+  };
+
+  const handleExitDemo = async () => {
+    await exitDemoMode();
+    setDemoActive(false);
+    setShowDemoSwitcher(false);
+    const s = getActiveSession();
+    if (s) applySession(s);
+    else setSession(null);
+  };
 
   // Tombol kembali fisik Android SEBELUMNYA langsung nutup app krn tidak ada
   // yang pernah mendengarkan event ini sama sekali - default handling
@@ -176,6 +221,7 @@ export function RootNavigator() {
 
   return (
     <AccountSwitcherProvider visible={showSwitcher} onOpen={() => setShowSwitcher(true)} onClose={() => setShowSwitcher(false)}>
+    {demoActive && session && <DemoModeBanner roleLabel={session.role} onExit={handleExitDemo} />}
     <NavigationContainer
       ref={navigationRef}
       theme={navTheme}
@@ -218,6 +264,9 @@ export function RootNavigator() {
                   onAvatarChanged={handleAvatarChanged}
                   onOpenSwitcher={() => setShowSwitcher(true)}
                   onNavigateStack={(screen, params) => navigateTo(navigation, screen, params)}
+                  canUseDemoMode={canUseDemoMode}
+                  demoActive={demoActive}
+                  onOpenDemoSwitcher={() => { handleLoadDemoRoles(); setShowDemoSwitcher(true); }}
                 />
               )}
             </Stack.Screen>
@@ -276,7 +325,7 @@ export function RootNavigator() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
-    {session && (
+    {session && !demoActive && (
       <AccountSwitcher
         visible={showSwitcher}
         currentAccountId={session.accountId}
@@ -285,6 +334,18 @@ export function RootNavigator() {
         onAddAccount={handleAddAccount}
         onRemoveAccount={handleRemoveLinkedAccount}
         onClose={() => setShowSwitcher(false)}
+      />
+    )}
+    {session && (
+      <DemoModeSwitcher
+        visible={showDemoSwitcher}
+        roles={demoRoles}
+        activeDemoLabel={demoActive ? session.role : null}
+        loading={demoLoading}
+        errorMessage={demoError}
+        onPick={handlePickDemoRole}
+        onExitDemo={handleExitDemo}
+        onClose={() => setShowDemoSwitcher(false)}
       />
     )}
     {/* SENGAJA BUKAN <Modal> lagi - lihat catatan panjang di

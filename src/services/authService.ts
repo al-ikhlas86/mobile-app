@@ -6,6 +6,7 @@
 // data ini bukan rahasia super-sensitif, cuma token sesi yang expire).
 // ============================================================
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getActiveDemoAccount, exitDemoMode as clearDemoSession } from "./demoService";
 
 export type RoleName =
   | "Admin IT"
@@ -105,15 +106,39 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
   return session;
 }
 
-export function getActiveSession(): ActiveSession | null {
+// Versi "asli" (bukan demo-aware) - lihat catatan lengkap di authService.ts
+// webview (App.tsx) kenapa 2 versi ini dipisah.
+export function getRealActiveSession(): ActiveSession | null {
   assertLoaded();
   return cachedSession;
 }
 
-export function getActiveToken(): string | null {
+export function getRealActiveToken(): string | null {
   assertLoaded();
   if (!cachedSession) return null;
   return cachedAccounts.find((a) => a.id === cachedSession!.accountId)?.token ?? null;
+}
+
+export function getActiveSession(): ActiveSession | null {
+  const demo = getActiveDemoAccount();
+  if (demo) {
+    return {
+      accountId: demo.id,
+      role: demo.role as RoleName,
+      username: demo.username,
+      fullName: demo.fullName,
+      avatarInitials: demo.avatarInitials,
+      avatarUrl: demo.avatarUrl,
+      loginAt: new Date().toISOString(),
+    };
+  }
+  return getRealActiveSession();
+}
+
+export function getActiveToken(): string | null {
+  const demo = getActiveDemoAccount();
+  if (demo) return demo.token;
+  return getRealActiveToken();
 }
 
 export function getSavedAccounts(): SavedAccount[] {
@@ -164,7 +189,15 @@ export async function removeAccount(accountId: string): Promise<void> {
   }
 }
 
+// Kalau demo aktif, cuma keluar dari demo (bukan logout akun asli) - ini
+// JUGA yang bikin token demo kedaluwarsa (8 jam) otomatis "turun" balik
+// ke akun asli lewat jalur 401 (lihat api.ts), bukan efek samping
+// disengaja tapi konsekuensi alami desain ini. Sama persis pola webview.
 export async function logout(): Promise<void> {
+  if (getActiveDemoAccount()) {
+    await clearDemoSession();
+    return;
+  }
   assertLoaded();
   cachedSession = null;
   await AsyncStorage.removeItem(KEYS.activeSession);

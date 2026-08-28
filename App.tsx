@@ -7,6 +7,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { loadAuthState } from "./src/services/authService";
+import { loadDemoState } from "./src/services/demoService";
 
 function Splash() {
   return (
@@ -39,7 +40,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    loadAuthState().finally(() => setReady(true));
+    Promise.all([loadAuthState(), loadDemoState()]).finally(() => setReady(true));
   }, []);
 
   return (
