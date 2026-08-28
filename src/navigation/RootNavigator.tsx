@@ -27,6 +27,7 @@ import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarSc
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
 import { JadwalPelajaranScreen } from "../components/screens/JadwalPelajaranScreen";
 import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
+import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
 import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
 import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, type DemoRoleOption } from "../services/demoService";
@@ -324,6 +325,7 @@ export function RootNavigator() {
               {() => <JadwalPelajaranScreen mode={session.role === "Orang Tua" ? "anak" : "guru"} />}
             </Stack.Screen>
             <Stack.Screen name="jadwal-kerja" options={{ headerShown: true, title: "Jadwal Kerja" }} component={JadwalKerjaScreen} />
+            <Stack.Screen name="cari-siswa-guru" options={{ headerShown: true, title: "Cari Siswa & Guru" }} component={CariSiswaGuruScreen} />
             {/* Rute generik utk menu yang GENUINELY belum dibangun (Slip
                 Gaji, Keuangan dkk, lihat catatan Projek.md 2026-08-13 & 29) -
                 dipanggil dari dashboard via onNavigate("placeholder", {title}),

@@ -187,6 +187,7 @@ export const api = {
   deleteAvatar: () => authedFetch("/api/auth/avatar", { method: "DELETE" }),
   myChildren: () => authedFetch("/api/students/my-children"),
   students: () => authedFetch("/api/students"),
+  employees: () => authedFetch("/api/employees"),
   notifications: () => authedFetch("/api/notifications"),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
