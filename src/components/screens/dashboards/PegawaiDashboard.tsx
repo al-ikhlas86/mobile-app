@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, CheckCircle } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, CheckCircle, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -53,6 +53,9 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     ] },
     { title: "Informasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
+    ] },
+    { title: "Administrasi", items: [
+      { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },
     ] },
     { title: "Akun", items: [
       { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, MessageSquareWarning } from "lucide-react-native";
+import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, MessageSquareWarning, CreditCard } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -67,6 +67,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       { label: "Jadwal Pelajaran", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
+      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
     ] },
     { title: "Informasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },

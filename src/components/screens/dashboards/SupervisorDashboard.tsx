@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, CreditCard, FileText, User, GraduationCap, UserCog, RefreshCw } from "lucide-react-native";
+import { Users, CreditCard, FileText, User, GraduationCap, UserCog, RefreshCw, TrendingUp, AlertCircle, BarChart2, History, ArrowUpCircle, ArrowDownCircle } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -36,6 +36,14 @@ export function SupervisorDashboard({ onNavigate }: Props) {
   const menuCategories: MenuCategory[] = [
     { title: "Keuangan", items: [
       { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("keuangan-admin") },
+      { label: "Tagihan", icon: <FileText size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Tagihan" }) },
+      { label: "Pembayaran Masuk", icon: <TrendingUp size={20} color="#16a34a" />, colorScheme: "green", onPress: () => onNavigate("placeholder", { title: "Pembayaran Masuk" }) },
+      { label: "Tunggakan", icon: <AlertCircle size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("placeholder", { title: "Tunggakan" }) },
+      { label: "Rekap Keuangan", icon: <BarChart2 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("placeholder", { title: "Rekap Keuangan" }) },
+      { label: "Laporan Keuangan", icon: <BarChart2 size={20} color="#4f46e5" />, colorScheme: "indigo", onPress: () => onNavigate("placeholder", { title: "Laporan Keuangan" }) },
+      { label: "Riwayat Transaksi", icon: <History size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("placeholder", { title: "Riwayat Transaksi" }) },
+      { label: "Pemasukan", icon: <ArrowUpCircle size={20} color="#16a34a" />, colorScheme: "green", onPress: () => onNavigate("placeholder", { title: "Pemasukan" }) },
+      { label: "Pengeluaran", icon: <ArrowDownCircle size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("placeholder", { title: "Pengeluaran" }) },
     ] },
     { title: "Operasional", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },

@@ -26,6 +26,7 @@ import { StatistikKontenScreen } from "../components/screens/StatistikKontenScre
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
 import { JadwalPelajaranScreen } from "../components/screens/JadwalPelajaranScreen";
+import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
 import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
 import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, type DemoRoleOption } from "../services/demoService";
 import { useTheme } from "../context/ThemeContext";
@@ -320,6 +321,18 @@ export function RootNavigator() {
             </Stack.Screen>
             <Stack.Screen name="jadwal-pelajaran" options={{ headerShown: true, title: "Jadwal Pelajaran" }}>
               {() => <JadwalPelajaranScreen mode={session.role === "Orang Tua" ? "anak" : "guru"} />}
+            </Stack.Screen>
+            {/* Rute generik utk menu yang GENUINELY belum dibangun (Slip
+                Gaji, Keuangan dkk, lihat catatan Projek.md 2026-08-13 & 29) -
+                dipanggil dari dashboard via onNavigate("placeholder", {title}),
+                sama pola dgn versi webview (App.tsx AppScreen). */}
+            <Stack.Screen name="placeholder" options={({ route }) => ({ headerShown: true, title: (route.params as { title?: string } | undefined)?.title ?? "Fitur" })}>
+              {({ route }) => (
+                <PlaceholderScreen
+                  title={(route.params as { title?: string } | undefined)?.title ?? "Fitur"}
+                  subtitle="Fitur ini sedang disiapkan dan akan segera tersedia."
+                />
+              )}
             </Stack.Screen>
           </>
         )}
