@@ -56,6 +56,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     ] },
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },
+      { label: "Jadwal Kerja", icon: <Calendar size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-kerja") },
     ] },
     { title: "Akun", items: [
       { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
