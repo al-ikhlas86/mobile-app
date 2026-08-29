@@ -70,7 +70,6 @@
           "color": "#356447"
         }
       ],
-      "./plugins/withNotificationManifestFix.js",
       "./plugins/withDebugAppIdSuffix.js",
       "expo-sharing"
     ],
