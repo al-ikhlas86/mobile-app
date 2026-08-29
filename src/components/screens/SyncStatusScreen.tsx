@@ -3,6 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 const POLL_MS = 10000;
 interface SourceStatus { lastSuccessAt: string | null; lastAttemptAt: string | null; failStreak: number; lastError: string | null; healthy: boolean; }
@@ -28,6 +29,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 }
 
 export function SyncStatusScreen() {
+  const colors = useThemeColors();
   const [data, setData] = useState<{ hubApi: SourceStatus; absen: SourceStatus } | null>(null);
   const [error, setError] = useState("");
   const [lastCheck, setLastCheck] = useState("");
@@ -51,7 +53,7 @@ export function SyncStatusScreen() {
       {error ? (
         <Card padding="lg"><View className="items-center py-4"><AlertTriangle size={40} color="#ef4444" /><Text className="text-sm text-muted-foreground mt-2">{error}</Text></View></Card>
       ) : !data ? (
-        <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color="#356447" /><Text className="text-sm text-muted-foreground mt-2">Memuat...</Text></View></Card>
+        <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /><Text className="text-sm text-muted-foreground mt-2">Memuat...</Text></View></Card>
       ) : (
         <>
           <SourceCard title="Hub API (Data Master Siswa/Guru/Pegawai)" status={data.hubApi} />
@@ -59,7 +61,7 @@ export function SyncStatusScreen() {
         </>
       )}
       {lastCheck ? (
-        <View className="flex-row items-center justify-center gap-1"><RefreshCw size={12} color="#6E776F" /><Text className="text-xs text-muted-foreground">Terakhir dicek: {lastCheck}</Text></View>
+        <View className="flex-row items-center justify-center gap-1"><RefreshCw size={12} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">Terakhir dicek: {lastCheck}</Text></View>
       ) : null}
     </ScrollView>
   );

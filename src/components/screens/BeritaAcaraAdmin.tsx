@@ -12,6 +12,7 @@ import { api, resolveAvatarUrl } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { SimplePicker } from "../ui/SimplePicker";
 import type { RoleName } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 type AdminView = "list" | "form";
 type Status = "draft" | "terkirim" | "disetujui";
@@ -40,6 +41,7 @@ function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-I
 function mediaUrl(m: Media) { return resolveAvatarUrl(m.url) ?? undefined; }
 
 export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role?: RoleName }) {
+  const colors = useThemeColors();
   const unitScopes = unitScopesFor(role);
   const [view, setView] = useState<AdminView>("list");
   const [items, setItems] = useState<BeritaItem[]>([]);
@@ -165,7 +167,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   if (view === "form") {
     return (
       <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
-        <Pressable onPress={() => setView("list")} className="flex-row items-center gap-1.5 -ml-1"><ArrowLeft size={16} color="#6E776F" /><Text className="text-sm text-muted-foreground">Kembali ke Daftar</Text></Pressable>
+        <Pressable onPress={() => setView("list")} className="flex-row items-center gap-1.5 -ml-1"><ArrowLeft size={16} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground">Kembali ke Daftar</Text></Pressable>
         <Text className="text-lg font-bold text-foreground">{editingId ? "Edit Berita" : "Buat Berita Baru"}</Text>
 
         {formMessage ? (
@@ -186,8 +188,8 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
           <Text className="text-sm font-medium text-foreground">Link (opsional, boleh lebih dari 1)</Text>
           {editingLinks.map((l) => (
             <View key={l.id} className="flex-row items-center gap-2 bg-muted rounded-xl px-3 py-2">
-              <Link2 size={13} color="#6E776F" /><Text numberOfLines={1} className="text-xs text-foreground flex-1">{l.url}</Text>
-              <Pressable onPress={() => handleRemoveLink(l.id)}><X size={13} color="#6E776F" /></Pressable>
+              <Link2 size={13} color={colors.mutedForeground} /><Text numberOfLines={1} className="text-xs text-foreground flex-1">{l.url}</Text>
+              <Pressable onPress={() => handleRemoveLink(l.id)}><X size={13} color={colors.mutedForeground} /></Pressable>
             </View>
           ))}
           <View className="flex-row gap-2">
@@ -209,7 +211,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
         </View>
 
         <View className="border border-border rounded-xl p-4 gap-3">
-          <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color="#17201B" /><Text className="text-sm font-semibold text-foreground">Media</Text></View>
+          <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color={colors.foreground} /><Text className="text-sm font-semibold text-foreground">Media</Text></View>
           <View>
             <Text className="text-xs text-muted-foreground mb-2">Thumbnail (1 gambar sampul)</Text>
             {thumbnail ? (
@@ -219,7 +221,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
               </View>
             ) : null}
             <Pressable onPress={() => pickAndUpload("thumbnail")} disabled={uploadingThumb || formSaving} className="flex-row items-center gap-2">
-              {uploadingThumb ? <ActivityIndicator size="small" color="#356447" /> : <Upload size={14} color="#356447" />}
+              {uploadingThumb ? <ActivityIndicator size="small" color={colors.primary} /> : <Upload size={14} color={colors.primary} />}
               <Text className="text-sm text-primary">{uploadingThumb ? "Mengunggah..." : thumbnail ? "Ganti Thumbnail" : "Upload Thumbnail"}</Text>
             </Pressable>
           </View>
@@ -234,7 +236,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
               ))}
             </View>
             <Pressable onPress={() => pickAndUpload("activity")} disabled={uploadingActivity || formSaving} className="flex-row items-center gap-2">
-              {uploadingActivity ? <ActivityIndicator size="small" color="#356447" /> : <Upload size={14} color="#356447" />}
+              {uploadingActivity ? <ActivityIndicator size="small" color={colors.primary} /> : <Upload size={14} color={colors.primary} />}
               <Text className="text-sm text-primary">{uploadingActivity ? "Mengunggah..." : "Tambah Gambar Kegiatan"}</Text>
             </Pressable>
           </View>
@@ -242,10 +244,10 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
 
         <View className="flex-row gap-3">
           <Pressable onPress={handleSaveDraft} disabled={formSaving || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 border border-border rounded-xl">
-            <Save size={15} color="#17201B" /><Text className="text-sm font-medium text-foreground">{formSaving ? "Menyimpan..." : "Simpan Draft"}</Text>
+            <Save size={15} color={colors.foreground} /><Text className="text-sm font-medium text-foreground">{formSaving ? "Menyimpan..." : "Simpan Draft"}</Text>
           </Pressable>
           <Pressable onPress={handlePublish} disabled={formSaving || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 bg-primary rounded-xl">
-            <Send size={15} color="#fff" /><Text className="text-sm font-semibold text-white">{formSaving ? "Memproses..." : "Terbitkan"}</Text>
+            <Send size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">{formSaving ? "Memproses..." : "Terbitkan"}</Text>
           </Pressable>
         </View>
       </KeyboardAwareScrollView>
@@ -256,18 +258,18 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Text className="text-base font-bold text-foreground">Kelola Berita Acara</Text>
-        <Pressable onPress={openCreate} className="flex-row items-center gap-1.5 bg-primary px-3 py-2 rounded-xl"><Plus size={15} color="#fff" /><Text className="text-sm font-semibold text-white">Tambah</Text></Pressable>
+        <Pressable onPress={openCreate} className="flex-row items-center gap-1.5 bg-primary px-3 py-2 rounded-xl"><Plus size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">Tambah</Text></Pressable>
       </View>
       <View className="flex-row gap-2">
         {(["all", "disetujui", "draft"] as const).map((f) => (
           <Pressable key={f} onPress={() => setStatusFilter(f)} className={`px-3 py-1.5 rounded-full ${statusFilter === f ? "bg-primary" : "bg-secondary"}`}>
-            <Text className={`text-xs font-medium ${statusFilter === f ? "text-white" : "text-foreground"}`}>{f === "all" ? "Semua" : f === "disetujui" ? "Terbit" : "Draft"}</Text>
+            <Text className={`text-xs font-medium ${statusFilter === f ? "text-primary-foreground" : "text-foreground"}`}>{f === "all" ? "Semua" : f === "disetujui" ? "Terbit" : "Draft"}</Text>
           </Pressable>
         ))}
       </View>
 
       {loading ? (
-        <ActivityIndicator color="#356447" />
+        <ActivityIndicator color={colors.primary} />
       ) : filtered.length === 0 ? (
         <View className="py-12 items-center">
           <Text className="text-muted-foreground text-sm">Belum ada berita untuk filter ini.</Text>
@@ -290,13 +292,13 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
                 {thumb ? <Image source={{ uri: mediaUrl(thumb) }} className="w-16 h-16 rounded-xl" /> : null}
               </View>
               <View className="flex-row gap-3 flex-wrap items-center">
-                <Pressable onPress={() => openEdit(item)} className="flex-row items-center gap-1"><Edit2 size={12} color="#356447" /><Text className="text-xs text-primary font-medium">Edit</Text></Pressable>
+                <Pressable onPress={() => openEdit(item)} className="flex-row items-center gap-1"><Edit2 size={12} color={colors.primary} /><Text className="text-xs text-primary font-medium">Edit</Text></Pressable>
                 {item.status !== "disetujui" ? (
                   <Pressable onPress={() => handlePublishFromList(item.id)} className="flex-row items-center gap-1"><Send size={12} color="#16a34a" /><Text className="text-xs text-green-600 font-medium">Terbitkan</Text></Pressable>
                 ) : null}
-                <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="flex-row items-center gap-1"><Eye size={12} color="#6E776F" /><Text className="text-xs text-muted-foreground">Preview</Text></Pressable>
+                <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="flex-row items-center gap-1"><Eye size={12} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">Preview</Text></Pressable>
                 <Pressable onPress={() => handleDelete(item.id)} className="flex-row items-center gap-1 ml-auto">
-                  <Trash2 size={12} color={confirmDeleteId === item.id ? "#dc2626" : "#6E776F"} />
+                  <Trash2 size={12} color={confirmDeleteId === item.id ? "#dc2626" : colors.mutedForeground} />
                   <Text className={`text-xs font-medium ${confirmDeleteId === item.id ? "text-red-600" : "text-muted-foreground"}`}>{confirmDeleteId === item.id ? "Konfirmasi Hapus?" : "Hapus"}</Text>
                 </Pressable>
               </View>

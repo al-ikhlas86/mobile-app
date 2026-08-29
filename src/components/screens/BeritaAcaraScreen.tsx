@@ -3,12 +3,14 @@ import { View, Text, FlatList, Image, Pressable, ActivityIndicator, RefreshContr
 import { Search, ChevronRight, FileText } from "lucide-react-native";
 import { Input } from "../ui/Input";
 import { api, resolveAvatarUrl } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Media { media_type: "thumbnail" | "activity"; url: string; }
 interface BeritaItem { id: number; title: string; activity_date: string | null; created_by_name: string; author_name: string | null; media: Media[]; }
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
 
 export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const colors = useThemeColors();
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<BeritaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
 
   const filtered = items.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <FlatList
@@ -35,12 +37,12 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
       ListHeaderComponent={
         <View className="mb-3">
-          <Input placeholder="Cari berita acara..." value={search} onChangeText={setSearch} icon={<Search size={18} color="#6E776F" />} />
+          <Input placeholder="Cari berita acara..." value={search} onChangeText={setSearch} icon={<Search size={18} color={colors.mutedForeground} />} />
         </View>
       }
       ListEmptyComponent={
         <View className="items-center py-16 gap-3">
-          <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><FileText size={24} color="#6E776F" /></View>
+          <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><FileText size={24} color={colors.mutedForeground} /></View>
           <Text className="text-sm text-muted-foreground">Belum ada berita yang diterbitkan.</Text>
         </View>
       }
@@ -49,7 +51,7 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
         return (
           <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="rounded-2xl overflow-hidden bg-card border border-border">
             <View className="h-40 bg-muted items-center justify-center">
-              {thumb ? <Image source={{ uri: resolveAvatarUrl(thumb.url) ?? undefined }} className="w-full h-full" resizeMode="cover" /> : <FileText size={20} color="#6E776F" />}
+              {thumb ? <Image source={{ uri: resolveAvatarUrl(thumb.url) ?? undefined }} className="w-full h-full" resizeMode="cover" /> : <FileText size={20} color={colors.mutedForeground} />}
             </View>
             <View className="p-4 gap-2">
               <Text numberOfLines={2} className="text-base font-bold text-foreground">{item.title}</Text>
@@ -58,7 +60,7 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
               </Text>
               <View className="flex-row items-center gap-1">
                 <Text className="text-xs font-semibold text-primary">Baca selengkapnya</Text>
-                <ChevronRight size={14} color="#356447" />
+                <ChevronRight size={14} color={colors.primary} />
               </View>
             </View>
           </Pressable>

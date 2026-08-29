@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Grid3x3 } from "lucide-react-native";
+import { useThemeColors } from "../context/ThemeContext";
 
 export interface QuickMenuItem {
   label: string;
@@ -40,6 +41,7 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
 }
 
 export function QuickMenuGrid({ items, onSeeAll }: { items: QuickMenuItem[]; onSeeAll: () => void }) {
+  const colors = useThemeColors();
   const preview = items.slice(0, 7);
   return (
     <View className="flex-row flex-wrap gap-2">
@@ -52,7 +54,7 @@ export function QuickMenuGrid({ items, onSeeAll }: { items: QuickMenuItem[]; onS
         style={{ width: "48%" }}
       >
         <View className="w-9 h-9 rounded-full items-center justify-center bg-card">
-          <Grid3x3 size={18} color="#356447" />
+          <Grid3x3 size={18} color={colors.primary} />
         </View>
         <Text className="flex-1 text-[10.5px] font-semibold text-foreground">Semua Menu</Text>
       </Pressable>

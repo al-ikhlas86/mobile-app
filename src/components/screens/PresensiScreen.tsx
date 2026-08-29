@@ -12,6 +12,7 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Props {
   role: string;
@@ -37,6 +38,43 @@ interface Statistik {
 const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const JENIS_OPTIONS = [{ value: "sakit", label: "Sakit" }, { value: "izin", label: "Izin (Ada Keperluan)" }];
 
+// Ambang akurasi sama dgn default server (checkin_max_accuracy_meters di
+// Absen) - cuma dipakai di sini utk keputusan RETRY sblm kirim ke server,
+// bukan menggantikan validasi server (server tetap penentu akhir, admin
+// bisa ubah ambangnya kapan saja tanpa aplikasi ini perlu tahu).
+const GPS_ACCURACY_TARGET_M = 50;
+const GPS_RETRY_MAX_ATTEMPTS = 3;
+const GPS_RETRY_DELAY_MS = 2500;
+
+// Diminta user 2026-08-29 - "presensi sempet beberapa kali gagal padahal
+// udah nyalain gps, terus baru akhirnya bisa". Akar masalah: fix GPS
+// PERTAMA setelah GPS baru dinyalakan/lokasi baru dibuka seringkali masih
+// kasar (network-based, bisa 100-500m+) sebelum satelit benar2 terkunci -
+// server menolaknya (akurasi > 50m) dan sebelumnya user harus tap tombol
+// Masuk/Pulang ULANG SENDIRI berkali-kali sampai kebetulan dapat fix yang
+// bagus. Sekarang aplikasi yang menunggu/mencoba ulang di belakang layar
+// (server TETAP jadi penentu akhir, ini cuma mengurangi kegagalan yang
+// sebenarnya bisa dihindari dgn menunggu sebentar).
+async function getAccuratePosition(
+  onAttempt?: (attempt: number, max: number) => void
+): Promise<Location.LocationObject> {
+  let best: Location.LocationObject | null = null;
+  for (let attempt = 1; attempt <= GPS_RETRY_MAX_ATTEMPTS; attempt++) {
+    onAttempt?.(attempt, GPS_RETRY_MAX_ATTEMPTS);
+    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation });
+    if (!best || (pos.coords.accuracy ?? Infinity) < (best.coords.accuracy ?? Infinity)) {
+      best = pos;
+    }
+    if ((pos.coords.accuracy ?? Infinity) <= GPS_ACCURACY_TARGET_M) {
+      return pos;
+    }
+    if (attempt < GPS_RETRY_MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, GPS_RETRY_DELAY_MS));
+    }
+  }
+  return best!; // belum cukup akurat setelah semua percobaan - tetap kirim yg terbaik, biar server yg putuskan
+}
+
 function formatDateFull(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -55,13 +93,14 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 }
 
 export function PresensiScreen({ role, onNavigate }: Props) {
+  const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statistik, setStatistik] = useState<Statistik | null>(null);
   const [checkinBusy, setCheckinBusy] = useState<"masuk" | "pulang" | null>(null);
-  const [checkinMessage, setCheckinMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [checkinMessage, setCheckinMessage] = useState<{ text: string; kind: "ok" | "error" | "progress" } | null>(null);
 
   const [izinTanggal, setIzinTanggal] = useState(getTodayLocal());
   const [izinJenis, setIzinJenis] = useState<"sakit" | "izin">("sakit");
@@ -87,12 +126,18 @@ export function PresensiScreen({ role, onNavigate }: Props) {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       setCheckinBusy(null);
-      setCheckinMessage({ text: "Izin lokasi ditolak. Aktifkan izin lokasi utk aplikasi ini di Pengaturan HP.", ok: false });
+      setCheckinMessage({ text: "Izin lokasi ditolak. Aktifkan izin lokasi utk aplikasi ini di Pengaturan HP.", kind: "error" });
       return;
     }
 
     try {
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const pos = await getAccuratePosition((attempt, max) => {
+        setCheckinMessage(
+          attempt === 1
+            ? { text: "Mencari lokasi GPS...", kind: "progress" }
+            : { text: `Sinyal GPS belum stabil, mencoba lagi (${attempt}/${max})...`, kind: "progress" }
+        );
+      });
       // pos.mocked - field ASLI Android bawaan expo-location (bukan
       // heuristik) - true kalau lokasi berasal dari aplikasi mock-GPS.
       // Server (Absen) tetap jadi penentu akhir tolak/terima, ini cuma
@@ -100,11 +145,11 @@ export function PresensiScreen({ role, onNavigate }: Props) {
       // kasus yang jelas-jelas palsu).
       const res = await api.attendanceCheckin(type, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? undefined, pos.mocked === true, pos.timestamp);
       setCheckinBusy(null);
-      setCheckinMessage({ text: res.message ?? (res.success ? "Presensi berhasil." : "Presensi gagal."), ok: !!res.success });
+      setCheckinMessage({ text: res.message ?? (res.success ? "Presensi berhasil." : "Presensi gagal."), kind: res.success ? "ok" : "error" });
       if (res.success) load();
     } catch {
       setCheckinBusy(null);
-      setCheckinMessage({ text: "Gagal mendapatkan lokasi GPS. Pastikan GPS aktif dan coba lagi.", ok: false });
+      setCheckinMessage({ text: "Gagal mendapatkan lokasi GPS. Pastikan GPS aktif dan coba lagi.", kind: "error" });
     }
   }
 
@@ -146,11 +191,11 @@ export function PresensiScreen({ role, onNavigate }: Props) {
       <View className="px-4 pt-5">
         <View className="flex-row gap-2 p-1 bg-muted rounded-xl">
           <Pressable onPress={() => setActiveTab("hadir")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "hadir" ? "bg-card" : ""}`}>
-            <CalendarCheck size={15} color={activeTab === "hadir" ? "#356447" : "#6E776F"} />
+            <CalendarCheck size={15} color={activeTab === "hadir" ? colors.primary : colors.mutedForeground} />
             <Text className={`text-sm font-medium ${activeTab === "hadir" ? "text-foreground" : "text-muted-foreground"}`}>Hadir</Text>
           </Pressable>
           <Pressable onPress={() => setActiveTab("izin")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "izin" ? "bg-card" : ""}`}>
-            <FileWarning size={15} color={activeTab === "izin" ? "#356447" : "#6E776F"} />
+            <FileWarning size={15} color={activeTab === "izin" ? colors.primary : colors.mutedForeground} />
             <Text className={`text-sm font-medium ${activeTab === "izin" ? "text-foreground" : "text-muted-foreground"}`}>Izin / Sakit</Text>
           </Pressable>
         </View>
@@ -177,7 +222,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Unggah Bukti Foto (Surat Dokter/Izin) - opsional</Text>
                 <Pressable onPress={handlePickFoto} className="flex-row items-center gap-2 border border-dashed border-border rounded-xl px-3 py-3">
-                  <Paperclip size={15} color="#6E776F" />
+                  <Paperclip size={15} color={colors.mutedForeground} />
                   <Text className="text-sm text-muted-foreground flex-1" numberOfLines={1}>{izinFoto ? izinFoto.name : "Pilih file foto..."}</Text>
                 </Pressable>
               </View>
@@ -198,7 +243,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
         >
           <Card padding="md">
             <View className="flex-row items-center gap-1.5 mb-2">
-              <MapPin size={14} color="#356447" />
+              <MapPin size={14} color={colors.primary} />
               <Text className="text-xs font-semibold text-foreground">Presensi via Aplikasi</Text>
             </View>
             <Text className="text-xs text-muted-foreground mb-2.5">Lokasi GPS wajib berada di area Yayasan.</Text>
@@ -208,25 +253,31 @@ export function PresensiScreen({ role, onNavigate }: Props) {
                 {"  "}Masuk
               </Button>
               <Button size="sm" variant="outline" className="flex-1" onPress={() => handleCheckin("pulang")} disabled={checkinBusy !== null}>
-                {checkinBusy === "pulang" ? <ActivityIndicator size="small" color="#356447" /> : <LogOut size={13} color="#356447" />}
+                {checkinBusy === "pulang" ? <ActivityIndicator size="small" color={colors.primary} /> : <LogOut size={13} color={colors.primary} />}
                 {"  "}Pulang
               </Button>
             </View>
             {checkinMessage && (
-              <Text className={`text-xs mt-2 text-center ${checkinMessage.ok ? "text-green-600" : "text-red-500"}`}>{checkinMessage.text}</Text>
+              <Text
+                className={`text-xs mt-2 text-center ${
+                  checkinMessage.kind === "ok" ? "text-green-600" : checkinMessage.kind === "error" ? "text-red-500" : "text-muted-foreground"
+                }`}
+              >
+                {checkinMessage.text}
+              </Text>
             )}
           </Card>
 
           <Card padding="sm" onPress={() => onNavigate("presensi-admin-tu")}>
             <View className="flex-row items-center gap-3">
               <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center">
-                <ClipboardList size={16} color="#356447" />
+                <ClipboardList size={16} color={colors.primary} />
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-foreground">Rekap Kehadiran</Text>
                 <Text className="text-xs text-muted-foreground">{role === "Guru Kelas" ? "Kehadiran Anda & siswa kelas Anda" : "Kehadiran Anda"}</Text>
               </View>
-              <ChevronRight size={16} color="#6E776F" />
+              <ChevronRight size={16} color={colors.mutedForeground} />
             </View>
           </Card>
 

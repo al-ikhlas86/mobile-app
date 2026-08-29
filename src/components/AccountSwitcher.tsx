@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, Check, X, Trash2 } from "lucide-react-native";
 import { resolveAvatarUrl } from "../services/api";
 import type { SavedAccount } from "../services/authService";
+import { useThemeColors } from "../context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -29,6 +30,7 @@ interface Props {
 // window yang SAMA, tidak perlu perlakuan/tambal khusus apapun lagi.
 export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSwitch, onAddAccount, onRemoveAccount, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   if (!visible) return null;
   return (
     <View className="absolute inset-0" style={{ zIndex: 50, elevation: 50 }}>
@@ -39,7 +41,7 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
         <Pressable className="bg-card rounded-t-3xl max-h-[70%]" style={{ paddingBottom: insets.bottom }} onPress={(e) => e.stopPropagation()}>
           <View className="flex-row items-center justify-between p-4 border-b border-border">
             <Text className="text-base font-bold text-foreground">Ganti Akun</Text>
-            <Pressable onPress={onClose}><X size={20} color="#6E776F" /></Pressable>
+            <Pressable onPress={onClose}><X size={20} color={colors.mutedForeground} /></Pressable>
           </View>
           <FlatList
             data={savedAccounts}
@@ -52,17 +54,17 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
                 <View className="flex-row items-center gap-3 px-2 py-2.5 rounded-xl">
                   <Pressable onPress={() => onSwitch(item.id)} className="flex-1 flex-row items-center gap-3">
                     <View className="w-11 h-11 rounded-full bg-primary items-center justify-center overflow-hidden">
-                      {avatar ? <Image source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-white font-bold">{item.avatarInitials}</Text>}
+                      {avatar ? <Image source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-primary-foreground font-bold">{item.avatarInitials}</Text>}
                     </View>
                     <View className="flex-1">
                       <Text numberOfLines={1} className="text-sm font-semibold text-foreground">{item.fullName}</Text>
                       <Text numberOfLines={1} className="text-xs text-muted-foreground">{item.role}</Text>
                     </View>
-                    {isCurrent && <Check size={18} color="#356447" />}
+                    {isCurrent && <Check size={18} color={colors.primary} />}
                   </Pressable>
                   {!isCurrent && (
                     <Pressable onPress={() => onRemoveAccount(item.id)} className="p-2">
-                      <Trash2 size={16} color="#6E776F" />
+                      <Trash2 size={16} color={colors.mutedForeground} />
                     </Pressable>
                   )}
                 </View>
@@ -70,7 +72,7 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
             }}
             ListFooterComponent={
               <Pressable onPress={onAddAccount} className="flex-row items-center gap-3 px-2 py-3 mt-1">
-                <View className="w-11 h-11 rounded-full bg-muted items-center justify-center"><Plus size={20} color="#356447" /></View>
+                <View className="w-11 h-11 rounded-full bg-muted items-center justify-center"><Plus size={20} color={colors.primary} /></View>
                 <Text className="text-sm font-semibold text-primary">Tambah Akun</Text>
               </Pressable>
             }

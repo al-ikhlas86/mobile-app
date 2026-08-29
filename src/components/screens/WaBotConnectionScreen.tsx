@@ -4,11 +4,13 @@ import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 const POLL_MS_WAITING = 1200;
 const POLL_MS_READY = 5000;
 
 export function WaBotConnectionScreen() {
+  const colors = useThemeColors();
   const [ready, setReady] = useState<boolean | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -93,7 +95,7 @@ export function WaBotConnectionScreen() {
               <Text className="text-sm text-muted-foreground text-center">{error}</Text>
             </>
           ) : ready === null ? (
-            <ActivityIndicator color="#356447" />
+            <ActivityIndicator color={colors.primary} />
           ) : ready ? (
             <>
               <CheckCircle2 size={44} color="#22c55e" />
@@ -107,7 +109,7 @@ export function WaBotConnectionScreen() {
               <Text className="text-sm text-muted-foreground text-center">Scan QR dari WhatsApp (Perangkat Tertaut → Tautkan Perangkat).</Text>
               {regenerating ? (
                 <View className="w-56 h-56 rounded-lg border border-border items-center justify-center">
-                  <ActivityIndicator color="#356447" />
+                  <ActivityIndicator color={colors.primary} />
                 </View>
               ) : qrDataUrl ? (
                 <Image source={{ uri: qrDataUrl }} className="w-56 h-56 rounded-lg border border-border" />

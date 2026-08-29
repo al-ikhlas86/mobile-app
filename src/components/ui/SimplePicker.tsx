@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, FlatList } from "react-native";
 import { ChevronDown, ChevronUp, Check } from "lucide-react-native";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Option { value: string; label: string; }
 
@@ -18,6 +19,7 @@ const MAX_VISIBLE_ROWS = 5;
 // layar penuh sama sekali). Tinggi dibatasi ~5 baris, kalau opsinya lebih
 // banyak dari itu FlatList di dalam otomatis bisa di-scroll.
 export function SimplePicker({ value, options, onChange, placeholder = "Pilih..." }: { value: string; options: Option[]; onChange: (v: string) => void; placeholder?: string }) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
   const maxHeight = Math.min(options.length, MAX_VISIBLE_ROWS) * ROW_HEIGHT;
@@ -26,7 +28,7 @@ export function SimplePicker({ value, options, onChange, placeholder = "Pilih...
     <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
       <Pressable onPress={() => setOpen((v) => !v)} className="flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-muted">
         <Text numberOfLines={1} className="flex-1 text-sm font-medium text-foreground">{selected?.label ?? placeholder}</Text>
-        {open ? <ChevronUp size={16} color="#6E776F" /> : <ChevronDown size={16} color="#6E776F" />}
+        {open ? <ChevronUp size={16} color={colors.mutedForeground} /> : <ChevronDown size={16} color={colors.mutedForeground} />}
       </Pressable>
       {open && (
         <View
@@ -45,7 +47,7 @@ export function SimplePicker({ value, options, onChange, placeholder = "Pilih...
                 style={{ height: ROW_HEIGHT }}
               >
                 <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{item.label}</Text>
-                {item.value === value && <Check size={16} color="#356447" />}
+                {item.value === value && <Check size={16} color={colors.primary} />}
               </Pressable>
             )}
           />

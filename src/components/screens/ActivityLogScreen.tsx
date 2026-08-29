@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, History } from "lucide-react-
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 const ACTION_LABELS: Record<string, string> = {
   buat_akun: "Buat Akun", edit_akun: "Edit Akun", ganti_role: "Ganti Role", hapus_akun: "Hapus Akun",
@@ -14,6 +15,7 @@ interface LogItem { id: number; actor_user_id: number | null; actor_name: string
 function formatTime(ts: string) { return new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
 export function ActivityLogScreen() {
+  const colors = useThemeColors();
   const [items, setItems] = useState<LogItem[] | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -34,11 +36,11 @@ export function ActivityLogScreen() {
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
       <Text className="text-xs text-muted-foreground">Riwayat aksi administratif sensitif (ganti role, hapus akun, ganti password, putus koneksi WA, dst).</Text>
       {loading ? (
-        <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color="#356447" /></View></Card>
+        <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /></View></Card>
       ) : error ? (
         <Card padding="lg"><View className="items-center py-4"><AlertTriangle size={40} color="#ef4444" /><Text className="text-sm text-muted-foreground mt-2">{error}</Text></View></Card>
       ) : items && items.length === 0 ? (
-        <Card padding="lg"><View className="items-center py-6"><History size={40} color="#6E776F" /><Text className="text-sm text-muted-foreground mt-2">Belum ada aktivitas tercatat.</Text></View></Card>
+        <Card padding="lg"><View className="items-center py-6"><History size={40} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground mt-2">Belum ada aktivitas tercatat.</Text></View></Card>
       ) : (
         items?.map((item) => (
           <Card key={item.id} padding="md">
@@ -55,9 +57,9 @@ export function ActivityLogScreen() {
       )}
       {!loading && !error && totalPages > 1 && (
         <View className="flex-row items-center justify-center gap-3 mt-2">
-          <Button variant="outline" disabled={page <= 1} onPress={() => setPage((p) => p - 1)}><ChevronLeft size={16} color="#356447" /></Button>
+          <Button variant="outline" disabled={page <= 1} onPress={() => setPage((p) => p - 1)}><ChevronLeft size={16} color={colors.primary} /></Button>
           <Text className="text-xs text-muted-foreground">Halaman {page} / {totalPages}</Text>
-          <Button variant="outline" disabled={page >= totalPages} onPress={() => setPage((p) => p + 1)}><ChevronRight size={16} color="#356447" /></Button>
+          <Button variant="outline" disabled={page >= totalPages} onPress={() => setPage((p) => p + 1)}><ChevronRight size={16} color={colors.primary} /></Button>
         </View>
       )}
     </ScrollView>

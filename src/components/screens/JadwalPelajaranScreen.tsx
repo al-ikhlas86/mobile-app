@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-nati
 import { Calendar, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, PartyPopper } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Slot { hari: string; jam_ke: number | null; jam_mulai: string; jam_selesai: string; mata_pelajaran_nama: string; jenis?: "pelajaran" | "kegiatan"; kelas_nama?: string; guru_nama?: string | null; }
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
@@ -48,6 +49,7 @@ export function indexAgenda(agenda: AgendaItem[]): Record<string, AgendaItem[]> 
 // 2026-08-29: default hari ini, klik tanggal lain ganti yang ditampilkan,
 // libur dari kalender akademik MENANG atas jadwal weekday biasa.
 export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onSelectDate }: { hasSchedule: Record<string, boolean>; agendaByDate: Record<string, AgendaItem[]>; selected: string; onSelectDate: (iso: string) => void }) {
+  const colors = useThemeColors();
   const [viewMonth, setViewMonth] = useState(() => { const d = new Date(selected + "T00:00:00"); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const cells = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
   const monthLabel = viewMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
@@ -55,9 +57,9 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
   return (
     <Card padding="md">
       <View className="flex-row items-center justify-between mb-3">
-        <Pressable onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="p-1.5"><ChevronLeft size={18} color="#6E776F" /></Pressable>
+        <Pressable onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="p-1.5"><ChevronLeft size={18} color={colors.mutedForeground} /></Pressable>
         <Text className="text-sm font-semibold text-foreground capitalize">{monthLabel}</Text>
-        <Pressable onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="p-1.5"><ChevronRight size={18} color="#6E776F" /></Pressable>
+        <Pressable onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="p-1.5"><ChevronRight size={18} color={colors.mutedForeground} /></Pressable>
       </View>
 
       <View className="flex-row mb-1">
@@ -76,7 +78,14 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
               style={{ width: "14.28%" }}
               className={`aspect-square items-center justify-center rounded-lg ${cell.isToday ? "border border-primary" : ""} ${selected === cell.iso ? "bg-primary/20" : ""} ${libur ? "bg-red-100" : adaJadwal ? "bg-primary/10" : ""}`}
             >
-              <Text className={`text-xs ${libur ? "text-red-700 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground/60"}`}>{cell.date}</Text>
+              {/* text-muted-foreground TANPA modifier opacity (2026-08-29) -
+                  sebelumnya "/60" (mis. text-muted-foreground/60), yang
+                  meredupkan warna abu2 gelap ke titik hampir tidak
+                  terbaca di atas latar HITAM mode gelap ("kedip2 tapi
+                  hitam" yang dilaporkan user). --muted-foreground SUDAH
+                  dikalibrasi terpisah per tema (abu gelap utk terang,
+                  abu terang utk gelap) - tidak perlu opacity tambahan. */}
+              <Text className={`text-xs ${libur ? "text-red-700 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{cell.date}</Text>
             </Pressable>
           );
         })}
@@ -97,6 +106,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [meta, setMeta] = useState<{ tahunAjaran?: string; semester?: string; message?: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => toISO(new Date()));
+  const colors = useThemeColors();
 
   useEffect(() => {
     (async () => {
@@ -120,9 +130,9 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
     })();
   }, [mode]);
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
-  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
-  if (mode === "anak" && !child) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground text-center">Belum ada data anak yang tertaut ke akun ini.</Text></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
+  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
+  if (mode === "anak" && !child) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">Belum ada data anak yang tertaut ke akun ini.</Text></View>;
 
   const grouped: Record<string, Slot[]> = {};
   for (const s of slots) (grouped[s.hari] = grouped[s.hari] || []).push(s);
@@ -142,8 +152,8 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
       {mode === "anak" && child && (
         <Card padding="md" className="bg-primary border-0">
           <View className="flex-row items-center gap-4">
-            <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><User size={22} color="#fff" /></View>
-            <View><Text className="text-white font-bold text-base">{child.nama}</Text><Text className="text-white/80 text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text></View>
+            <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><User size={22} color={colors.primaryForeground} /></View>
+            <View><Text className="text-primary-foreground font-bold text-base">{child.nama}</Text><Text className="text-primary-foreground/80 text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text></View>
           </View>
         </Card>
       )}
@@ -152,7 +162,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
       {meta?.tahunAjaran ? <Text className="text-xs text-muted-foreground text-center">Tahun Ajaran {meta.tahunAjaran} · Semester {meta.semester === "genap" ? "Genap" : "Ganjil"}</Text> : null}
 
       {!meta?.message && slots.length === 0 && agenda.length === 0 && (
-        <Card padding="lg"><View className="items-center py-4"><Calendar size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground mt-2">Belum ada jadwal pelajaran yang diatur.</Text></View></Card>
+        <Card padding="lg"><View className="items-center py-4"><Calendar size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground mt-2">Belum ada jadwal pelajaran yang diatur.</Text></View></Card>
       )}
 
       {(slots.length > 0 || agenda.length > 0) && (
@@ -182,7 +192,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
                     <Card key={idx} padding="sm" className={kegiatan ? "opacity-80" : ""}>
                       <View className="flex-row items-center gap-3">
                         <View className={`items-center justify-center rounded-lg px-2 py-1.5 ${kegiatan ? "bg-muted" : "bg-primary/10"}`} style={{ minWidth: 64 }}>
-                          {kegiatan ? <Coffee size={13} color="#6E776F" /> : <Clock size={13} color="#356447" />}
+                          {kegiatan ? <Coffee size={13} color={colors.mutedForeground} /> : <Clock size={13} color={colors.primary} />}
                           <Text className={`text-[11px] font-semibold ${kegiatan ? "text-muted-foreground" : "text-primary"}`}>{jam(s.jam_mulai)}</Text>
                           <Text className="text-[10px] text-muted-foreground">{jam(s.jam_selesai)}</Text>
                         </View>

@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { ArrowLeft, Search } from "lucide-react-native";
 import { Input } from "./ui/Input";
 import { QuickMenuButton, type MenuCategory } from "./QuickMenuGrid";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme, useThemeColors } from "../context/ThemeContext";
 
 export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory[]; onBack: () => void }) {
   const [search, setSearch] = useState("");
@@ -12,6 +12,7 @@ export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory
   // 2026-08-28: dibandingkan sisi-sisi tema terang vs gelap). Ikut pola
   // warna adaptif yang sama dgn tombol tema di MainTabs.tsx.
   const { isDark } = useTheme();
+  const colors = useThemeColors();
   const backIconColor = isDark ? "#F1F1F2" : "#17201B";
 
   const filtered = categories
@@ -27,7 +28,7 @@ export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory
         <Text className="text-base font-bold text-foreground">Semua Menu</Text>
       </View>
 
-      <Input placeholder="Cari menu..." value={search} onChangeText={setSearch} icon={<Search size={18} color="#6E776F" />} />
+      <Input placeholder="Cari menu..." value={search} onChangeText={setSearch} icon={<Search size={18} color={colors.mutedForeground} />} />
 
       {filtered.length === 0 ? (
         <Text className="text-sm text-muted-foreground text-center py-8">Menu tidak ditemukan.</Text>

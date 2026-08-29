@@ -8,6 +8,7 @@ import { View, Text, Pressable, FlatList, ActivityIndicator } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, PlayCircle, LogOut } from "lucide-react-native";
 import type { DemoRoleOption } from "../services/demoService";
+import { useThemeColors } from "../context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -22,6 +23,7 @@ interface Props {
 
 export function DemoModeSwitcher({ visible, roles, activeDemoLabel, loading, errorMessage, onPick, onExitDemo, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   if (!visible) return null;
   return (
     <View className="absolute inset-0" style={{ zIndex: 55, elevation: 55 }}>
@@ -30,7 +32,7 @@ export function DemoModeSwitcher({ visible, roles, activeDemoLabel, loading, err
           <View className="p-4 border-b border-border">
             <View className="flex-row items-center justify-between">
               <Text className="text-base font-bold text-foreground">Mode Demo</Text>
-              <Pressable onPress={onClose}><X size={20} color="#6E776F" /></Pressable>
+              <Pressable onPress={onClose}><X size={20} color={colors.mutedForeground} /></Pressable>
             </View>
             <Text className="text-xs text-muted-foreground mt-1">Lihat & uji tampilan sebagai role lain. Data terpisah, tidak menyentuh data asli.</Text>
           </View>
@@ -65,7 +67,7 @@ export function DemoModeSwitcher({ visible, roles, activeDemoLabel, loading, err
                   className={`flex-row items-center gap-3 p-3 rounded-2xl ${active ? "bg-primary/10 border border-primary/30" : ""}`}
                   style={{ opacity: loading ? 0.5 : 1 }}
                 >
-                  <PlayCircle size={18} color={active ? "#356447" : "#6E776F"} />
+                  <PlayCircle size={18} color={active ? colors.primary : colors.mutedForeground} />
                   <Text className={`font-medium text-sm ${active ? "text-primary" : "text-foreground"}`}>{item.label}</Text>
                 </Pressable>
               );

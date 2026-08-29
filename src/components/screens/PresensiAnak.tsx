@@ -10,6 +10,7 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
 interface AttendanceRow { student_cache_id: number; tanggal: string; check_in_time: string | null; check_out_time: string | null; status: string; }
@@ -31,6 +32,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 }
 
 export function PresensiAnak() {
+  const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -94,11 +96,11 @@ export function PresensiAnak() {
     }
   }
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (error || !child) {
     return (
       <View className="flex-1 items-center justify-center bg-background gap-3 px-8">
-        <AlertCircle size={32} color="#6E776F" />
+        <AlertCircle size={32} color={colors.mutedForeground} />
         <Text className="text-sm text-muted-foreground text-center">{error || "Belum ada data anak yang tertaut ke akun ini."}</Text>
       </View>
     );
@@ -113,21 +115,21 @@ export function PresensiAnak() {
       <View className="px-4 pt-5">
         <Card padding="md" className="bg-primary border-0">
           <View className="flex-row items-center gap-4">
-            <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><Text className="text-white font-bold text-lg">{initials(child.nama)}</Text></View>
+            <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><Text className="text-primary-foreground font-bold text-lg">{initials(child.nama)}</Text></View>
             <View>
-              <Text className="text-white font-bold text-base">{child.nama}</Text>
-              <Text className="text-white/80 text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text>
+              <Text className="text-primary-foreground font-bold text-base">{child.nama}</Text>
+              <Text className="text-primary-foreground/80 text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text>
             </View>
           </View>
         </Card>
 
         <View className="flex-row gap-2 p-1 bg-muted rounded-xl mt-4">
           <Pressable onPress={() => setActiveTab("hadir")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "hadir" ? "bg-card" : ""}`}>
-            <CalendarCheck size={15} color={activeTab === "hadir" ? "#356447" : "#6E776F"} />
+            <CalendarCheck size={15} color={activeTab === "hadir" ? colors.primary : colors.mutedForeground} />
             <Text className={`text-sm font-medium ${activeTab === "hadir" ? "text-foreground" : "text-muted-foreground"}`}>Hadir</Text>
           </Pressable>
           <Pressable onPress={() => setActiveTab("izin")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "izin" ? "bg-card" : ""}`}>
-            <FileWarning size={15} color={activeTab === "izin" ? "#356447" : "#6E776F"} />
+            <FileWarning size={15} color={activeTab === "izin" ? colors.primary : colors.mutedForeground} />
             <Text className={`text-sm font-medium ${activeTab === "izin" ? "text-foreground" : "text-muted-foreground"}`}>Izin / Sakit</Text>
           </Pressable>
         </View>
@@ -154,12 +156,12 @@ export function PresensiAnak() {
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Unggah Bukti Foto (Surat Dokter/Izin) - opsional</Text>
                 <Pressable onPress={handlePickFoto} className="flex-row items-center gap-2 border border-dashed border-border rounded-xl px-3 py-3">
-                  <Paperclip size={15} color="#6E776F" />
+                  <Paperclip size={15} color={colors.mutedForeground} />
                   <Text className="text-sm text-muted-foreground flex-1" numberOfLines={1}>{izinFoto ? izinFoto.name : "Pilih file foto..."}</Text>
                 </Pressable>
               </View>
               <Button onPress={handleSubmitIzin} disabled={izinBusy} loading={izinBusy} className="mt-1">
-                <Send size={14} color="#fff" />{"  "}Kirim Form Izin/Sakit
+                <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Form Izin/Sakit
               </Button>
               {izinMessage && (
                 <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600" : "text-red-500"}`}>{izinMessage.text}</Text>
@@ -171,7 +173,7 @@ export function PresensiAnak() {
         <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
           <Card padding="lg">
             <View className="flex-row items-center gap-2 mb-4">
-              <Calendar size={18} color="#356447" />
+              <Calendar size={18} color={colors.primary} />
               <Text className="text-sm font-semibold text-foreground">{formatDateFull(today)}</Text>
             </View>
             {todayRecord ? (

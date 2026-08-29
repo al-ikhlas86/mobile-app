@@ -3,11 +3,13 @@ import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native
 import { Ban, UserX } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface BlockedUser { id: number; user_id: number; full_name: string; username: string; blocked_by_name: string; created_at: string; }
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
 
 export function BlokiranKomentarScreen() {
+  const colors = useThemeColors();
   const [items, setItems] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +31,7 @@ export function BlokiranKomentarScreen() {
     if (res.success) setItems((prev) => prev.filter((i) => i.user_id !== userId));
   }
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <FlatList
@@ -45,7 +47,7 @@ export function BlokiranKomentarScreen() {
       keyExtractor={(item) => String(item.id)}
       ListEmptyComponent={
         <View className="py-12 items-center gap-3">
-          <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><Ban size={24} color="#6E776F" /></View>
+          <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><Ban size={24} color={colors.mutedForeground} /></View>
           <Text className="text-muted-foreground text-sm">Belum ada akun yang diblokir.</Text>
         </View>
       }

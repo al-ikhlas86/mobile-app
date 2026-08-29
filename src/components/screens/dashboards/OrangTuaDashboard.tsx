@@ -12,6 +12,7 @@ import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useThemeColors } from "../../../context/ThemeContext";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 interface ChildData { id: number; nama: string; nis: string; kelas_nama: string | null; tingkat: string | null; status: string; }
@@ -24,6 +25,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [showAllMenu, setShowAllMenu] = useState(false);
   useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  const colors = useThemeColors();
   const session = getActiveSession();
   const news = useNewsList();
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -46,12 +48,12 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
     }, [])
   );
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   if (error || !child) {
     return (
       <View className="flex-1 items-center justify-center bg-background gap-3 px-8">
-        <AlertCircle size={32} color="#6E776F" />
+        <AlertCircle size={32} color={colors.mutedForeground} />
         <Text className="text-sm text-muted-foreground text-center">{error || "Belum ada data anak yang tertaut ke akun ini."}</Text>
       </View>
     );
@@ -86,7 +88,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
         <Text className="text-sm font-bold text-foreground">{child.nama}</Text>
         <Text className="text-xs text-muted-foreground mt-0.5">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"} · NIS: {child.nis}</Text>
         <View className={`self-start flex-row items-center gap-1 px-2.5 py-1 rounded-full mt-2 ${hadirHariIni ? "bg-green-100" : "bg-muted"}`}>
-          <CheckCircle size={12} color={hadirHariIni ? "#15803d" : "#6E776F"} />
+          <CheckCircle size={12} color={hadirHariIni ? "#15803d" : colors.mutedForeground} />
           <Text className={`text-xs font-medium ${hadirHariIni ? "text-green-700" : "text-muted-foreground"}`}>{hadirHariIni ? "Hadir Hari Ini" : "Belum Ada Presensi Hari Ini"}</Text>
         </View>
       </Card>

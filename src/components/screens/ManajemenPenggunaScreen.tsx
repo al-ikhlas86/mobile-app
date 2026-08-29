@@ -8,6 +8,7 @@ import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api, ROLE_MAP } from "../../services/api";
 import { getActiveSession } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface AdminUser { id: number; username: string; phone: string | null; full_name: string; role: string; is_active: 0 | 1; employee_cache_id: number | null; }
 interface AccountLinkReview { id: number; nama: string; jabatan: string | null; role: string; phone: string; existing_full_name: string; existing_phone: string | null; status: string; }
@@ -21,6 +22,7 @@ const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r]
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
 export function ManajemenPenggunaScreen() {
+  const colors = useThemeColors();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -80,7 +82,7 @@ export function ManajemenPenggunaScreen() {
     else setAddError(res.message ?? "Gagal menambah akun.");
   };
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
@@ -100,8 +102,8 @@ export function ManajemenPenggunaScreen() {
                 <Text className="text-sm text-foreground"><Text className="font-semibold">{r.nama}</Text> ({r.jabatan ?? ROLE_MAP[r.role] ?? r.role}) — no HP {r.phone}</Text>
                 <Text className="text-xs text-muted-foreground mt-0.5">Bentrok dengan akun yang sudah ada: <Text className="font-medium">{r.existing_full_name}</Text> ({r.existing_phone ?? "-"})</Text>
                 <View className="flex-row gap-3 mt-2">
-                  <Pressable onPress={() => handleLinkReview(r.id)} disabled={reviewBusyId === r.id} className="flex-row items-center gap-1.5"><Link2 size={12} color="#356447" /><Text className="text-xs font-medium text-primary">Ya, Orang yang Sama - Tautkan</Text></Pressable>
-                  <Pressable onPress={() => handleRejectReview(r.id)} disabled={reviewBusyId === r.id} className="flex-row items-center gap-1.5"><UserX size={12} color="#6E776F" /><Text className="text-xs font-medium text-muted-foreground">Bukan, Tolak</Text></Pressable>
+                  <Pressable onPress={() => handleLinkReview(r.id)} disabled={reviewBusyId === r.id} className="flex-row items-center gap-1.5"><Link2 size={12} color={colors.primary} /><Text className="text-xs font-medium text-primary">Ya, Orang yang Sama - Tautkan</Text></Pressable>
+                  <Pressable onPress={() => handleRejectReview(r.id)} disabled={reviewBusyId === r.id} className="flex-row items-center gap-1.5"><UserX size={12} color={colors.mutedForeground} /><Text className="text-xs font-medium text-muted-foreground">Bukan, Tolak</Text></Pressable>
                 </View>
               </View>
             ))}
@@ -110,12 +112,12 @@ export function ManajemenPenggunaScreen() {
       )}
 
       {!showAddForm ? (
-        <Button variant="outline" onPress={() => setShowAddForm(true)}><Plus size={16} color="#356447" />{"  "}Tambah Akun</Button>
+        <Button variant="outline" onPress={() => setShowAddForm(true)}><Plus size={16} color={colors.primary} />{"  "}Tambah Akun</Button>
       ) : (
         <Card padding="md">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-sm font-semibold text-foreground">Tambah Akun Baru</Text>
-            <Pressable onPress={resetAddForm}><X size={16} color="#6E776F" /></Pressable>
+            <Pressable onPress={resetAddForm}><X size={16} color={colors.mutedForeground} /></Pressable>
           </View>
           <View className="gap-2.5">
             <TextInput value={newFullName} onChangeText={setNewFullName} placeholder="Nama lengkap" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
@@ -138,14 +140,14 @@ export function ManajemenPenggunaScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-sm font-semibold text-foreground">{u.full_name}</Text>
-              <View className="flex-row items-center gap-1"><Phone size={11} color="#6E776F" /><Text className="text-xs text-muted-foreground">{u.phone ?? u.username}</Text></View>
+              <View className="flex-row items-center gap-1"><Phone size={11} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">{u.phone ?? u.username}</Text></View>
             </View>
             {!u.is_active && <Badge variant="muted">Nonaktif</Badge>}
             {u.id === currentUserId ? (
               <Text className="text-[10px] text-muted-foreground px-1.5">Ini kamu</Text>
             ) : (
               <Pressable onPress={() => handleDelete(u.id)} className={`p-1.5 rounded-full ${confirmDeleteId === u.id ? "bg-red-100" : ""}`}>
-                <Trash2 size={15} color={confirmDeleteId === u.id ? "#ef4444" : "#6E776F"} />
+                <Trash2 size={15} color={confirmDeleteId === u.id ? "#ef4444" : colors.mutedForeground} />
               </Pressable>
             )}
           </View>

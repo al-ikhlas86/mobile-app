@@ -6,6 +6,7 @@ import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { Input } from "../ui/Input";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface PendingRow {
   id: number;
@@ -26,6 +27,7 @@ function formatDateFull(dateStr: string): string {
 // Guru Kelas saja - tinjau pengajuan Izin/Sakit siswa kelasnya (dibatasi
 // server-side, lihat LeaveRequestController::pending di Absen).
 export function PersetujuanIzinScreen() {
+  const colors = useThemeColors();
   const [rows, setRows] = useState<PendingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -61,7 +63,7 @@ export function PersetujuanIzinScreen() {
     <View className="flex-1 bg-background">
       <View className="px-4 pt-5 pb-2">
         <View className="flex-row items-center gap-2">
-          <ClipboardCheck size={18} color="#356447" />
+          <ClipboardCheck size={18} color={colors.primary} />
           <Text className="text-sm font-semibold text-foreground">Persetujuan Izin/Sakit Siswa</Text>
         </View>
         <Text className="text-xs text-muted-foreground mt-1">Pengajuan yang ditolak akan otomatis dianggap Alfa pada tanggal tersebut.</Text>
@@ -85,7 +87,7 @@ export function PersetujuanIzinScreen() {
             {!!item.keterangan && <Text className="text-sm text-foreground mb-2">{item.keterangan}</Text>}
             {!!item.bukti_foto_url && (
               <Pressable onPress={() => Linking.openURL(item.bukti_foto_url!)} className="flex-row items-center gap-1.5 mb-3">
-                <ImageIcon size={14} color="#356447" />
+                <ImageIcon size={14} color={colors.primary} />
                 <Text className="text-xs text-primary font-medium">Lihat bukti foto</Text>
               </Pressable>
             )}
@@ -101,7 +103,7 @@ export function PersetujuanIzinScreen() {
             ) : (
               <View className="flex-row gap-2 mt-2">
                 <Button size="sm" variant="outline" className="flex-1" onPress={() => setRejectingId(item.id)} disabled={busyId === item.id}>
-                  <XCircle size={14} color="#356447" />{"  "}Tolak
+                  <XCircle size={14} color={colors.primary} />{"  "}Tolak
                 </Button>
                 <Button size="sm" className="flex-1" onPress={() => handleApprove(item.id)} disabled={busyId === item.id} loading={busyId === item.id}>
                   <CheckCircle size={14} color="#fff" />{"  "}Setujui

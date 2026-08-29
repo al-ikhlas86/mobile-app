@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X, Trash2 } from "lucide-react-native";
 import { api } from "../../services/api";
 import { resolveNavScreen } from "../../utils/navAlias";
+import { useThemeColors } from "../../context/ThemeContext";
 
 export interface NotifItem {
   id: number; type: string; title: string; message: string; is_read: 0 | 1;
@@ -37,6 +38,7 @@ function timeAgo(iso: string): string {
 }
 
 export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const colors = useThemeColors();
   const [items, setItems] = useState<NotifItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,7 +93,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
     );
   };
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
     <View className="flex-1 bg-background">
@@ -125,7 +127,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         ListEmptyComponent={
           <View className="items-center py-16 gap-3">
-            <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><Bell size={24} color="#6E776F" /></View>
+            <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><Bell size={24} color={colors.mutedForeground} /></View>
             <Text className="text-sm text-muted-foreground">{tab === "pemberitahuan" ? "Belum ada pemberitahuan" : "Belum ada pengumuman dari admin"}</Text>
           </View>
         }
@@ -133,7 +135,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
           <Pressable onPress={() => handleOpen(item)} className={`rounded-2xl border border-border bg-card p-4 ${!item.is_read ? "border-l-4 border-l-primary" : ""}`}>
             <View className="flex-row items-start gap-3">
               <View className={`w-10 h-10 rounded-xl items-center justify-center ${TYPE_BG[item.type] ?? "bg-muted"}`}>
-                {TYPE_ICON[item.type] ?? <Bell size={20} color="#6E776F" />}
+                {TYPE_ICON[item.type] ?? <Bell size={20} color={colors.mutedForeground} />}
               </View>
               <View className="flex-1">
                 <View className="flex-row items-start justify-between gap-2">
@@ -144,7 +146,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
                 <Text className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</Text>
               </View>
               <Pressable onPress={() => deleteOne(item.id)} hitSlop={8} className="p-1">
-                <Trash2 size={16} color="#6E776F" />
+                <Trash2 size={16} color={colors.mutedForeground} />
               </Pressable>
             </View>
           </Pressable>
@@ -162,7 +164,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
                 <View className="w-9 h-9 rounded-xl bg-orange-50 items-center justify-center"><Megaphone size={18} color="#f97316" /></View>
                 <Text className="text-base font-bold text-foreground flex-1">{openLetter?.title}</Text>
               </View>
-              <Pressable onPress={() => setOpenLetter(null)}><X size={18} color="#6E776F" /></Pressable>
+              <Pressable onPress={() => setOpenLetter(null)}><X size={18} color={colors.mutedForeground} /></Pressable>
             </View>
             <Text className="text-xs text-muted-foreground mb-3">{openLetter ? timeAgo(openLetter.created_at) : ""}</Text>
             <Text className="text-sm text-foreground">{openLetter?.message}</Text>
