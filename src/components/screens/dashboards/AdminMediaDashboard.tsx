@@ -52,7 +52,7 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
         <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Plus size={24} color={colors.primaryForeground} /></View>
         <View className="flex-1">
           <Text className="text-primary-foreground font-bold text-base">Buat Berita Baru</Text>
-          <Text className="text-primary-foreground/70 text-sm">Tambah berita acara dan unggah media</Text>
+          <Text className="text-primary-foreground text-sm">Tambah berita acara dan unggah media</Text>
         </View>
       </Pressable>
 

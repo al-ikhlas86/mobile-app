@@ -153,7 +153,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
         <Card padding="md" className="bg-primary border-0">
           <View className="flex-row items-center gap-4">
             <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><User size={22} color={colors.primaryForeground} /></View>
-            <View><Text className="text-primary-foreground font-bold text-base">{child.nama}</Text><Text className="text-primary-foreground/80 text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text></View>
+            <View><Text className="text-primary-foreground font-bold text-base">{child.nama}</Text><Text className="text-primary-foreground text-sm">{child.kelas_nama ? `Kelas ${child.kelas_nama}` : "Kelas belum diatur"}</Text></View>
           </View>
         </Card>
       )}

@@ -76,10 +76,10 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
     <View className="flex-1 bg-background">
       <View className="px-4 pt-5">
         <View className="bg-primary rounded-xl p-4">
-          <Text className="text-primary-foreground/70 text-xs">Rekap Kehadiran</Text>
+          <Text className="text-primary-foreground text-xs">Rekap Kehadiran</Text>
           <Text className="text-primary-foreground font-bold text-base mt-0.5">{new Date(date + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</Text>
           <View className="mt-2">
-            <Text className="text-primary-foreground/70 text-xs">Total Tercatat Hadir</Text>
+            <Text className="text-primary-foreground text-xs">Total Tercatat Hadir</Text>
             <Text className="text-primary-foreground font-bold text-lg">{hadirCount}</Text>
           </View>
         </View>

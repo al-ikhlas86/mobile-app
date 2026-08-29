@@ -91,7 +91,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Clock size={24} color={colors.primaryForeground} /></View>
         <View className="flex-1">
           <Text className="text-primary-foreground font-bold text-base">Presensi Sekarang</Text>
-          <Text className="text-primary-foreground/70 text-sm">{hadirHariIni ? "Sudah presensi hari ini" : "Belum presensi masuk hari ini"}</Text>
+          <Text className="text-primary-foreground text-sm">{hadirHariIni ? "Sudah presensi hari ini" : "Belum presensi masuk hari ini"}</Text>
         </View>
       </Pressable>
 

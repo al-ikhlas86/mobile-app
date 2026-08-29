@@ -102,7 +102,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         </View>
         <Text className="text-xl font-bold text-primary-foreground">{session.fullName}</Text>
         <Badge variant="primary" className="mt-2 bg-white/15"><Text className="text-primary-foreground">{session.role}</Text></Badge>
-        <Text className="text-xs text-primary-foreground/60 mt-2">@{session.username}</Text>
+        <Text className="text-xs text-primary-foreground mt-2">@{session.username}</Text>
       </Card>
 
       <Card padding="md">

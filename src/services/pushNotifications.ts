@@ -75,18 +75,31 @@ export async function initPushNotifications(navigate: NavigateFn): Promise<void>
   if (isExpoGo) return; // Push native tidak tersedia di Expo Go - lihat catatan di atas.
   try {
     const {
-      getMessaging, getToken, requestPermission, onTokenRefresh, onMessage,
-      onNotificationOpenedApp, getInitialNotification, AuthorizationStatus,
+      getMessaging, getToken, onTokenRefresh, onMessage,
+      onNotificationOpenedApp, getInitialNotification,
     } = await import("@react-native-firebase/messaging");
 
     await ensureAndroidChannel();
+
+    // Izin notifikasi (2026-08-29) - SEBELUMNYA pakai
+    // `requestPermission(messaging)` dari @react-native-firebase/messaging,
+    // TERBUKTI jadi akar masalah "guru tidak pernah terima push sama
+    // sekali" (server kirim sukses ke FCM tanpa error, HP tidak
+    // menampilkan apa pun): dikonfirmasi LANGSUNG dari tipe library itu
+    // sendiri (messaging.d.ts) - method itu SUDAH DEPRECATED khusus utk
+    // Android & "It's a no-op on Android and will promise resolve
+    // AuthorizationStatus.AUTHORIZED" TANPA SYARAT, tidak peduli izin
+    // POST_NOTIFICATIONS (Android 13+) sungguhan sudah diberikan atau
+    // belum - jadi kode sebelumnya SELALU lolos pengecekan izin padahal
+    // OS-nya sendiri mungkin belum pernah benar2 diminta izin, dan diam2
+    // membungkam notifikasi yang masuk. Diganti expo-notifications yang
+    // menangani izin Android SUNGGUHAN (termasuk dialog POST_NOTIFICATIONS
+    // Android 13+) - direkomendasikan resmi oleh dokumentasi
+    // @react-native-firebase/messaging sendiri sbg pengganti.
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") return;
+
     const messaging = getMessaging();
-
-    const authStatus = await requestPermission(messaging);
-    const enabled =
-      authStatus === AuthorizationStatus.AUTHORIZED || authStatus === AuthorizationStatus.PROVISIONAL;
-    if (!enabled) return;
-
     const token = await getToken(messaging);
     if (token) await api.registerFcmToken(token).catch(() => {});
 
