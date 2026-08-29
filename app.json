@@ -71,6 +71,7 @@
         }
       ],
       "./plugins/withNotificationManifestFix.js",
+      "./plugins/withDebugAppIdSuffix.js",
       "expo-sharing"
     ],
     "extra": {
