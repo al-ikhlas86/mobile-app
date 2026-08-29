@@ -5,8 +5,10 @@ import { Lock, Eye, EyeOff } from "lucide-react-native";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string) => void }) {
+  const colors = useThemeColors();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,20 +37,20 @@ export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string
         </View>
       ) : (
         <>
-          <Input label="Kata Sandi Lama" secureTextEntry={!showPassword} value={oldPassword} onChangeText={setOldPassword} icon={<Lock size={18} color="#6E776F" />} />
+          <Input label="Kata Sandi Lama" secureTextEntry={!showPassword} value={oldPassword} onChangeText={setOldPassword} icon={<Lock size={18} color={colors.mutedForeground} />} />
           <Input
             label="Kata Sandi Baru"
             secureTextEntry={!showPassword}
             value={newPassword}
             onChangeText={setNewPassword}
-            icon={<Lock size={18} color="#6E776F" />}
+            icon={<Lock size={18} color={colors.mutedForeground} />}
             rightElement={
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={18} color="#6E776F" /> : <Eye size={18} color="#6E776F" />}
+                {showPassword ? <EyeOff size={18} color={colors.mutedForeground} /> : <Eye size={18} color={colors.mutedForeground} />}
               </Pressable>
             }
           />
-          <Input label="Konfirmasi Kata Sandi Baru" secureTextEntry={!showPassword} value={confirmPassword} onChangeText={setConfirmPassword} icon={<Lock size={18} color="#6E776F" />} />
+          <Input label="Konfirmasi Kata Sandi Baru" secureTextEntry={!showPassword} value={confirmPassword} onChangeText={setConfirmPassword} icon={<Lock size={18} color={colors.mutedForeground} />} />
           {error ? <Text className="text-sm text-red-500">{error}</Text> : null}
           <Button onPress={handleSubmit} loading={loading} fullWidth size="lg">{loading ? "Memproses..." : "Simpan"}</Button>
         </>

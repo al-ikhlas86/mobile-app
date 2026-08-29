@@ -17,6 +17,7 @@ import { CheckCircle2, Circle, Camera, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -34,6 +35,7 @@ const COOLDOWN_MS = 800;
 const HOLD_MS = 200;
 
 export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
+  const colors = useThemeColors();
   const isChild = target === "child";
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,10 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   const captureFrame = useCallback(async (): Promise<string | null> => {
     if (!cameraRef.current) return null;
     try {
-      const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true });
+      // shutterSound:false (2026-08-29) - dipanggil berulang tiap
+      // ANALYZE_INTERVAL_MS selama auto-scan, bunyi jepret berulang2
+      // mengganggu kalau tidak dimatikan. Tidak mempengaruhi hasil deteksi.
+      const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true, shutterSound: false });
       if (!photo?.uri) return null;
       const manipulated = await ImageManipulator.manipulateAsync(
         photo.uri,
@@ -210,7 +215,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   }, [cameraActive, nextStep, complete, captureFrame, submitSample]);
 
   if (loading) {
-    return <View className="flex-1 items-center justify-center"><ActivityIndicator color="#356447" /></View>;
+    return <View className="flex-1 items-center justify-center"><ActivityIndicator color={colors.primary} /></View>;
   }
 
   return (
@@ -238,7 +243,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
         <View className="flex flex-col gap-2">
           {STEPS.map((s) => (
             <View key={s.angle} className="flex-row items-center gap-2.5">
-              {doneAngles.has(s.angle) ? <CheckCircle2 size={18} color="#22c55e" /> : <Circle size={18} color="#6E776F" />}
+              {doneAngles.has(s.angle) ? <CheckCircle2 size={18} color="#22c55e" /> : <Circle size={18} color={colors.mutedForeground} />}
               <Text className={`text-sm ${doneAngles.has(s.angle) ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</Text>
             </View>
           ))}
@@ -248,7 +253,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
       {complete && !cameraActive && (
         <Card padding="md">
           <Button fullWidth variant="outline" onPress={handleReenroll}>
-            <Camera size={16} color="#356447" />{"  "}Daftar Ulang Wajah
+            <Camera size={16} color={colors.primary} />{"  "}Daftar Ulang Wajah
           </Button>
           <Text className="text-xs text-muted-foreground text-center mt-2">Foto lama akan diganti otomatis dengan yang baru, bukan menumpuk data.</Text>
         </Card>
@@ -263,7 +268,13 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
           ) : (
             <View className="flex flex-col gap-3">
               <View className="relative w-full max-w-xs self-center aspect-square rounded-xl overflow-hidden bg-black">
-                <CameraView ref={cameraRef} style={{ flex: 1 }} facing="front" />
+                {/* animateShutter=false (2026-08-29) - AKAR MASALAH layar/HP
+                    "kedip-kedip" saat pendaftaran wajah: expo-camera
+                    menyalakan animasi kilat layar tiap takePictureAsync()
+                    dipanggil (default true), dan captureFrame() dipanggil
+                    berulang tiap ANALYZE_INTERVAL_MS selama auto-scan -
+                    murni animasi visual, tidak mempengaruhi hasil foto. */}
+                <CameraView ref={cameraRef} style={{ flex: 1 }} facing="front" animateShutter={false} />
               </View>
 
               {nextStep && (
@@ -278,7 +289,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
               </Text>
 
               <Button fullWidth variant="outline" onPress={handleManualCapture} disabled={capturing || !nextStep}>
-                {capturing ? <ActivityIndicator size="small" color="#356447" /> : <Camera size={16} color="#356447" />}
+                {capturing ? <ActivityIndicator size="small" color={colors.primary} /> : <Camera size={16} color={colors.primary} />}
                 {"  "}{capturing ? "Memproses..." : "Ambil Manual"}
               </Button>
               <Button fullWidth variant="ghost" onPress={stopCamera}>Tutup Kamera</Button>

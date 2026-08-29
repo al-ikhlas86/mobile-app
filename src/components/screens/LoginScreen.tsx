@@ -7,7 +7,7 @@ import { Input } from "../ui/Input";
 import { OtpPasswordScreen } from "./OtpPasswordScreen";
 import { apiLogin } from "../../services/api";
 import type { RoleName, SavedAccount } from "../../services/authService";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme, useThemeColors } from "../../context/ThemeContext";
 
 interface LoginScreenProps {
   onLogin: (role: RoleName, fullName: string, avatarInitials: string, accountId: string) => void;
@@ -16,6 +16,7 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
   const { isDark, toggleTheme } = useTheme();
+  const colors = useThemeColors();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -88,7 +89,7 @@ export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
               autoCapitalize="none"
               value={username}
               onChangeText={setUsername}
-              icon={<User size={18} color="#6E776F" />}
+              icon={<User size={18} color={colors.mutedForeground} />}
             />
             <Input
               label="Kata Sandi"
@@ -96,10 +97,10 @@ export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
-              icon={<Lock size={18} color="#6E776F" />}
+              icon={<Lock size={18} color={colors.mutedForeground} />}
               rightElement={
                 <Pressable onPress={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff size={18} color="#6E776F" /> : <Eye size={18} color="#6E776F" />}
+                  {showPassword ? <EyeOff size={18} color={colors.mutedForeground} /> : <Eye size={18} color={colors.mutedForeground} />}
                 </Pressable>
               }
             />

@@ -5,6 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface CalonSiswa {
   hub_id: number;
@@ -31,6 +32,7 @@ interface KelasOption {
 // Persetujuan PSB dari HP - port 1:1 dari versi webview
 // (PersetujuanPsbScreen.tsx), lihat catatan arsitektur lengkap di sana.
 export function PersetujuanPsbScreen() {
+  const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [items, setItems] = useState<CalonSiswa[]>([]);
@@ -76,8 +78,8 @@ export function PersetujuanPsbScreen() {
     tutup();
   };
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
-  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
+  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
 
   const kelasPickerOptions = kelasOptions.map((k) => ({ value: String(k.source_id), label: `${k.tingkat} ${k.nama}` }));
 
@@ -93,7 +95,7 @@ export function PersetujuanPsbScreen() {
       {items.length === 0 ? (
         <Card padding="lg">
           <View className="items-center py-6">
-            <UserPlus size={32} color="#6E776F" />
+            <UserPlus size={32} color={colors.mutedForeground} />
             <Text className="text-sm text-muted-foreground mt-2 text-center">Tidak ada pendaftar yang menunggu persetujuan.</Text>
           </View>
         </Card>
@@ -118,7 +120,7 @@ export function PersetujuanPsbScreen() {
                 <View className="flex-row items-center gap-3 mt-1.5">
                   {c.no_handphone && (
                     <Pressable onPress={() => Linking.openURL(`tel:${c.no_handphone}`)} className="flex-row items-center gap-1">
-                      <Phone size={12} color="#356447" /><Text className="text-xs text-primary">{c.no_handphone}</Text>
+                      <Phone size={12} color={colors.primary} /><Text className="text-xs text-primary">{c.no_handphone}</Text>
                     </Pressable>
                   )}
                   <View className="flex-row items-center gap-1">
@@ -137,7 +139,7 @@ export function PersetujuanPsbScreen() {
                           value={nis}
                           onChangeText={(t) => setNis(t.replace(/\D/g, ""))}
                           placeholder="NIS (angka)"
-                          placeholderTextColor="#6E776F"
+                          placeholderTextColor={colors.mutedForeground}
                           keyboardType="numeric"
                           className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground"
                         />
@@ -154,7 +156,7 @@ export function PersetujuanPsbScreen() {
                           value={catatan}
                           onChangeText={setCatatan}
                           placeholder="Catatan penolakan (opsional)"
-                          placeholderTextColor="#6E776F"
+                          placeholderTextColor={colors.mutedForeground}
                           multiline
                           numberOfLines={2}
                           className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground"

@@ -5,7 +5,7 @@ import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanF
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme, useThemeColors } from "../../context/ThemeContext";
 import { getActiveSession } from "../../services/authService";
 import { api, resolveAvatarUrl } from "../../services/api";
 import type { RoleName } from "../../services/authService";
@@ -25,6 +25,7 @@ const STAFF_ROLES: RoleName[] = ["Guru", "Guru Kelas", "Pegawai"];
 
 export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
+  const colors = useThemeColors();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -84,14 +85,14 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
       <Card padding="lg" className="bg-primary border-0 items-center">
         <View className="relative mb-3">
           <View className="w-24 h-24 rounded-full bg-white/15 items-center justify-center overflow-hidden">
-            {avatarUploading ? <ActivityIndicator color="#fff" /> : avatarUrl ? (
+            {avatarUploading ? <ActivityIndicator color={colors.primaryForeground} /> : avatarUrl ? (
               <Image source={{ uri: avatarUrl }} className="w-full h-full" />
             ) : (
-              <Text className="text-white font-black text-2xl">{session.avatarInitials}</Text>
+              <Text className="text-primary-foreground font-black text-2xl">{session.avatarInitials}</Text>
             )}
           </View>
           <Pressable onPress={handleAvatarChange} disabled={avatarUploading} className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card items-center justify-center">
-            <Camera size={13} color="#17201B" />
+            <Camera size={13} color={colors.foreground} />
           </Pressable>
           {avatarUrl && !avatarUploading && (
             <Pressable onPress={handleAvatarRemove} className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 items-center justify-center">
@@ -99,15 +100,15 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
             </Pressable>
           )}
         </View>
-        <Text className="text-xl font-bold text-white">{session.fullName}</Text>
-        <Badge variant="primary" className="mt-2 bg-white/15"><Text className="text-white">{session.role}</Text></Badge>
-        <Text className="text-xs text-white/60 mt-2">@{session.username}</Text>
+        <Text className="text-xl font-bold text-primary-foreground">{session.fullName}</Text>
+        <Badge variant="primary" className="mt-2 bg-white/15"><Text className="text-primary-foreground">{session.role}</Text></Badge>
+        <Text className="text-xs text-primary-foreground/60 mt-2">@{session.username}</Text>
       </Card>
 
       <Card padding="md">
         <Text className="text-sm font-semibold text-foreground mb-4">Informasi Akun</Text>
         {[
-          { icon: <User size={18} color="#356447" />, label: "Nama Lengkap", value: session.fullName },
+          { icon: <User size={18} color={colors.primary} />, label: "Nama Lengkap", value: session.fullName },
           { icon: <Shield size={18} color="#059669" />, label: "Role", value: session.role },
           { icon: <Mail size={18} color="#22c55e" />, label: "Email", value: email ?? "-" },
           { icon: <Phone size={18} color="#f59e0b" />, label: "Nomor HP", value: phone ?? "-" },
@@ -128,7 +129,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Text className="text-sm font-semibold text-foreground mb-3">Tampilan</Text>
         <Pressable onPress={toggleTheme} className="flex-row items-center gap-3 py-1">
           <View className="w-8 h-8 rounded-lg bg-emerald-50 items-center justify-center">
-            {isDark ? <Moon size={16} color="#356447" /> : <Sun size={16} color="#356447" />}
+            {isDark ? <Moon size={16} color={colors.primary} /> : <Sun size={16} color={colors.primary} />}
           </View>
           <View className="flex-1">
             <Text className="text-sm font-medium text-foreground">Tema Aplikasi</Text>
@@ -167,7 +168,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
             );
           })
         ) : (
-          <ActivityIndicator color="#356447" />
+          <ActivityIndicator color={colors.primary} />
         )}
       </Card>
 
@@ -177,7 +178,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
           <Pressable onPress={() => onNavigate("pengenalan-wajah")} className="flex-row items-center gap-3 py-1">
             <View className="w-8 h-8 rounded-lg bg-green-50 items-center justify-center"><ScanFace size={16} color="#16a34a" /></View>
             <Text className="text-sm font-medium text-foreground flex-1">Pengenalan Wajah</Text>
-            <ChevronRight size={16} color="#6E776F" />
+            <ChevronRight size={16} color={colors.mutedForeground} />
           </Pressable>
         </Card>
       )}
@@ -189,7 +190,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Pressable onPress={onOpenSwitcher} className="flex-row items-center gap-3 py-1">
           <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center"><Users size={16} color="#D0AF68" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ganti Akun</Text>
-          <ChevronRight size={16} color="#6E776F" />
+          <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
         {canUseDemoMode && (
           <Pressable onPress={onOpenDemoSwitcher} className="flex-row items-center gap-3 py-1 mt-2">
@@ -197,7 +198,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
               <FlaskConical size={16} color={demoActive ? "#fff" : "#D0AF68"} />
             </View>
             <Text className="text-sm font-medium text-foreground flex-1">Mode Demo</Text>
-            <ChevronRight size={16} color="#6E776F" />
+            <ChevronRight size={16} color={colors.mutedForeground} />
           </Pressable>
         )}
       </Card>
@@ -207,13 +208,13 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Pressable onPress={() => onNavigate("ubah-password")} className="flex-row items-center gap-3 py-1">
           <View className="w-8 h-8 rounded-lg bg-purple-50 items-center justify-center"><Lock size={16} color="#7c3aed" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ubah Kata Sandi</Text>
-          <ChevronRight size={16} color="#6E776F" />
+          <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
       </Card>
 
       {!showLogoutConfirm ? (
         <Button variant="outline" size="lg" onPress={() => setShowLogoutConfirm(true)} className="border-red-200">
-          <LogOut size={18} color="#dc2626" />{"  "}<Text className="text-red-600 font-semibold">Keluar</Text>
+          <LogOut size={18} color={colors.destructive} />{"  "}<Text className="text-destructive font-semibold">Keluar</Text>
         </Button>
       ) : (
         <Card padding="md" className="border border-red-200 bg-red-50">

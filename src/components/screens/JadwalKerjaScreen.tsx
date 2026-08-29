@@ -4,6 +4,7 @@ import { Calendar, AlertCircle, PartyPopper, Briefcase } from "lucide-react-nati
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
 import { AcademicMonthCalendar, indexAgenda, toISO, type AgendaItem } from "./JadwalPelajaranScreen";
+import { useThemeColors } from "../../context/ThemeContext";
 
 // Jadwal Kerja Pegawai - BEDA dari Jadwal Pelajaran Guru: Pegawai tidak
 // punya jadwal mengajar per-jam/kelas, yang relevan cuma "hari ini kerja
@@ -11,6 +12,7 @@ import { AcademicMonthCalendar, indexAgenda, toISO, type AgendaItem } from "./Ja
 // unit-scoped otomatis dari employee_cache_id akun ini) yang diatur Admin
 // TU di data master.
 export function JadwalKerjaScreen() {
+  const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
@@ -26,8 +28,8 @@ export function JadwalKerjaScreen() {
     })();
   }, []);
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
-  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
+  if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
 
   const agendaByDate = indexAgenda(agenda);
   const selectedAgenda = agendaByDate[selectedDate] || [];
@@ -39,7 +41,7 @@ export function JadwalKerjaScreen() {
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
       {agenda.length === 0 && (
-        <Card padding="lg"><View className="items-center py-4"><Calendar size={32} color="#6E776F" /><Text className="text-sm text-muted-foreground mt-2">Belum ada kalender akademik yang diatur Admin TU.</Text></View></Card>
+        <Card padding="lg"><View className="items-center py-4"><Calendar size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground mt-2">Belum ada kalender akademik yang diatur Admin TU.</Text></View></Card>
       )}
 
       <AcademicMonthCalendar hasSchedule={{}} agendaByDate={agendaByDate} selected={selectedDate} onSelectDate={setSelectedDate} />

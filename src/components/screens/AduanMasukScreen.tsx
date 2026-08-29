@@ -5,6 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { api, API_URL } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface AduanRow {
   id: number;
@@ -35,6 +36,7 @@ function statusLabel(status: string): string {
 }
 
 export function AduanMasukScreen() {
+  const colors = useThemeColors();
   const [rows, setRows] = useState<AduanRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -66,7 +68,7 @@ export function AduanMasukScreen() {
     <View className="flex-1 bg-background">
       <View className="px-4 pt-5 pb-2">
         <View className="flex-row items-center gap-2">
-          <Inbox size={18} color="#356447" />
+          <Inbox size={18} color={colors.primary} />
           <Text className="text-sm font-semibold text-foreground">Aduan Masuk</Text>
         </View>
       </View>
@@ -92,7 +94,7 @@ export function AduanMasukScreen() {
             <Text className="text-sm text-foreground mb-2">{item.isi}</Text>
             {!!item.bukti_foto_path && (
               <Pressable onPress={() => Linking.openURL(`${API_URL}${item.bukti_foto_path}`)} className="flex-row items-center gap-1.5 mb-2">
-                <ImageIcon size={14} color="#356447" />
+                <ImageIcon size={14} color={colors.primary} />
                 <Text className="text-xs text-primary font-medium">Lihat lampiran foto</Text>
               </Pressable>
             )}

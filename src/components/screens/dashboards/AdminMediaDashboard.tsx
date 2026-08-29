@@ -8,11 +8,13 @@ import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { type RoleName } from "../../../services/authService";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useThemeColors } from "../../../context/ThemeContext";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role: RoleName; }
 interface StatsSummary { total_published: number; total_likes: number; total_comments: number; }
 
 export function AdminMediaDashboard({ onNavigate, role }: Props) {
+  const colors = useThemeColors();
   const isSD = role === "Admin Media (SD)";
   const unitLabel = isSD ? "SD" : "TK & Playground";
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -47,10 +49,10 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
   return (
     <DashboardLayout name="Admin Media" roleLabel="Ruang Redaksi Sekolah" date={today} unitLabel={unitLabel}>
       <Pressable onPress={() => onNavigate("berita-acara-admin")} className="w-full bg-primary rounded-2xl p-4 flex-row items-center gap-4">
-        <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Plus size={24} color="#fff" /></View>
+        <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Plus size={24} color={colors.primaryForeground} /></View>
         <View className="flex-1">
-          <Text className="text-white font-bold text-base">Buat Berita Baru</Text>
-          <Text className="text-white/70 text-sm">Tambah berita acara dan unggah media</Text>
+          <Text className="text-primary-foreground font-bold text-base">Buat Berita Baru</Text>
+          <Text className="text-primary-foreground/70 text-sm">Tambah berita acara dan unggah media</Text>
         </View>
       </Pressable>
 
@@ -67,7 +69,7 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
             </View>
             <Pressable onPress={() => onNavigate("statistik-konten")} className="mt-2.5 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border">
               <Text className="text-sm font-medium text-foreground">Lihat Statistik Lengkap</Text>
-              <ChevronRight size={16} color="#17201B" />
+              <ChevronRight size={16} color={colors.foreground} />
             </Pressable>
           </>
         ) : (

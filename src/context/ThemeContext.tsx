@@ -69,3 +69,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
+
+// Nilai hex DISALIN PERSIS dari src/styles/global.css (:root vs .dark) -
+// dipakai KHUSUS utk prop `color` komponen non-className (ikon
+// lucide-react-native, style inline) yang tidak bisa memakai class
+// Tailwind/NativeWind langsung. JANGAN hardcode hex warna tema di file
+// lain - selalu ambil dari sini supaya SATU sumber kebenaran dgn
+// global.css (ditemukan 2026-08-29: puluhan ikon di seluruh app hardcode
+// hex versi LIGHT SAJA, mis. color="#17201B"/"#356447"/"#6E776F" -
+// nyaris tidak kelihatan atau kontrasnya jatuh parah begitu dark mode
+// aktif, krn warna itu tidak pernah ikut berubah).
+const LIGHT_COLORS = {
+  foreground: "#17201B",
+  mutedForeground: "#6E776F",
+  primary: "#356447",
+  primaryForeground: "#FFFFFF",
+  destructive: "#DC2626",
+  cardForeground: "#17201B",
+};
+const DARK_COLORS = {
+  foreground: "#F1F1F2",
+  mutedForeground: "#A3A3AA",
+  primary: "#D0AF68",
+  primaryForeground: "#1A1710",
+  destructive: "#EF4444",
+  cardForeground: "#F1F1F2",
+};
+export type ThemeColors = typeof LIGHT_COLORS;
+
+export function useThemeColors(): ThemeColors {
+  const { isDark } = useTheme();
+  return isDark ? DARK_COLORS : LIGHT_COLORS;
+}

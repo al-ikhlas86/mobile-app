@@ -32,7 +32,7 @@ export function RoleHakAksesScreen() {
                 {r.auto ? <Badge variant="muted">Otomatis</Badge> : null}
               </View>
               <Text className="text-xs text-muted-foreground mt-0.5">{r.desc}</Text>
-              {r.auto ? <Text className="text-[11px] text-muted-foreground/80 mt-1">{r.auto}</Text> : null}
+              {r.auto ? <Text className="text-[11px] text-muted-foreground mt-1">{r.auto}</Text> : null}
             </View>
           </View>
         </Card>

@@ -6,6 +6,7 @@ import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api, API_URL } from "../../services/api";
 import type { RoleName } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface ClassOption { tingkat: string; kelas: string; label: string; }
 interface MatrixRow { id: number; nama: string; harian: Record<string, string>; totals: { H: number; T: number; I: number; S: number; A: number }; }
@@ -23,6 +24,7 @@ const NAME_W = 130;
 const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
 
 export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
+  const colors = useThemeColors();
   const isAdmin = !role || UNRESTRICTED_ROLES.includes(role);
   const [scope, setScope] = useState<"kelas" | "pegawai">("kelas");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
@@ -94,12 +96,12 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
       <View className="px-4 pt-5 pb-3 gap-3">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-1 bg-muted rounded-xl p-1">
-            <Pressable onPress={() => changeMonth(-1)} className="p-1.5 rounded-lg"><ChevronLeft size={16} color="#356447" /></Pressable>
+            <Pressable onPress={() => changeMonth(-1)} className="p-1.5 rounded-lg"><ChevronLeft size={16} color={colors.primary} /></Pressable>
             <Text className="text-sm font-medium text-foreground px-2" style={{ minWidth: 110, textAlign: "center" }}>{MONTH_NAMES[bulan - 1]} {tahun}</Text>
-            <Pressable onPress={() => changeMonth(1)} className="p-1.5 rounded-lg"><ChevronRight size={16} color="#356447" /></Pressable>
+            <Pressable onPress={() => changeMonth(1)} className="p-1.5 rounded-lg"><ChevronRight size={16} color={colors.primary} /></Pressable>
           </View>
           <Button size="sm" variant="outline" onPress={handleDownloadPdf} disabled={downloading || rows.length === 0} loading={downloading}>
-            <Printer size={14} color="#356447" />{"  "}Cetak/PDF
+            <Printer size={14} color={colors.primary} />{"  "}Cetak/PDF
           </Button>
         </View>
 
@@ -152,7 +154,7 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
                     <View style={{ width: CELL_W }} className="items-center justify-center py-1.5"><Text className="text-xs text-foreground">{row.totals.T}</Text></View>
                     <View style={{ width: CELL_W }} className="items-center justify-center py-1.5"><Text className="text-xs text-foreground">{row.totals.I}</Text></View>
                     <View style={{ width: CELL_W }} className="items-center justify-center py-1.5"><Text className="text-xs text-foreground">{row.totals.S}</Text></View>
-                    <View style={{ width: CELL_W }} className="items-center justify-center py-1.5"><Text className="text-xs font-medium" style={{ color: "#b91c1c" }}>{row.totals.A}</Text></View>
+                    <View style={{ width: CELL_W }} className="items-center justify-center py-1.5"><Text className="text-xs font-medium" style={{ color: colors.destructive }}>{row.totals.A}</Text></View>
                   </View>
                 ))}
               </ScrollView>

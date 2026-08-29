@@ -6,6 +6,7 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { requestOtp, verifyOtp } from "../../services/api";
 import type { SavedAccount } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Props {
   initialPhone?: string;
@@ -19,6 +20,7 @@ type Step = "phone" | "otp";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title = "Atur Kata Sandi", onSuccess, onCancel }: Props) {
+  const colors = useThemeColors();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState(initialPhone);
   const [code, setCode] = useState("");
@@ -89,7 +91,7 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-6 pt-14" contentContainerStyle={{ paddingBottom: 40 }} bottomOffset={20}>
         <Pressable onPress={onCancel} className="flex-row items-center gap-1.5 mb-4 -ml-1">
-          <ArrowLeft size={16} color="#6E776F" />
+          <ArrowLeft size={16} color={colors.mutedForeground} />
           <Text className="text-sm text-muted-foreground">Kembali</Text>
         </Pressable>
 
@@ -110,7 +112,7 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
-                icon={<Phone size={18} color="#6E776F" />}
+                icon={<Phone size={18} color={colors.mutedForeground} />}
               />
               {error ? <Text className="text-sm text-red-500">{error}</Text> : null}
               <Button onPress={() => handleSendOtp()} loading={loading} disabled={cooldown > 0} fullWidth size="lg">
@@ -128,7 +130,7 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
                 keyboardType="number-pad"
                 value={code}
                 onChangeText={setCode}
-                icon={<KeyRound size={18} color="#6E776F" />}
+                icon={<KeyRound size={18} color={colors.mutedForeground} />}
               />
               <Input
                 label="Kata Sandi Baru"
@@ -136,10 +138,10 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
                 secureTextEntry={!showPassword}
                 value={newPassword}
                 onChangeText={setNewPassword}
-                icon={<Lock size={18} color="#6E776F" />}
+                icon={<Lock size={18} color={colors.mutedForeground} />}
                 rightElement={
                   <Pressable onPress={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff size={18} color="#6E776F" /> : <Eye size={18} color="#6E776F" />}
+                    {showPassword ? <EyeOff size={18} color={colors.mutedForeground} /> : <Eye size={18} color={colors.mutedForeground} />}
                   </Pressable>
                 }
               />
@@ -149,7 +151,7 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
                 secureTextEntry={!showPassword}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                icon={<Lock size={18} color="#6E776F" />}
+                icon={<Lock size={18} color={colors.mutedForeground} />}
               />
 
               {info && !error ? <Text className="text-sm text-green-600">{info}</Text> : null}

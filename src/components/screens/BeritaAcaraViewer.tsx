@@ -12,6 +12,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Calendar, User, ImageIcon, Tag, Link2, X, Heart, MessageCircle, Send, Ban } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../../services/api";
 import { getActiveSession } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Media { id: number; media_type: "thumbnail" | "activity"; url: string; }
 interface LinkItem { id: number; url: string; thumbnail_url: string | null; }
@@ -37,6 +38,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
   comment: CommentItem; canModerate: boolean; isMine: boolean;
   onReply: () => void; onLike: () => void; onDelete: () => void; onBlock: () => void; onEdit: (newText: string) => void;
 }) {
+  const colors = useThemeColors();
   const avatar = resolveAvatarUrl(comment.avatar_url);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -71,7 +73,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
         <View className="flex-row items-center gap-3 mt-1.5">
           <Pressable onPress={onReply}><Text className="text-xs text-primary font-medium">Balas</Text></Pressable>
           <Pressable onPress={onLike} className="flex-row items-center gap-1">
-            <Heart size={12} color={comment.liked_by_me ? "#ef4444" : "#6E776F"} fill={comment.liked_by_me ? "#ef4444" : "none"} />
+            <Heart size={12} color={comment.liked_by_me ? "#ef4444" : colors.mutedForeground} fill={comment.liked_by_me ? "#ef4444" : "none"} />
             {comment.likes_count > 0 && <Text className="text-xs text-muted-foreground">{comment.likes_count}</Text>}
           </Pressable>
         </View>
@@ -88,6 +90,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
 }
 
 export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const colors = useThemeColors();
   const [post, setPost] = useState<BeritaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -156,7 +159,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
     setTimeout(() => setModerationMessage(""), 4000);
   }
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (!post) {
     return (
       <View className="flex-1 items-center justify-center bg-background gap-3 px-8">
@@ -177,13 +180,13 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
           <Image source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-52" resizeMode="cover" />
         </Pressable>
       ) : (
-        <View className="w-full h-40 bg-primary/10 items-center justify-center"><ImageIcon size={40} color="#356447" /></View>
+        <View className="w-full h-40 bg-primary/10 items-center justify-center"><ImageIcon size={40} color={colors.primary} /></View>
       )}
 
       <View className="px-4 py-5 gap-4">
         {post.category ? (
           <View className="self-start flex-row items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-full">
-            <Tag size={10} color="#356447" /><Text className="text-xs text-primary font-medium">{post.category}</Text>
+            <Tag size={10} color={colors.primary} /><Text className="text-xs text-primary font-medium">{post.category}</Text>
           </View>
         ) : null}
 
@@ -191,9 +194,9 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
 
         <View className="gap-1.5">
           {(post.approved_at || post.activity_date) && (
-            <View className="flex-row items-center gap-1.5"><Calendar size={13} color="#6E776F" /><Text className="text-xs text-muted-foreground">{formatDate(post.approved_at ?? post.activity_date!)}</Text></View>
+            <View className="flex-row items-center gap-1.5"><Calendar size={13} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">{formatDate(post.approved_at ?? post.activity_date!)}</Text></View>
           )}
-          <View className="flex-row items-center gap-1.5"><User size={13} color="#6E776F" /><Text className="text-xs text-muted-foreground">{post.author_name || post.created_by_name}</Text></View>
+          <View className="flex-row items-center gap-1.5"><User size={13} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">{post.author_name || post.created_by_name}</Text></View>
         </View>
 
         {post.description ? <Text className="text-sm text-foreground leading-relaxed">{post.description}</Text> : null}
@@ -202,7 +205,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
           <View className="gap-2">
             {post.links.map((link) => (
               <Pressable key={link.id} onPress={() => Linking.openURL(link.url)} className="flex-row items-center gap-1.5">
-                <Link2 size={15} color="#356447" />
+                <Link2 size={15} color={colors.primary} />
                 <Text numberOfLines={1} className="text-sm text-primary flex-1">{link.url}</Text>
               </Pressable>
             ))}
@@ -211,7 +214,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
 
         {activityImages.length > 0 && (
           <View className="gap-3 mt-2">
-            <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color="#17201B" /><Text className="text-sm font-semibold text-foreground">Foto Kegiatan</Text></View>
+            <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color={colors.foreground} /><Text className="text-sm font-semibold text-foreground">Foto Kegiatan</Text></View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {activityImages.map((img) => (
                 <Pressable key={img.id} onPress={() => setLightbox(resolveAvatarUrl(img.url))} className="mr-2">
@@ -224,10 +227,10 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
 
         <View className="flex-row items-center gap-4 pt-3 border-t border-border">
           <Pressable onPress={handleToggleLike} disabled={likeBusy} className="flex-row items-center gap-1.5">
-            <Heart size={18} color={post.liked_by_me ? "#ef4444" : "#6E776F"} fill={post.liked_by_me ? "#ef4444" : "none"} />
+            <Heart size={18} color={post.liked_by_me ? "#ef4444" : colors.mutedForeground} fill={post.liked_by_me ? "#ef4444" : "none"} />
             <Text className={`text-sm font-medium ${post.liked_by_me ? "text-red-500" : "text-muted-foreground"}`}>{post.likes_count}</Text>
           </Pressable>
-          <View className="flex-row items-center gap-1.5"><MessageCircle size={18} color="#6E776F" /><Text className="text-sm text-muted-foreground">{comments.length}</Text></View>
+          <View className="flex-row items-center gap-1.5"><MessageCircle size={18} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground">{comments.length}</Text></View>
         </View>
 
         <View className="gap-3">
@@ -236,7 +239,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
           {replyingTo && (
             <View className="flex-row items-center justify-between bg-muted rounded-lg px-3 py-1.5">
               <Text className="text-xs text-muted-foreground">Membalas <Text className="font-semibold text-foreground">{replyingTo.full_name}</Text></Text>
-              <Pressable onPress={() => setReplyingTo(null)}><X size={13} color="#6E776F" /></Pressable>
+              <Pressable onPress={() => setReplyingTo(null)}><X size={13} color={colors.mutedForeground} /></Pressable>
             </View>
           )}
           {post.blocked_from_commenting ? (
@@ -253,7 +256,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
                 className="flex-1 bg-input-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground"
               />
               <Pressable onPress={handleAddComment} disabled={commentSaving || !newComment.trim()} className="w-10 h-10 rounded-xl bg-primary items-center justify-center">
-                <Send size={16} color="#fff" />
+                <Send size={16} color={colors.primaryForeground} />
               </Pressable>
             </View>
           )}

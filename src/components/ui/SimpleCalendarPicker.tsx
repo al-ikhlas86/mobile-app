@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react-native";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface Props {
   value: string; // "YYYY-MM-DD"
@@ -26,6 +27,7 @@ function formatDisplay(dateStr: string): string {
 // atau library kalender manapun) supaya TIDAK butuh native module baru/
 // build ulang APK, sama prinsipnya dgn SimplePicker.
 export function SimpleCalendarPicker({ value, onChange }: Props) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   const [y, m] = value.split("-").map(Number);
   const [viewYear, setViewYear] = useState(y);
@@ -72,9 +74,9 @@ export function SimpleCalendarPicker({ value, onChange }: Props) {
   return (
     <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
       <Pressable onPress={openPicker} className="flex-row items-center gap-2 px-3 py-2.5 rounded-xl bg-input-background border border-border">
-        <CalendarIcon size={15} color="#6E776F" />
+        <CalendarIcon size={15} color={colors.mutedForeground} />
         <Text className="flex-1 text-sm text-foreground">{formatDisplay(value)}</Text>
-        {open ? <ChevronUp size={15} color="#6E776F" /> : <ChevronDown size={15} color="#6E776F" />}
+        {open ? <ChevronUp size={15} color={colors.mutedForeground} /> : <ChevronDown size={15} color={colors.mutedForeground} />}
       </Pressable>
 
       {open && (
@@ -83,9 +85,9 @@ export function SimpleCalendarPicker({ value, onChange }: Props) {
           style={{ top: "100%", marginTop: 4, zIndex: 50, elevation: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
         >
           <View className="flex-row items-center justify-between mb-2">
-            <Pressable onPress={() => changeMonth(-1)} className="p-1.5 rounded-lg"><ChevronLeft size={16} color="#356447" /></Pressable>
+            <Pressable onPress={() => changeMonth(-1)} className="p-1.5 rounded-lg"><ChevronLeft size={16} color={colors.primary} /></Pressable>
             <Text className="text-sm font-semibold text-foreground">{MONTH_NAMES[viewMonth - 1]} {viewYear}</Text>
-            <Pressable onPress={() => changeMonth(1)} className="p-1.5 rounded-lg"><ChevronRight size={16} color="#356447" /></Pressable>
+            <Pressable onPress={() => changeMonth(1)} className="p-1.5 rounded-lg"><ChevronRight size={16} color={colors.primary} /></Pressable>
           </View>
 
           <View className="flex-row mb-1">
@@ -108,9 +110,9 @@ export function SimpleCalendarPicker({ value, onChange }: Props) {
                     <Pressable
                       onPress={() => selectDay(d)}
                       className="w-8 h-8 items-center justify-center rounded-full"
-                      style={isSelected ? { backgroundColor: "#356447" } : isToday ? { borderWidth: 1, borderColor: "#356447" } : undefined}
+                      style={isSelected ? { backgroundColor: colors.primary } : isToday ? { borderWidth: 1, borderColor: colors.primary } : undefined}
                     >
-                      <Text className={`text-xs ${isSelected ? "text-white font-semibold" : isToday ? "text-primary font-medium" : "text-foreground"}`}>{d}</Text>
+                      <Text className={`text-xs ${isSelected ? "text-primary-foreground font-semibold" : isToday ? "text-primary font-medium" : "text-foreground"}`}>{d}</Text>
                     </Pressable>
                   </View>
                 );

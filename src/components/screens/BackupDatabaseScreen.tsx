@@ -7,6 +7,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { API_URL, api } from "../../services/api";
 import { getActiveToken } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 function formatWaktu(iso: string | null): string {
   if (!iso) return "Belum pernah";
@@ -18,6 +19,7 @@ function formatWaktu(iso: string | null): string {
 // dibuka dialog "Simpan/Bagikan ke..." (expo-sharing) supaya user bisa
 // pilih taruh di mana (Files, Drive, dst).
 export function BackupDatabaseScreen() {
+  const colors = useThemeColors();
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<{ last_manual_backup_at: string | null; last_auto_backup_at: string | null } | null>(null);
@@ -66,7 +68,7 @@ export function BackupDatabaseScreen() {
       {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
       <Card padding="lg">
         <View className="items-center py-4">
-          <DatabaseBackup size={40} color="#6E776F" />
+          <DatabaseBackup size={40} color={colors.mutedForeground} />
           <Text className="text-xs text-muted-foreground mb-4 mt-3 text-center">File berformat .sql, bisa dipulihkan kapan saja lewat mysql -u root nama_db {"<"} file.sql.</Text>
           <Button onPress={handleDownload} loading={downloading} fullWidth>
             <Download size={16} color="#fff" />{"  "}{downloading ? "Membuat backup..." : "Download Backup Sekarang"}

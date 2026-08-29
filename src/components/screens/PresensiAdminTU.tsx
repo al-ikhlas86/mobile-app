@@ -9,6 +9,7 @@ import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import type { RoleName } from "../../services/authService";
+import { useThemeColors } from "../../context/ThemeContext";
 
 type TabType = "Siswa" | "Guru" | "Pegawai";
 interface AttendanceRow { id: number; entity_name: string; kelas_nama?: string | null; jabatan?: string | null; check_in_time: string | null; check_out_time: string | null; status: string; }
@@ -38,6 +39,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 interface Props { role?: RoleName; onNavigate?: (screen: string, params?: Record<string, unknown>) => void; }
 
 export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
+  const colors = useThemeColors();
   const tabs = useMemo(() => allowedTabsForRole(role), [role]);
   const unrestricted = isUnrestricted(role);
   const [tab, setTab] = useState<TabType>(tabs[0]);
@@ -74,18 +76,18 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
     <View className="flex-1 bg-background">
       <View className="px-4 pt-5">
         <View className="bg-primary rounded-xl p-4">
-          <Text className="text-white/70 text-xs">Rekap Kehadiran</Text>
-          <Text className="text-white font-bold text-base mt-0.5">{new Date(date + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</Text>
+          <Text className="text-primary-foreground/70 text-xs">Rekap Kehadiran</Text>
+          <Text className="text-primary-foreground font-bold text-base mt-0.5">{new Date(date + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</Text>
           <View className="mt-2">
-            <Text className="text-white/70 text-xs">Total Tercatat Hadir</Text>
-            <Text className="text-white font-bold text-lg">{hadirCount}</Text>
+            <Text className="text-primary-foreground/70 text-xs">Total Tercatat Hadir</Text>
+            <Text className="text-primary-foreground font-bold text-lg">{hadirCount}</Text>
           </View>
         </View>
 
         {onNavigate && (
           <Card padding="sm" onPress={() => onNavigate("rekapitulasi-kehadiran")} className="mt-3">
             <View className="flex-row items-center gap-3">
-              <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center"><BarChart3 size={16} color="#356447" /></View>
+              <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center"><BarChart3 size={16} color={colors.primary} /></View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-foreground">Rekapitulasi Kehadiran Bulanan</Text>
                 <Text className="text-xs text-muted-foreground">Lihat & unduh rekap 1 bulan penuh</Text>
@@ -101,7 +103,7 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
           )}
         </View>
 
-        <View className="mt-3"><Input placeholder={`Cari ${tab.toLowerCase()}...`} value={search} onChangeText={setSearch} icon={<Search size={18} color="#6E776F" />} /></View>
+        <View className="mt-3"><Input placeholder={`Cari ${tab.toLowerCase()}...`} value={search} onChangeText={setSearch} icon={<Search size={18} color={colors.mutedForeground} />} /></View>
 
         {tabs.length > 1 && (
           <View className="flex-row gap-2 p-1 bg-muted rounded-xl mt-4">

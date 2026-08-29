@@ -9,6 +9,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
+import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; }
 interface AduanRow { id: number; kategori: string; isi: string; bukti_foto_path: string | null; status: string; created_at: string; }
@@ -35,6 +36,7 @@ function statusLabel(status: string): string {
 }
 
 export function KirimAduanScreen() {
+  const colors = useThemeColors();
   const [child, setChild] = useState<ChildData | null>(null);
   const [loading, setLoading] = useState(true);
   const [riwayat, setRiwayat] = useState<AduanRow[]>([]);
@@ -80,11 +82,11 @@ export function KirimAduanScreen() {
     }
   }
 
-  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color="#356447" /></View>;
+  if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (!child) {
     return (
       <View className="flex-1 items-center justify-center bg-background gap-3 px-8">
-        <AlertCircle size={32} color="#6E776F" />
+        <AlertCircle size={32} color={colors.mutedForeground} />
         <Text className="text-sm text-muted-foreground text-center">Belum ada data anak yang tertaut ke akun ini.</Text>
       </View>
     );
@@ -96,7 +98,7 @@ export function KirimAduanScreen() {
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
       <Card padding="lg">
         <View className="flex-row items-center gap-1.5 mb-1">
-          <MessageSquareWarning size={16} color="#356447" />
+          <MessageSquareWarning size={16} color={colors.primary} />
           <Text className="text-sm font-semibold text-foreground">Kirim Aduan untuk {child.nama}</Text>
         </View>
         <Text className="text-xs text-muted-foreground mb-4">Maksimal 1 aduan per hari. Pilih tujuan yang paling sesuai.</Text>
@@ -116,7 +118,7 @@ export function KirimAduanScreen() {
             <View>
               <Text className="text-xs font-medium text-foreground mb-1.5">Lampiran Foto (opsional)</Text>
               <Pressable onPress={handlePickFoto} className="flex-row items-center gap-2 border border-dashed border-border rounded-xl px-3 py-3">
-                <Paperclip size={15} color="#6E776F" />
+                <Paperclip size={15} color={colors.mutedForeground} />
                 <Text className="text-sm text-muted-foreground flex-1" numberOfLines={1}>{foto ? foto.name : "Pilih file foto..."}</Text>
               </Pressable>
             </View>

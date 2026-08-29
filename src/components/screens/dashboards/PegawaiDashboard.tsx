@@ -11,11 +11,13 @@ import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useThemeColors } from "../../../context/ThemeContext";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 interface AttendanceRow { tanggal: string; status: string; }
 
 export function PegawaiDashboard({ onNavigate }: Props) {
+  const colors = useThemeColors();
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
@@ -73,17 +75,17 @@ export function PegawaiDashboard({ onNavigate }: Props) {
           <Text className="text-sm text-muted-foreground">Memuat...</Text>
         ) : (
           <View className="flex-row gap-3">
-            <View className="flex-1"><SummaryCard label="Status Hari Ini" value={hadirHariIni ? "Hadir" : "-"} icon={<CheckCircle size={18} color={hadirHariIni ? "#16a34a" : "#6E776F"} />} colorScheme={hadirHariIni ? "green" : "default"} subtitle={today} /></View>
+            <View className="flex-1"><SummaryCard label="Status Hari Ini" value={hadirHariIni ? "Hadir" : "-"} icon={<CheckCircle size={18} color={hadirHariIni ? "#16a34a" : colors.mutedForeground} />} colorScheme={hadirHariIni ? "green" : "default"} subtitle={today} /></View>
             <View className="flex-1"><SummaryCard label="Presensi Bulan Ini" value={String(hadirBulanIni)} icon={<Calendar size={18} color="#047857" />} colorScheme="blue" subtitle="hari hadir" /></View>
           </View>
         )}
       </View>
 
       <Pressable onPress={() => onNavigate("presensi")} className="w-full bg-primary rounded-2xl p-4 flex-row items-center gap-4">
-        <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Clock size={24} color="#fff" /></View>
+        <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Clock size={24} color={colors.primaryForeground} /></View>
         <View className="flex-1">
-          <Text className="text-white font-bold text-base">Presensi Sekarang</Text>
-          <Text className="text-white/70 text-sm">{hadirHariIni ? "Sudah presensi hari ini" : "Belum presensi masuk hari ini"}</Text>
+          <Text className="text-primary-foreground font-bold text-base">Presensi Sekarang</Text>
+          <Text className="text-primary-foreground/70 text-sm">{hadirHariIni ? "Sudah presensi hari ini" : "Belum presensi masuk hari ini"}</Text>
         </View>
       </Pressable>
 

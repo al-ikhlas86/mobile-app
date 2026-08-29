@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, Pressable, ScrollView } from "react-native";
 import { Newspaper } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../services/api";
+import { useThemeColors } from "../context/ThemeContext";
 
 export interface NewsItem {
   id: number;
@@ -76,13 +77,14 @@ function NewsSlide({ news, onPress }: { news: NewsItem; onPress: () => void }) {
 }
 
 export function NewsCarousel({ items, loading, onOpenNews }: { items: NewsItem[]; loading: boolean; onOpenNews: (newsId: string) => void }) {
+  const colors = useThemeColors();
   if (loading) {
     return <View className="w-64 h-44 rounded-3xl bg-muted" />;
   }
   if (items.length === 0) {
     return (
       <View className="rounded-2xl bg-card border border-border p-5 items-center gap-2">
-        <Newspaper size={24} color="#6E776F" />
+        <Newspaper size={24} color={colors.mutedForeground} />
         <Text className="text-sm text-muted-foreground">Belum ada berita yang diterbitkan.</Text>
       </View>
     );
