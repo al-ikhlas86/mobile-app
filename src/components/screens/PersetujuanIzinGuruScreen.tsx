@@ -14,9 +14,7 @@ interface PendingRow {
   jenis: "sakit" | "izin";
   keterangan: string | null;
   bukti_foto_url: string | null;
-  siswa_nama: string;
-  tingkat: string;
-  kelas: string;
+  guru_nama: string;
   created_at: string;
 }
 
@@ -24,9 +22,13 @@ function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
-// Guru Kelas saja - tinjau pengajuan Izin/Sakit siswa kelasnya (dibatasi
-// server-side, lihat LeaveRequestController::pending di Absen).
-export function PersetujuanIzinScreen() {
+// Kepala Sekolah saja - tinjau pengajuan Izin/Sakit GURU (guru_kelas/
+// guru_bidang) di unitnya (LeaveRequestController::pendingGuru di Absen,
+// dibatasi server-side via unit_id - lihat routes/leave.js). Port 1:1 dari
+// PersetujuanIzinScreen (versi siswa), beda sumber data & endpoint approve/
+// reject saja (otorisasi unit_id, bukan phone/employee - Kepala Sekolah
+// akun administratif murni).
+export function PersetujuanIzinGuruScreen() {
   const colors = useThemeColors();
   const [rows, setRows] = useState<PendingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function PersetujuanIzinScreen() {
 
   const load = async () => {
     setLoading(true);
-    const res = await api.leavePending();
+    const res = await api.leavePendingGuru();
     if (res.success) setRows(res.data);
     setLoading(false);
   };
@@ -45,14 +47,14 @@ export function PersetujuanIzinScreen() {
 
   async function handleApprove(id: number) {
     setBusyId(id);
-    await api.leaveApprove(id);
+    await api.leaveApproveGuru(id);
     setBusyId(null);
     load();
   }
 
   async function handleReject(id: number) {
     setBusyId(id);
-    await api.leaveReject(id, rejectReason.trim() || undefined);
+    await api.leaveRejectGuru(id, rejectReason.trim() || undefined);
     setBusyId(null);
     setRejectingId(null);
     setRejectReason("");
@@ -64,9 +66,9 @@ export function PersetujuanIzinScreen() {
       <View className="px-4 pt-5 pb-2">
         <View className="flex-row items-center gap-2">
           <ClipboardCheck size={18} color={colors.primary} />
-          <Text className="text-sm font-semibold text-foreground">Persetujuan Izin/Sakit Siswa</Text>
+          <Text className="text-sm font-semibold text-foreground">Persetujuan Izin/Sakit Guru</Text>
         </View>
-        <Text className="text-xs text-muted-foreground mt-1">Pengajuan yang ditolak akan otomatis dianggap Alfa pada tanggal tersebut.</Text>
+        <Text className="text-xs text-muted-foreground mt-1">Berlaku untuk Guru Kelas & Guru Bidang. Pegawai non-guru tidak melalui persetujuan ini.</Text>
       </View>
 
       <FlatList
@@ -79,8 +81,8 @@ export function PersetujuanIzinScreen() {
           <Card padding="md">
             <View className="flex-row items-start justify-between gap-2 mb-2">
               <View className="flex-1">
-                <Text className="text-sm font-semibold text-foreground">{item.siswa_nama}</Text>
-                <Text className="text-xs text-muted-foreground">Kelas {item.tingkat} {item.kelas} · {formatDateFull(item.tanggal)}</Text>
+                <Text className="text-sm font-semibold text-foreground">{item.guru_nama}</Text>
+                <Text className="text-xs text-muted-foreground">{formatDateFull(item.tanggal)}</Text>
               </View>
               <Badge variant="info">{item.jenis === "sakit" ? "Sakit" : "Izin"}</Badge>
             </View>

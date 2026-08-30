@@ -16,7 +16,7 @@ interface AttendanceRow { id: number; entity_name: string; kelas_nama?: string |
 interface ClassOption { tingkat: string; kelas: string; label: string; }
 const TAB_TO_ENTITY: Record<TabType, "siswa" | "guru" | "karyawan"> = { Siswa: "siswa", Guru: "guru", Pegawai: "karyawan" };
 
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
+const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Kepala Sekolah (SD)", "Kepala Sekolah (TK & Playground)", "Keuangan"];
 
 function allowedTabsForRole(role?: RoleName): TabType[] {
   if (!role || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];

@@ -227,7 +227,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
                 </Pressable>
               </View>
               <Button onPress={handleSubmitIzin} disabled={izinBusy} loading={izinBusy} className="mt-1">
-                <Send size={14} color="#fff" />{"  "}Kirim Form Izin/Sakit
+                <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Form Izin/Sakit
               </Button>
               {izinMessage && (
                 <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600" : "text-red-500"}`}>{izinMessage.text}</Text>
@@ -249,7 +249,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
             <Text className="text-xs text-muted-foreground mb-2.5">Lokasi GPS wajib berada di area Yayasan.</Text>
             <View className="flex-row gap-2">
               <Button size="sm" className="flex-1" onPress={() => handleCheckin("masuk")} disabled={checkinBusy !== null}>
-                {checkinBusy === "masuk" ? <ActivityIndicator size="small" color="#fff" /> : <LogIn size={13} color="#fff" />}
+                {checkinBusy === "masuk" ? <ActivityIndicator size="small" color={colors.primaryForeground} /> : <LogIn size={13} color={colors.primaryForeground} />}
                 {"  "}Masuk
               </Button>
               <Button size="sm" variant="outline" className="flex-1" onPress={() => handleCheckin("pulang")} disabled={checkinBusy !== null}>

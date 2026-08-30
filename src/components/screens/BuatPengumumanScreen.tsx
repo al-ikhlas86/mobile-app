@@ -6,10 +6,12 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api, ROLE_MAP } from "../../services/api";
+import { useThemeColors } from "../../context/ThemeContext";
 
 const TARGET_OPTIONS = [{ value: "ALL", label: "Semua Pengguna" }, ...Object.entries(ROLE_MAP).map(([value, label]) => ({ value, label }))];
 
 export function BuatPengumumanScreen() {
+  const colors = useThemeColors();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [targetRole, setTargetRole] = useState("ALL");
@@ -47,7 +49,7 @@ export function BuatPengumumanScreen() {
             <TextInput value={message} onChangeText={setMessage} placeholder="Tulis isi pengumuman di sini..." maxLength={1000} multiline numberOfLines={5} textAlignVertical="top" className="w-full bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" style={{ minHeight: 100 }} />
           </View>
           <Button onPress={handleSend} loading={saving} fullWidth>
-            <Megaphone size={16} color="#fff" />{"  "}{saving ? "Mengirim..." : "Kirim Pengumuman"}
+            <Megaphone size={16} color={colors.primaryForeground} />{"  "}{saving ? "Mengirim..." : "Kirim Pengumuman"}
           </Button>
         </View>
       </Card>

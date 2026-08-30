@@ -11,6 +11,8 @@ const ROLES: { name: string; desc: string; auto?: string }[] = [
   { name: "Admin TU (TK & Playground)", desc: "Kelola administrasi & presensi unit TK/Playground." },
   { name: "Admin Media (SD)", desc: "Kelola Berita Acara & media unit SD." },
   { name: "Admin Media (TK & Playground)", desc: "Kelola Berita Acara & media unit TK/Playground." },
+  { name: "Kepala Sekolah (SD)", desc: "Menyetujui/menolak izin guru unit SD, pantau rekap presensi." },
+  { name: "Kepala Sekolah (TK & Playground)", desc: "Menyetujui/menolak izin guru unit TK/Playground, pantau rekap presensi." },
   { name: "Keuangan", desc: "Akses data pembayaran & tagihan." },
   { name: "Guru", desc: "Akses presensi & data mengajar sendiri.", auto: "Otomatis dari jabatan pegawai (guru_bidang) di Hub API" },
   { name: "Guru Kelas", desc: "Sama seperti Guru, plus akses data wali kelas.", auto: "Otomatis dari jabatan pegawai (guru_kelas) di Hub API" },

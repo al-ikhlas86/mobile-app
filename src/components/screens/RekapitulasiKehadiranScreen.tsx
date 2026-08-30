@@ -21,7 +21,7 @@ const STATUS_TEXT: Record<string, string> = {
 const CELL_W = 28;
 const NAME_W = 130;
 
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
+const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Kepala Sekolah (SD)", "Kepala Sekolah (TK & Playground)", "Keuangan"];
 
 export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const colors = useThemeColors();

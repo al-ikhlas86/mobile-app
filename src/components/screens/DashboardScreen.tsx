@@ -2,6 +2,7 @@ import React from "react";
 import { AdminITDashboard } from "./dashboards/AdminITDashboard";
 import { SupervisorDashboard } from "./dashboards/SupervisorDashboard";
 import { AdminTUDashboard } from "./dashboards/AdminTUDashboard";
+import { KepalaSekolahDashboard } from "./dashboards/KepalaSekolahDashboard";
 import { AdminMediaDashboard } from "./dashboards/AdminMediaDashboard";
 import { KeuanganDashboard } from "./dashboards/KeuanganDashboard";
 import { OrangTuaDashboard } from "./dashboards/OrangTuaDashboard";
@@ -23,6 +24,7 @@ export function DashboardScreen({ role, onNavigate }: Props) {
   if (role === "Admin IT") return <AdminITDashboard onNavigate={onNavigate} />;
   if (role === "Supervisor") return <SupervisorDashboard onNavigate={onNavigate} />;
   if (role === "Admin TU (SD)" || role === "Admin TU (TK & Playground)") return <AdminTUDashboard onNavigate={onNavigate} />;
+  if (role === "Kepala Sekolah (SD)" || role === "Kepala Sekolah (TK & Playground)") return <KepalaSekolahDashboard onNavigate={onNavigate} role={role} />;
   if (ADMIN_MEDIA_ROLES.includes(role)) return <AdminMediaDashboard onNavigate={onNavigate} role={role} />;
   if (role === "Keuangan") return <KeuanganDashboard onNavigate={onNavigate} />;
   if (role === "Orang Tua") return <OrangTuaDashboard onNavigate={onNavigate} />;
