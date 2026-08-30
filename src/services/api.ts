@@ -282,9 +282,9 @@ export const api = {
   faceAnalyze: (imageBase64: string) => authedFetch("/api/face/analyze", { method: "POST", body: JSON.stringify({ image_base64: imageBase64 }) }),
   faceEnrollSample: (angle: string, sampleIndex: number, imageBase64: string) =>
     authedFetch("/api/face/enroll-sample", { method: "POST", body: JSON.stringify({ angle, sample_index: sampleIndex, image_base64: imageBase64 }) }),
-  faceChildStatus: () => authedFetch("/api/face/child/status"),
-  faceChildEnrollSample: (angle: string, sampleIndex: number, imageBase64: string) =>
-    authedFetch("/api/face/child/enroll-sample", { method: "POST", body: JSON.stringify({ angle, sample_index: sampleIndex, image_base64: imageBase64 }) }),
+  faceChildStatus: (studentCacheId?: number) => authedFetch(`/api/face/child/status${studentCacheId ? `?studentCacheId=${studentCacheId}` : ""}`),
+  faceChildEnrollSample: (angle: string, sampleIndex: number, imageBase64: string, studentCacheId?: number) =>
+    authedFetch("/api/face/child/enroll-sample", { method: "POST", body: JSON.stringify({ angle, sample_index: sampleIndex, image_base64: imageBase64, studentCacheId }) }),
   stats: () => authedFetch("/api/stats"),
   adminUsers: () => authedFetch("/api/admin/users"),
   adminCreateUser: (data: { username: string; password: string; full_name: string; role: string; phone?: string }) =>

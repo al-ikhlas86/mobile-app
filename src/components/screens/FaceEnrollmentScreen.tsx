@@ -16,6 +16,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { CheckCircle2, Circle, Camera, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
+import { ChildSwitcher, type ChildOption } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -46,6 +47,8 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   const [capturing, setCapturing] = useState(false);
   const [message, setMessage] = useState("");
   const [autoStatus, setAutoStatus] = useState("");
+  const [children, setChildren] = useState<ChildOption[]>([]);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
 
   const cameraRef = useRef<CameraView>(null);
   const busyRef = useRef(false);
@@ -53,9 +56,9 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   const lastCaptureTimeRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadStatus = async () => {
+  const loadStatus = async (childId?: number) => {
     setLoading(true);
-    const res = isChild ? await api.faceChildStatus() : await api.faceStatus();
+    const res = isChild ? await api.faceChildStatus(childId) : await api.faceStatus();
     setLoading(false);
     if (res.success && res.data) {
       setComplete(res.data.complete);
@@ -65,8 +68,38 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
     }
   };
 
-  useEffect(() => { loadStatus(); }, []);
+  useEffect(() => {
+    (async () => {
+      if (isChild) {
+        const childrenRes = await api.myChildren();
+        if (childrenRes.success) {
+          setChildren(childrenRes.data);
+          const firstId = childrenRes.data[0]?.id ?? null;
+          setActiveChildId(firstId);
+          if (firstId) await loadStatus(firstId);
+          else setLoading(false);
+          return;
+        }
+      }
+      await loadStatus();
+    })();
+  }, []);
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  // Ganti anak aktif - progres pendaftaran wajah TERPISAH per anak, jadi
+  // status/langkah lokal harus dimuat ulang dari nol (bukan melanjutkan
+  // progres anak sebelumnya). Kamera ditutup dulu kalau sedang aktif -
+  // cegah foto yang sudah diambil utk anak A ikut tersubmit atas nama anak
+  // B di tengah alur.
+  async function handleSelectChild(id: number) {
+    stopCamera();
+    setActiveChildId(id);
+    setComplete(false);
+    setDoneAngles(new Set());
+    setMessage("");
+    setError("");
+    await loadStatus(id);
+  }
 
   const nextStep = STEPS.find((s) => !doneAngles.has(s.angle));
 
@@ -118,7 +151,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
 
   const submitSample = useCallback(async (angle: string, label: string, imageBase64: string) => {
     setCapturing(true); setMessage("");
-    const res = isChild ? await api.faceChildEnrollSample(angle, 1, imageBase64) : await api.faceEnrollSample(angle, 1, imageBase64);
+    const res = isChild ? await api.faceChildEnrollSample(angle, 1, imageBase64, activeChildId ?? undefined) : await api.faceEnrollSample(angle, 1, imageBase64);
     setCapturing(false);
     if (res.success) {
       setDoneAngles((prev) => new Set(prev).add(angle));
@@ -127,7 +160,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
       const reason = res.data?.reason || res.data?.detail || res.data?.message || res.message || "Foto tidak memenuhi syarat, coba lagi.";
       setMessage(`Ditolak: ${reason}`);
     }
-  }, [isChild]);
+  }, [isChild, activeChildId]);
 
   useEffect(() => {
     if (cameraActive && doneAngles.size >= STEPS.length) {
@@ -218,8 +251,12 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
     return <View className="flex-1 items-center justify-center"><ActivityIndicator color={colors.primary} /></View>;
   }
 
+  const childLabel = children.find((c) => c.id === activeChildId)?.nama ?? "anak Anda";
+
   return (
     <View className="flex-1 bg-background px-4 pt-5 gap-5">
+      {isChild ? <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} /> : null}
+
       {error ? (
         <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
           <Text className="text-sm text-red-600">{error}</Text>
@@ -233,8 +270,8 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
         </View>
         <Text className="text-xs text-muted-foreground">
           {complete
-            ? `Wajah ${isChild ? "anak Anda" : "Anda"} sudah bisa dikenali sistem presensi otomatis di sekolah.`
-            : `Daftarkan wajah ${isChild ? "anak Anda" : "Anda"} dari 3 sudut supaya bisa dikenali sistem presensi otomatis di sekolah.`}
+            ? `Wajah ${isChild ? childLabel : "Anda"} sudah bisa dikenali sistem presensi otomatis di sekolah.`
+            : `Daftarkan wajah ${isChild ? childLabel : "Anda"} dari 3 sudut supaya bisa dikenali sistem presensi otomatis di sekolah.`}
         </Text>
       </Card>
 

@@ -8,6 +8,7 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
+import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -36,7 +37,8 @@ export function PresensiAnak() {
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [child, setChild] = useState<ChildData | null>(null);
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [statistik, setStatistik] = useState<Statistik | null>(null);
 
@@ -51,10 +53,12 @@ export function PresensiAnak() {
     setLoading(true);
     const [childrenRes, attendanceRes] = await Promise.all([api.myChildren(), api.attendanceMyChildren()]);
     if (childrenRes.success) {
-      const firstChild = childrenRes.data[0] ?? null;
-      setChild(firstChild);
-      if (firstChild) {
-        const statRes = await api.attendanceStatistikAnak(firstChild.id);
+      setChildren(childrenRes.data);
+      const keepActive = activeChildId !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildId);
+      const nextActiveId = keepActive ? activeChildId : (childrenRes.data[0]?.id ?? null);
+      setActiveChildId(nextActiveId);
+      if (nextActiveId) {
+        const statRes = await api.attendanceStatistikAnak(nextActiveId);
         if (statRes.success) setStatistik(statRes.data);
       }
     } else setError(childrenRes.message ?? "Gagal memuat data anak.");
@@ -63,6 +67,20 @@ export function PresensiAnak() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Ganti anak aktif - reset form Izin/Sakit sekalian (cegah keterangan yang
+  // sudah diketik utk anak A tidak sengaja ikut terkirim atas nama anak B).
+  async function handleSelectChild(id: number) {
+    setActiveChildId(id);
+    setStatistik(null);
+    setIzinKeterangan("");
+    setIzinFoto(null);
+    setIzinMessage(null);
+    const statRes = await api.attendanceStatistikAnak(id);
+    if (statRes.success) setStatistik(statRes.data);
+  }
+
+  const child = children.find((c) => c.id === activeChildId) ?? null;
 
   async function handlePickFoto() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
@@ -113,6 +131,9 @@ export function PresensiAnak() {
   return (
     <View className="flex-1 bg-background">
       <View className="px-4 pt-5">
+        <View className="mb-3">
+          <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />
+        </View>
         <Card padding="md" className="bg-primary border-0">
           <View className="flex-row items-center gap-4">
             <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"><Text className="text-primary-foreground font-bold text-lg">{initials(child.nama)}</Text></View>
