@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus } from "lucide-react-native";
+import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -48,6 +48,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Keuangan", icon: <CreditCard size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
+      { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
       { label: "Backup Database", icon: <HardDrive size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("backup-database") },
       { label: "Status Sinkronisasi", icon: <Activity size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("status-sinkronisasi") },

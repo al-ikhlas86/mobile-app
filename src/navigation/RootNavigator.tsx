@@ -11,6 +11,7 @@ import { WaBotConnectionScreen } from "../components/screens/WaBotConnectionScre
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PersetujuanIzinScreen } from "../components/screens/PersetujuanIzinScreen";
 import { PersetujuanIzinGuruScreen } from "../components/screens/PersetujuanIzinGuruScreen";
+import { PengaturanLokasiScreen } from "../components/screens/PengaturanLokasiScreen";
 import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiKehadiranScreen";
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
@@ -290,6 +291,11 @@ export function RootNavigator() {
               name="koneksi-wa-bot"
               options={{ headerShown: true, title: "Koneksi Bot WhatsApp" }}
               component={WaBotConnectionScreen}
+            />
+            <Stack.Screen
+              name="pengaturan-lokasi"
+              options={{ headerShown: true, title: "Pengaturan Lokasi Presensi" }}
+              component={PengaturanLokasiScreen}
             />
             <Stack.Screen name="presensi-admin-tu" options={{ headerShown: true, title: "Rekap Kehadiran" }}>
               {({ navigation }) => <PresensiAdminTU role={session.role} onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
