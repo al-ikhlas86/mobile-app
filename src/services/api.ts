@@ -38,6 +38,8 @@ export const ROLE_MAP: Record<string, RoleName> = {
   admin_media_sd: "Admin Media (SD)",
   admin_tu_tk: "Admin TU (TK & Playground)",
   admin_media_tk: "Admin Media (TK & Playground)",
+  kepala_sekolah_sd: "Kepala Sekolah (SD)",
+  kepala_sekolah_tk: "Kepala Sekolah (TK & Playground)",
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",
@@ -248,6 +250,18 @@ export const api = {
   leavePending: () => authedFetch("/api/leave/pending"),
   leaveApprove: (id: number) => authedFetch(`/api/leave/${id}/approve`, { method: "POST", body: JSON.stringify({}) }),
   leaveReject: (id: number, reason?: string) => authedFetch(`/api/leave/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+  // Persetujuan izin GURU oleh Kepala Sekolah (2026-08-31) - lihat webview.
+  leavePendingGuru: () => authedFetch("/api/leave/pending-guru"),
+  leaveApproveGuru: (id: number) => authedFetch(`/api/leave/${id}/approve-guru`, { method: "POST", body: JSON.stringify({}) }),
+  leaveRejectGuru: (id: number, reason?: string) => authedFetch(`/api/leave/${id}/reject-guru`, { method: "POST", body: JSON.stringify({ reason }) }),
+
+  // Pengaturan lokasi+radius geofence presensi (Admin IT).
+  attendanceLocations: () => authedFetch("/api/attendance-locations"),
+  attendanceLocationCreate: (data: { nama: string; lat: number; lng: number; radius_meter: number }) =>
+    authedFetch("/api/attendance-locations", { method: "POST", body: JSON.stringify(data) }),
+  attendanceLocationUpdate: (id: number, data: Partial<{ nama: string; lat: number; lng: number; radius_meter: number; is_active: boolean }>) =>
+    authedFetch(`/api/attendance-locations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  attendanceLocationDelete: (id: number) => authedFetch(`/api/attendance-locations/${id}`, { method: "DELETE" }),
 
   // Aduan - lihat routes/aduan.js (Node)
   aduanSubmit: (data: { studentCacheId: number; kategori: "wali_kelas" | "admin_it" | "keuangan" | "tu"; isi: string; buktiFotoUri?: string; buktiFotoMime?: string }) => {

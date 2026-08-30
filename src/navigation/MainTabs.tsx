@@ -20,7 +20,7 @@ const ADMIN_TU_ROLES: RoleName[] = ["Admin TU (SD)", "Admin TU (TK & Playground)
 function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
   if (role === "Orang Tua") return <PresensiAnak />;
   if (ADMIN_MEDIA_ROLES.includes(role)) return <PlaceholderScreen title="Akun administratif - gunakan akun utama utk presensi" />;
-  if (ADMIN_TU_ROLES.includes(role) || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  if (ADMIN_TU_ROLES.includes(role) || role === "Kepala Sekolah (SD)" || role === "Kepala Sekolah (TK & Playground)" || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
   return <PresensiScreen role={role} onNavigate={onNavigate} />;
 }
 
@@ -31,14 +31,16 @@ const Tab = createBottomTabNavigator();
 // SEBELUMNYA cuma warna ikon yang berubah (tabBarActiveTintColor polos),
 // bedanya nyaris tidak kelihatan sekilas - user lapor "navbar belum ada
 // tandanya lagi di menu apa".
-function TabIcon({ IconCmp, focused, color, activeColor }: { IconCmp: React.ComponentType<{ color: string; size: number }>; focused: boolean; color: string; activeColor: string }) {
+function TabIcon({ IconCmp, focused, color, activeColor, isDark }: { IconCmp: React.ComponentType<{ color: string; size: number }>; focused: boolean; color: string; activeColor: string; isDark: boolean }) {
   if (!focused) return <IconCmp color={color} size={22} />;
   return (
     <View
       className="w-9 h-9 rounded-full items-center justify-center"
       style={{ backgroundColor: activeColor, transform: [{ translateY: -8 }], shadowColor: activeColor, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}
     >
-      <IconCmp color="#fff" size={20} />
+      {/* activeColor jadi emas (#D0AF68) di dark mode - ikon gelap wajib
+          disitu, putih di light mode dimana activeColor hijau (#356447). */}
+      <IconCmp color={isDark ? "#1A1710" : "#FFFFFF"} size={20} />
     </View>
   );
 }
@@ -96,25 +98,25 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNa
     >
       <Tab.Screen
         name="dashboard"
-        options={{ title: "Beranda", headerShown: false, tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Home} focused={focused} color={color} activeColor={activeColor} /> }}
+        options={{ title: "Beranda", headerShown: false, tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Home} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <DashboardScreen role={role} onNavigate={onNavigateStack} />}
       </Tab.Screen>
       <Tab.Screen
         name="berita-acara"
-        options={{ title: "Berita Acara", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={FileText} focused={focused} color={color} activeColor={activeColor} /> }}
+        options={{ title: "Berita Acara", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={FileText} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <BeritaAcaraScreen onNavigate={onNavigateStack} />}
       </Tab.Screen>
       <Tab.Screen
         name="presensi"
-        options={{ title: "Presensi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Clock} focused={focused} color={color} activeColor={activeColor} /> }}
+        options={{ title: "Presensi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Clock} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <PresensiTab role={role} onNavigate={onNavigateStack} />}
       </Tab.Screen>
       <Tab.Screen
         name="notifikasi"
-        options={{ title: "Notifikasi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Bell} focused={focused} color={color} activeColor={activeColor} /> }}
+        options={{ title: "Notifikasi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Bell} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <NotifikasiScreen onNavigate={onNavigateStack} />}
       </Tab.Screen>
@@ -122,7 +124,7 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNa
         name="profil"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={User} focused={focused} color={color} activeColor={activeColor} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={User} focused={focused} color={color} activeColor={activeColor} isDark={isDark} />,
           // Tekan lama ikon Profil di bottom nav = buka switch akun cepat,
           // gaya Instagram (tap biasa tetap buka layar Profil spt biasa).
           tabBarButton: (props) => <Pressable {...(props as any)} onLongPress={onOpenSwitcher} delayLongPress={350} />,

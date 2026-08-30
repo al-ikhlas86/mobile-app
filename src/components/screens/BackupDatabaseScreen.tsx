@@ -71,7 +71,7 @@ export function BackupDatabaseScreen() {
           <DatabaseBackup size={40} color={colors.mutedForeground} />
           <Text className="text-xs text-muted-foreground mb-4 mt-3 text-center">File berformat .sql, bisa dipulihkan kapan saja lewat mysql -u root nama_db {"<"} file.sql.</Text>
           <Button onPress={handleDownload} loading={downloading} fullWidth>
-            <Download size={16} color="#fff" />{"  "}{downloading ? "Membuat backup..." : "Download Backup Sekarang"}
+            <Download size={16} color={colors.primaryForeground} />{"  "}{downloading ? "Membuat backup..." : "Download Backup Sekarang"}
           </Button>
         </View>
       </Card>

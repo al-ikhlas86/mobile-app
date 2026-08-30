@@ -88,6 +88,8 @@ const DEMO_ROLE_MAP: Record<string, string> = {
   admin_media_sd: "Admin Media (SD)",
   admin_tu_tk: "Admin TU (TK & Playground)",
   admin_media_tk: "Admin Media (TK & Playground)",
+  kepala_sekolah_sd: "Kepala Sekolah (SD)",
+  kepala_sekolah_tk: "Kepala Sekolah (TK & Playground)",
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",

@@ -15,6 +15,8 @@ export type RoleName =
   | "Admin Media (SD)"
   | "Admin TU (TK & Playground)"
   | "Admin Media (TK & Playground)"
+  | "Kepala Sekolah (SD)"
+  | "Kepala Sekolah (TK & Playground)"
   | "Keuangan"
   | "Orang Tua"
   | "Guru"

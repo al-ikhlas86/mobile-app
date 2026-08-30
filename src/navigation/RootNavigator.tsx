@@ -10,6 +10,7 @@ import { UbahPasswordScreen } from "../components/screens/UbahPasswordScreen";
 import { WaBotConnectionScreen } from "../components/screens/WaBotConnectionScreen";
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PersetujuanIzinScreen } from "../components/screens/PersetujuanIzinScreen";
+import { PersetujuanIzinGuruScreen } from "../components/screens/PersetujuanIzinGuruScreen";
 import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiKehadiranScreen";
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
@@ -294,6 +295,7 @@ export function RootNavigator() {
               {({ navigation }) => <PresensiAdminTU role={session.role} onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
             <Stack.Screen name="persetujuan-izin" options={{ headerShown: true, title: "Persetujuan Izin" }} component={PersetujuanIzinScreen} />
+            <Stack.Screen name="persetujuan-izin-guru" options={{ headerShown: true, title: "Persetujuan Izin Guru" }} component={PersetujuanIzinGuruScreen} />
             <Stack.Screen name="rekapitulasi-kehadiran" options={{ headerShown: true, title: "Rekapitulasi Kehadiran" }}>
               {() => <RekapitulasiKehadiranScreen role={session.role} />}
             </Stack.Screen>

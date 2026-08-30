@@ -123,7 +123,7 @@ export function KirimAduanScreen() {
               </Pressable>
             </View>
             <Button onPress={handleSubmit} disabled={busy} loading={busy} className="mt-1">
-              <Send size={14} color="#fff" />{"  "}Kirim Aduan
+              <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Aduan
             </Button>
             {message && <Text className={`text-xs text-center ${message.ok ? "text-green-600" : "text-red-500"}`}>{message.text}</Text>}
           </View>

@@ -100,7 +100,7 @@ export function AduanMasukScreen() {
             )}
             {item.status !== "selesai" && (
               <Button size="sm" onPress={() => handleResolve(item.id)} disabled={busyId === item.id} loading={busyId === item.id} className="mt-1">
-                <CheckCircle size={14} color="#fff" />{"  "}Tandai Selesai
+                <CheckCircle size={14} color={colors.primaryForeground} />{"  "}Tandai Selesai
               </Button>
             )}
           </Card>

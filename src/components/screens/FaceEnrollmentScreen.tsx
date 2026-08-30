@@ -263,7 +263,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
         <Card padding="md">
           {!cameraActive ? (
             <Button fullWidth onPress={startCamera}>
-              <Camera size={16} color="#fff" />{"  "}Buka Kamera
+              <Camera size={16} color={colors.primaryForeground} />{"  "}Buka Kamera
             </Button>
           ) : (
             <View className="flex flex-col gap-3">
