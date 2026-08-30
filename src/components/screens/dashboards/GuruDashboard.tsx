@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, BarChart3, MessageSquareWarning, Award } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -59,6 +59,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
     ] },
     { title: "Mengajar", items: [
       { label: "Jadwal Pelajaran", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
+      { label: "Buat Tugas / Materi", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("buat-tugas") },
     ] },
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },

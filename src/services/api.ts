@@ -263,6 +263,17 @@ export const api = {
     authedFetch(`/api/attendance-locations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   attendanceLocationDelete: (id: number) => authedFetch(`/api/attendance-locations/${id}`, { method: "DELETE" }),
 
+  // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
+  tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
+  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string }) =>
+    authedFetch("/api/tugas/create", { method: "POST", body: JSON.stringify(data) }),
+  tugasMine: () => authedFetch("/api/tugas/mine"),
+  tugasRekap: (id: number) => authedFetch(`/api/tugas/${id}/rekap`),
+  tugasDelete: (id: number) => authedFetch(`/api/tugas/${id}`, { method: "DELETE" }),
+  tugasAnak: (studentCacheId: number) => authedFetch(`/api/tugas/anak?studentCacheId=${studentCacheId}`),
+  tugasTandaiSelesai: (id: number, studentCacheId: number) =>
+    authedFetch(`/api/tugas/${id}/tandai-selesai`, { method: "POST", body: JSON.stringify({ studentCacheId }) }),
+
   // Aduan - lihat routes/aduan.js (Node)
   aduanSubmit: (data: { studentCacheId: number; kategori: "wali_kelas" | "admin_it" | "keuangan" | "tu"; isi: string; buktiFotoUri?: string; buktiFotoMime?: string }) => {
     const form = new FormData();

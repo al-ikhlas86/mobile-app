@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, MessageSquareWarning, CreditCard } from "lucide-react-native";
+import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -85,6 +85,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
     { title: "Anak", items: [
       { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi") },
       { label: "Jadwal Pelajaran", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
+      { label: "Tugas & Materi", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("tugas-anak") },
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
