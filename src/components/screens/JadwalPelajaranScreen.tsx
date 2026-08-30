@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { Calendar, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, PartyPopper } from "lucide-react-native";
 import { Card } from "../ui/Card";
+import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -101,7 +102,8 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
 export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [child, setChild] = useState<ChildData | null>(null);
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [meta, setMeta] = useState<{ tahunAjaran?: string; semester?: string; message?: string } | null>(null);
@@ -115,8 +117,9 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
       if (mode === "anak") {
         const childrenRes = await api.myChildren();
         if (!childrenRes.success) { setError(childrenRes.message ?? "Gagal memuat data anak."); setLoading(false); return; }
+        setChildren(childrenRes.data);
         const firstChild = childrenRes.data[0] ?? null;
-        setChild(firstChild);
+        setActiveChildId(firstChild?.id ?? null);
         if (!firstChild) { setLoading(false); return; }
         const res = await api.scheduleAnak(firstChild.id);
         if (res.success) { setSlots(res.data); setMeta(res.meta ?? null); } else setError(res.message ?? "Gagal memuat jadwal pelajaran.");
@@ -129,6 +132,17 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
       setLoading(false);
     })();
   }, [mode]);
+
+  async function handleSelectChild(id: number) {
+    setActiveChildId(id);
+    setLoading(true);
+    setError("");
+    const res = await api.scheduleAnak(id);
+    if (res.success) { setSlots(res.data); setMeta(res.meta ?? null); } else setError(res.message ?? "Gagal memuat jadwal pelajaran.");
+    setLoading(false);
+  }
+
+  const child = children.find((c) => c.id === activeChildId) ?? null;
 
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;
@@ -149,6 +163,8 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
 
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+      {mode === "anak" && <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />}
+
       {mode === "anak" && child && (
         <Card padding="md" className="bg-primary border-0">
           <View className="flex-row items-center gap-4">

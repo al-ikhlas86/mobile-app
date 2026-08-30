@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, MessageSquareWarning, CreditCard } from "lucide-react-native";
@@ -7,6 +7,7 @@ import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { Card } from "../../ui/Card";
+import { ChildSwitcher } from "../../ChildSwitcher";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
@@ -21,9 +22,14 @@ interface AttendanceRow { student_cache_id: number; tanggal: string; status: str
 export function OrangTuaDashboard({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [child, setChild] = useState<ChildData | null>(null);
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  // Dibaca dalam useFocusEffect (deps [], jangan re-jalan tiap ganti anak) -
+  // ref supaya nilai TERBARU terbaca tanpa membuat effect fetch ulang tiap
+  // switch anak.
+  const activeChildIdRef = useRef<number | null>(null);
   useBackWhen(showAllMenu, () => setShowAllMenu(false));
   const colors = useThemeColors();
   const session = getActiveSession();
@@ -39,8 +45,13 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
         setLoading(true);
         const [childrenRes, attendanceRes] = await Promise.all([api.myChildren(), api.attendanceMyChildren()]);
         if (!active) return;
-        if (childrenRes.success) setChild(childrenRes.data[0] ?? null);
-        else setError(childrenRes.message ?? "Gagal memuat data anak.");
+        if (childrenRes.success) {
+          setChildren(childrenRes.data);
+          const keepActive = activeChildIdRef.current !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildIdRef.current);
+          const nextActiveId = keepActive ? activeChildIdRef.current : (childrenRes.data[0]?.id ?? null);
+          activeChildIdRef.current = nextActiveId;
+          setActiveChildId(nextActiveId);
+        } else setError(childrenRes.message ?? "Gagal memuat data anak.");
         if (attendanceRes.success) setAttendance(attendanceRes.data);
         setLoading(false);
       })();
@@ -48,7 +59,14 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
     }, [])
   );
 
+  function handleSelectChild(id: number) {
+    activeChildIdRef.current = id;
+    setActiveChildId(id);
+  }
+
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
+
+  const child = children.find((c) => c.id === activeChildId) ?? null;
 
   if (error || !child) {
     return (
@@ -83,6 +101,8 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
 
   return (
     <DashboardLayout name={session?.fullName ?? "Orang Tua"} roleLabel="Portal Orang Tua" date={todayLabel}>
+      <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />
+
       <Card padding="md">
         <Text className="text-xs text-muted-foreground mb-1">Data Anak</Text>
         <Text className="text-sm font-bold text-foreground">{child.nama}</Text>

@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
+import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -37,7 +38,8 @@ function statusLabel(status: string): string {
 
 export function KirimAduanScreen() {
   const colors = useThemeColors();
-  const [child, setChild] = useState<ChildData | null>(null);
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [riwayat, setRiwayat] = useState<AduanRow[]>([]);
 
@@ -50,12 +52,17 @@ export function KirimAduanScreen() {
   async function load() {
     setLoading(true);
     const [childrenRes, mineRes] = await Promise.all([api.myChildren(), api.aduanMine()]);
-    if (childrenRes.success) setChild(childrenRes.data[0] ?? null);
+    if (childrenRes.success) {
+      setChildren(childrenRes.data);
+      setActiveChildId((prev) => (prev !== null && childrenRes.data.some((c: ChildData) => c.id === prev) ? prev : childrenRes.data[0]?.id ?? null));
+    }
     if (mineRes.success) setRiwayat(mineRes.data);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
+
+  const child = children.find((c) => c.id === activeChildId) ?? null;
 
   async function handlePickFoto() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
@@ -96,12 +103,14 @@ export function KirimAduanScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
+      <ChildSwitcher children={children} activeId={activeChildId} onChange={setActiveChildId} />
+
       <Card padding="lg">
         <View className="flex-row items-center gap-1.5 mb-1">
           <MessageSquareWarning size={16} color={colors.primary} />
           <Text className="text-sm font-semibold text-foreground">Kirim Aduan untuk {child.nama}</Text>
         </View>
-        <Text className="text-xs text-muted-foreground mb-4">Maksimal 1 aduan per hari. Pilih tujuan yang paling sesuai.</Text>
+        <Text className="text-xs text-muted-foreground mb-4">Maksimal 1 aduan per hari untuk SELURUH akun (bukan per anak). Pilih tujuan yang paling sesuai.</Text>
 
         {alreadySentToday ? (
           <Text className="text-sm text-amber-600 text-center py-4">Anda sudah mengirim aduan hari ini. Coba lagi besok.</Text>
