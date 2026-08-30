@@ -195,6 +195,7 @@ export const api = {
   psbKeputusan: (hubId: number, body: { keputusan: "terima" | "tolak"; nis?: string; kelasSourceId?: number; catatan?: string }) =>
     authedFetch(`/api/psb/${hubId}/keputusan`, { method: "POST", body: JSON.stringify(body) }),
   notifications: () => authedFetch("/api/notifications"),
+  notificationsUnreadCount: () => authedFetch("/api/notifications/unread-count"),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
   deleteNotification: (id: number) => authedFetch(`/api/notifications/${id}`, { method: "DELETE" }),
