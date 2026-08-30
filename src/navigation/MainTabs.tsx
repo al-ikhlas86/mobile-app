@@ -12,6 +12,7 @@ import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
 import { NotifikasiScreen } from "../components/screens/NotifikasiScreen";
 import { ProfilScreen } from "../components/screens/ProfilScreen";
+import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
 import type { RoleName } from "../services/authService";
 
 const ADMIN_MEDIA_ROLES: RoleName[] = ["Admin Media (SD)", "Admin Media (TK & Playground)"];
@@ -65,6 +66,9 @@ interface Props {
 export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNavigateStack, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
+  // Badge angka notifikasi (2026-08-31, spt WA/Line) - lihat catatan
+  // lengkap di hook (juga men-set badge ikon aplikasi di homescreen HP).
+  const unreadCount = useUnreadNotificationCount();
   const activeColor = isDark ? "#D0AF68" : "#356447";
   const inactiveColor = isDark ? "#A3A3AA" : "#6E776F";
   const bg = isDark ? "#19191C" : "#FFFFFF";
@@ -116,7 +120,12 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNa
       </Tab.Screen>
       <Tab.Screen
         name="notifikasi"
-        options={{ title: "Notifikasi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Bell} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
+        options={{
+          title: "Notifikasi",
+          tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Bell} focused={focused} color={color} activeColor={activeColor} isDark={isDark} />,
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? "9+" : unreadCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#ef4444", fontSize: 10 },
+        }}
       >
         {() => <NotifikasiScreen onNavigate={onNavigateStack} />}
       </Tab.Screen>
