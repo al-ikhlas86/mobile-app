@@ -309,6 +309,8 @@ export const api = {
     authedFetch(`/api/admin/account-link-reviews/${id}/reject`, { method: "POST", body: JSON.stringify({ note }) }),
   changePassword: (data: { old_password: string; new_password: string }) =>
     authedFetch("/api/auth/change-password", { method: "POST", body: JSON.stringify(data) }),
+  updateFullName: (fullName: string) =>
+    authedFetch("/api/auth/full-name", { method: "POST", body: JSON.stringify({ full_name: fullName }) }),
   adminWaStatus: () => authedFetch("/api/admin/wa-status"),
   adminWaQr: () => authedFetch("/api/admin/wa-qr"),
   adminWaDisconnect: () => authedFetch("/api/admin/wa-disconnect", { method: "POST" }),

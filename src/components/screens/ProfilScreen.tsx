@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical } from "lucide-react-native";
+import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
+import { Input } from "../ui/Input";
 import { useTheme, useThemeColors } from "../../context/ThemeContext";
-import { getActiveSession } from "../../services/authService";
+import { getActiveSession, updateAccountFullName } from "../../services/authService";
 import { api, resolveAvatarUrl } from "../../services/api";
 import type { RoleName } from "../../services/authService";
 
@@ -33,6 +34,29 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean> | null>(null);
   const session = getActiveSession();
+  const isOrangTua = role === "Orang Tua";
+
+  // Ganti Nama (2026-08-31) - KHUSUS Orang Tua, lihat catatan lengkap di
+  // versi webview (ProfilScreen.tsx) soal kenapa (akun ini auto-dibuat
+  // "Orang Tua {anak pertama}", tidak pernah berubah walau anak ke-2 dst
+  // ditautkan).
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(session?.fullName ?? "");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [displayName, setDisplayName] = useState(session?.fullName ?? "");
+
+  async function handleSaveName() {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) return;
+    setNameSaving(true);
+    const res = await api.updateFullName(trimmed);
+    setNameSaving(false);
+    if (res.success) {
+      setDisplayName(trimmed);
+      if (session) await updateAccountFullName(session.accountId, trimmed);
+      setEditingName(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -100,15 +124,38 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
             </Pressable>
           )}
         </View>
-        <Text className="text-xl font-bold text-primary-foreground">{session.fullName}</Text>
+        <Text className="text-xl font-bold text-primary-foreground">{displayName}</Text>
         <Badge variant="primary" className="mt-2 bg-white/15"><Text className="text-primary-foreground">{session.role}</Text></Badge>
         <Text className="text-xs text-primary-foreground mt-2">@{session.username}</Text>
       </Card>
 
       <Card padding="md">
         <Text className="text-sm font-semibold text-foreground mb-4">Informasi Akun</Text>
+        <View className="flex-row items-center gap-3 py-3 border-b border-border">
+          <View className="w-8 h-8 rounded-lg bg-muted items-center justify-center"><User size={18} color={colors.primary} /></View>
+          <View className="flex-1">
+            <Text className="text-xs text-muted-foreground">Nama Lengkap</Text>
+            {editingName ? (
+              <View className="flex-row items-center gap-2 mt-1">
+                <Input value={nameDraft} onChangeText={setNameDraft} maxLength={100} autoFocus style={{ flex: 1 }} />
+                <Pressable onPress={handleSaveName} disabled={nameSaving || !nameDraft.trim()} style={{ opacity: nameSaving || !nameDraft.trim() ? 0.5 : 1 }}>
+                  <Check size={18} color={colors.primary} />
+                </Pressable>
+                <Pressable onPress={() => { setEditingName(false); setNameDraft(displayName); }}>
+                  <X size={18} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+            ) : (
+              <Text numberOfLines={1} className="text-sm font-medium text-foreground">{displayName}</Text>
+            )}
+          </View>
+          {isOrangTua && !editingName && (
+            <Pressable onPress={() => setEditingName(true)}>
+              <Pencil size={15} color={colors.mutedForeground} />
+            </Pressable>
+          )}
+        </View>
         {[
-          { icon: <User size={18} color={colors.primary} />, label: "Nama Lengkap", value: session.fullName },
           { icon: <Shield size={18} color="#059669" />, label: "Role", value: session.role },
           { icon: <Mail size={18} color="#22c55e" />, label: "Email", value: email ?? "-" },
           { icon: <Phone size={18} color="#f59e0b" />, label: "Nomor HP", value: phone ?? "-" },

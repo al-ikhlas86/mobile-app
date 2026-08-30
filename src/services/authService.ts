@@ -235,6 +235,19 @@ export async function updateAccountAvatar(accountId: string, avatarUrl: string |
   }
 }
 
+export async function updateAccountFullName(accountId: string, fullName: string): Promise<void> {
+  assertLoaded();
+  const idx = cachedAccounts.findIndex((a) => a.id === accountId);
+  if (idx >= 0) {
+    cachedAccounts[idx] = { ...cachedAccounts[idx], fullName };
+    await persistAccounts();
+  }
+  if (cachedSession && cachedSession.accountId === accountId) {
+    cachedSession = { ...cachedSession, fullName };
+    await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(cachedSession));
+  }
+}
+
 export async function removeAccount(accountId: string): Promise<void> {
   assertLoaded();
   cachedAccounts = cachedAccounts.filter((a) => a.id !== accountId);
