@@ -36,7 +36,7 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children }: 
 
         <View className="pt-12 px-4 pb-2 flex-row items-center gap-2">
           <View className="h-9 w-9 rounded-full border border-white/40 bg-white/92 p-1 items-center justify-center overflow-hidden">
-            <Image source={require("../../assets/icon.png")} className="w-full h-full" resizeMode="contain" />
+            <Image source={require("../../assets/favicon.png")} className="w-full h-full" resizeMode="contain" />
           </View>
           <View className="flex-1 min-w-0">
             <Text className="text-white text-xs font-bold" numberOfLines={1}>Al-Ikhlas 86</Text>
