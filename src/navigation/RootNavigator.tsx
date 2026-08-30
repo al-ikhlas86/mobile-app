@@ -28,6 +28,8 @@ import { StatistikKontenScreen } from "../components/screens/StatistikKontenScre
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
 import { JadwalPelajaranScreen } from "../components/screens/JadwalPelajaranScreen";
+import { BuatTugasScreen } from "../components/screens/BuatTugasScreen";
+import { TugasAnakScreen } from "../components/screens/TugasAnakScreen";
 import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
 import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PersetujuanPsbScreen } from "../components/screens/PersetujuanPsbScreen";
@@ -333,6 +335,8 @@ export function RootNavigator() {
             <Stack.Screen name="jadwal-pelajaran" options={{ headerShown: true, title: "Jadwal Pelajaran" }}>
               {() => <JadwalPelajaranScreen mode={session.role === "Orang Tua" ? "anak" : "guru"} />}
             </Stack.Screen>
+            <Stack.Screen name="buat-tugas" options={{ headerShown: true, title: "Buat Tugas / Materi" }} component={BuatTugasScreen} />
+            <Stack.Screen name="tugas-anak" options={{ headerShown: true, title: "Tugas & Materi" }} component={TugasAnakScreen} />
             <Stack.Screen name="jadwal-kerja" options={{ headerShown: true, title: "Jadwal Kerja" }} component={JadwalKerjaScreen} />
             <Stack.Screen name="cari-siswa-guru" options={{ headerShown: true, title: "Cari Siswa & Guru" }} component={CariSiswaGuruScreen} />
             <Stack.Screen name="persetujuan-psb" options={{ headerShown: true, title: "Persetujuan PSB" }} component={PersetujuanPsbScreen} />
