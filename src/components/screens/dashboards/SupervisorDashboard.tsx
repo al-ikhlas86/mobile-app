@@ -48,6 +48,7 @@ export function SupervisorDashboard({ onNavigate }: Props) {
     { title: "Operasional", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
       { label: "Ringkasan Presensi", icon: <BarChart2 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
+      { label: "Performa Individu", icon: <BarChart2 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
     ] },
     { title: "Akun", items: [
       { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },

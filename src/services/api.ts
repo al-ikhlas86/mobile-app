@@ -280,6 +280,12 @@ export const api = {
     return authedFetch(`/api/ringkasan?${qs.toString()}`);
   },
 
+  // Performa Individu - cari orang lain (fitur baru, lihat routes/performa.js)
+  performaCari: (params: { identifier: string; year: number; month: number }) => {
+    const qs = new URLSearchParams({ identifier: params.identifier, year: String(params.year), month: String(params.month) });
+    return authedFetch(`/api/performa/cari?${qs.toString()}`);
+  },
+
   // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
   tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
   tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string }) =>
