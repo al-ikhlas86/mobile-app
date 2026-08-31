@@ -30,7 +30,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 
 export function SyncStatusScreen() {
   const colors = useThemeColors();
-  const [data, setData] = useState<{ hubApi: SourceStatus; absen: SourceStatus } | null>(null);
+  const [data, setData] = useState<{ hubApi: SourceStatus } | null>(null);
   const [error, setError] = useState("");
   const [lastCheck, setLastCheck] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -55,10 +55,7 @@ export function SyncStatusScreen() {
       ) : !data ? (
         <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /><Text className="text-sm text-muted-foreground mt-2">Memuat...</Text></View></Card>
       ) : (
-        <>
-          <SourceCard title="Hub API (Data Master Siswa/Guru/Pegawai)" status={data.hubApi} />
-          <SourceCard title="Absen (Data Presensi)" status={data.absen} />
-        </>
+        <SourceCard title="Hub API (Data Master Siswa/Guru/Pegawai)" status={data.hubApi} />
       )}
       {lastCheck ? (
         <View className="flex-row items-center justify-center gap-1"><RefreshCw size={12} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">Terakhir dicek: {lastCheck}</Text></View>
