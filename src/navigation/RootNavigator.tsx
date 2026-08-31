@@ -12,6 +12,8 @@ import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PersetujuanIzinScreen } from "../components/screens/PersetujuanIzinScreen";
 import { PersetujuanIzinGuruScreen } from "../components/screens/PersetujuanIzinGuruScreen";
 import { PengaturanLokasiScreen } from "../components/screens/PengaturanLokasiScreen";
+import { PengaturanJamKeterlambatanScreen } from "../components/screens/PengaturanJamKeterlambatanScreen";
+import { RingkasanScreen } from "../components/screens/RingkasanScreen";
 import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiKehadiranScreen";
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
@@ -299,6 +301,11 @@ export function RootNavigator() {
               options={{ headerShown: true, title: "Pengaturan Lokasi Presensi" }}
               component={PengaturanLokasiScreen}
             />
+            <Stack.Screen
+              name="pengaturan-jam-keterlambatan"
+              options={{ headerShown: true, title: "Jam Keterlambatan" }}
+              component={PengaturanJamKeterlambatanScreen}
+            />
             <Stack.Screen name="presensi-admin-tu" options={{ headerShown: true, title: "Rekap Kehadiran" }}>
               {({ navigation }) => <PresensiAdminTU role={session.role} onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
@@ -306,6 +313,9 @@ export function RootNavigator() {
             <Stack.Screen name="persetujuan-izin-guru" options={{ headerShown: true, title: "Persetujuan Izin Guru" }} component={PersetujuanIzinGuruScreen} />
             <Stack.Screen name="rekapitulasi-kehadiran" options={{ headerShown: true, title: "Rekapitulasi Kehadiran" }}>
               {() => <RekapitulasiKehadiranScreen role={session.role} />}
+            </Stack.Screen>
+            <Stack.Screen name="ringkasan" options={{ headerShown: true, title: "Ringkasan Presensi" }}>
+              {() => <RingkasanScreen role={session.role} />}
             </Stack.Screen>
             <Stack.Screen name="kirim-aduan" options={{ headerShown: true, title: "Kirim Aduan" }} component={KirimAduanScreen} />
             <Stack.Screen name="aduan-masuk" options={{ headerShown: true, title: "Aduan Masuk" }} component={AduanMasukScreen} />
