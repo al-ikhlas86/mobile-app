@@ -78,8 +78,16 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   }
 
   const today = getTodayLocal();
-  const hadirHariIni = attendance.some((a) => a.student_cache_id === child.id && a.tanggal === today && a.status === "Hadir");
-  const totalHadirBulanIni = attendance.filter((a) => a.student_cache_id === child.id && a.status === "Hadir" && a.tanggal.slice(0, 7) === today.slice(0, 7)).length;
+  // "Terlambat" ikut dihitung "hadir" (konsisten dgn dashboard Pegawai/Guru
+  // & layar Statistik) - SEBELUMNYA cuma cek status==="Hadir" persis, jadi
+  // anak yang terlambat masuk tampil seolah belum presensi sama sekali.
+  // CATATAN: tidak spt dashboard Pegawai/Guru, angka ini BELUM disamakan ke
+  // sumber days_present (Statistik Anak) krn perlu fetch per-anak terpisah
+  // (arsitektur di sini sengaja fetch 1x utk SEMUA anak, lihat komentar
+  // useFocusEffect) - closest-safe-fix dulu, bukan penyelarasan penuh.
+  const isPresent = (a: AttendanceRow) => a.status === "Hadir" || a.status === "Terlambat";
+  const hadirHariIni = attendance.some((a) => a.student_cache_id === child.id && a.tanggal === today && isPresent(a));
+  const totalHadirBulanIni = attendance.filter((a) => a.student_cache_id === child.id && isPresent(a) && a.tanggal.slice(0, 7) === today.slice(0, 7)).length;
 
   const menuCategories: MenuCategory[] = [
     { title: "Anak", items: [
