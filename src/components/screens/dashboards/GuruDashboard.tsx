@@ -20,6 +20,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const colors = useThemeColors();
   const isGuruKelas = role === "Guru Kelas";
   const [records, setRecords] = useState<AttendanceRow[]>([]);
+  const [daysPresent, setDaysPresent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
   useBackWhen(showAllMenu, () => setShowAllMenu(false));
@@ -33,8 +34,9 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       let active = true;
       (async () => {
         setLoading(true);
-        const res = await api.attendanceMe();
+        const [res, statRes] = await Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]);
         if (active && res.success) setRecords(res.data);
+        if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
         if (active) setLoading(false);
       })();
       return () => { active = false; };
@@ -42,8 +44,11 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   );
 
   const today = getTodayLocal();
-  const hadirHariIni = records.some((r) => r.tanggal === today);
-  const hadirBulanIni = records.filter((r) => r.tanggal.startsWith(today.slice(0, 7))).length;
+  // Sama spt PegawaiDashboard - HANYA Hadir/Terlambat dihitung "hadir",
+  // "Presensi Bulan Ini" pakai sumber sama dgn layar Statistik.
+  const todayRecord = records.find((r) => r.tanggal === today);
+  const hadirHariIni = todayRecord?.status === 'Hadir' || todayRecord?.status === 'Terlambat';
+  const hadirBulanIni = daysPresent;
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const menuCategories: MenuCategory[] = [
