@@ -54,6 +54,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Persetujuan Izin", icon: <ClipboardCheck size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("persetujuan-izin") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+        { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
     ] },

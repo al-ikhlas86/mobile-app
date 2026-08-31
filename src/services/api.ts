@@ -264,6 +264,22 @@ export const api = {
     authedFetch(`/api/attendance-locations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   attendanceLocationDelete: (id: number) => authedFetch(`/api/attendance-locations/${id}`, { method: "DELETE" }),
 
+  // Pengaturan jam keterlambatan (Admin IT) - menggantikan SettingsController
+  // Absen, lihat routes/attendanceSettings.js & services/attendanceStatus.js (Node).
+  lateCutoffGet: () => authedFetch("/api/attendance-settings/late-cutoff"),
+  lateCutoffUpdate: (data: Partial<{ late_cutoff_siswa: string; late_cutoff_staff: string; late_cutoff_tk_playground: string }>) =>
+    authedFetch("/api/attendance-settings/late-cutoff", { method: "PUT", body: JSON.stringify(data) }),
+
+  // Statistik Ringkasan (fitur baru, lihat routes/ringkasan.js Node)
+  ringkasanUnits: () => authedFetch("/api/ringkasan/units"),
+  ringkasan: (params: { unitId?: number; year: number; month: number }) => {
+    const qs = new URLSearchParams();
+    if (params.unitId) qs.set("unitId", String(params.unitId));
+    qs.set("year", String(params.year));
+    qs.set("month", String(params.month));
+    return authedFetch(`/api/ringkasan?${qs.toString()}`);
+  },
+
   // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
   tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
   tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string }) =>

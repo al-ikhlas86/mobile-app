@@ -33,6 +33,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
       { label: "Berita Acara", icon: <FileText size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
+      { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
       { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("cari-siswa-guru") },
     ] },
