@@ -49,6 +49,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
       { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
+      { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
       { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },

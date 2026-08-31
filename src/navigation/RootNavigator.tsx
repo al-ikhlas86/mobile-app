@@ -14,6 +14,7 @@ import { PersetujuanIzinGuruScreen } from "../components/screens/PersetujuanIzin
 import { PengaturanLokasiScreen } from "../components/screens/PengaturanLokasiScreen";
 import { PengaturanJamKeterlambatanScreen } from "../components/screens/PengaturanJamKeterlambatanScreen";
 import { RingkasanScreen } from "../components/screens/RingkasanScreen";
+import { PerformaCariScreen } from "../components/screens/PerformaCariScreen";
 import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiKehadiranScreen";
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
@@ -317,6 +318,7 @@ export function RootNavigator() {
             <Stack.Screen name="ringkasan" options={{ headerShown: true, title: "Ringkasan Presensi" }}>
               {() => <RingkasanScreen role={session.role} />}
             </Stack.Screen>
+            <Stack.Screen name="performa-cari" options={{ headerShown: true, title: "Performa Individu" }} component={PerformaCariScreen} />
             <Stack.Screen name="kirim-aduan" options={{ headerShown: true, title: "Kirim Aduan" }} component={KirimAduanScreen} />
             <Stack.Screen name="aduan-masuk" options={{ headerShown: true, title: "Aduan Masuk" }} component={AduanMasukScreen} />
             <Stack.Screen name="manajemen-pengguna" options={{ headerShown: true, title: "Manajemen Pengguna" }} component={ManajemenPenggunaScreen} />
