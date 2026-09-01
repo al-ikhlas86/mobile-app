@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Search } from "lucide-react-native";
 import { Input } from "./ui/Input";
 import { QuickMenuButton, type MenuCategory } from "./QuickMenuGrid";
@@ -7,6 +8,12 @@ import { useTheme, useThemeColors } from "../context/ThemeContext";
 
 export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory[]; onBack: () => void }) {
   const [search, setSearch] = useState("");
+  // paddingBottom TETAP (32) SEBELUMNYA tidak cukup - kategori terakhir
+  // (mis. "Log Aktivitas") kepotong tepat di batas bawah layar (dilaporkan
+  // user via screenshot). insets.bottom saja tidak cukup krn tab bar
+  // MainTabs.tsx sendiri tingginya 56+insets.bottom - tambahkan itu jg
+  // supaya baris terakhir jelas bebas dari tab bar, bukan cuma nyaris pas.
+  const insets = useSafeAreaInsets();
   // Sebelumnya warna panah kembali di-hardcode gelap (#17201B) - tak
   // terlihat sama sekali di tema gelap (dilaporkan user via screenshot
   // 2026-08-28: dibandingkan sisi-sisi tema terang vs gelap). Ikut pola
@@ -20,7 +27,7 @@ export function SemuaMenuView({ categories, onBack }: { categories: MenuCategory
     .filter((c) => c.items.length > 0);
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-14" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-14" contentContainerStyle={{ paddingBottom: insets.bottom + 56 + 24, gap: 20 }}>
       <View className="flex-row items-center gap-2 -ml-1">
         <Pressable onPress={onBack} className="p-1.5 rounded-full">
           <ArrowLeft size={18} color={backIconColor} />

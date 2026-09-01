@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, FlatList } from "react-native";
+import { View, Text, Pressable } from "react-native";
+// ScrollView dari react-native-gesture-handler (BUKAN dari "react-native")
+// sengaja dipakai di sini - FlatList/ScrollView bawaan RN kalah rebutan
+// gesture scroll saat dropdown ini dipasang di dalam FlatList/ScrollView
+// layar induknya (mis. PresensiAdminTU, RekapitulasiKehadiranScreen),
+// akibatnya list opsi mentok di baris ke-5 walau opsinya lebih banyak
+// (dilaporkan user - "Semua Kelas" cuma sampai Kelas 2). ScrollView
+// gesture-handler ikut sistem gesture recognizer yang sama dgn navigasi
+// stack app ini (sudah terpasang, bukan dependency baru), jadi prioritas
+// scroll nested-nya benar tanpa perlu balik ke <Modal>.
+import { ScrollView } from "react-native-gesture-handler";
 import { ChevronDown, ChevronUp, Check } from "lucide-react-native";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -35,13 +45,10 @@ export function SimplePicker({ value, options, onChange, placeholder = "Pilih...
           className="absolute left-0 right-0 bg-card border border-border rounded-xl overflow-hidden"
           style={{ top: "100%", marginTop: 4, zIndex: 50, elevation: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
         >
-          <FlatList
-            data={options}
-            keyExtractor={(o) => o.value}
-            style={{ maxHeight }}
-            nestedScrollEnabled
-            renderItem={({ item }) => (
+          <ScrollView style={{ maxHeight }} nestedScrollEnabled showsVerticalScrollIndicator>
+            {options.map((item) => (
               <Pressable
+                key={item.value}
                 onPress={() => { onChange(item.value); setOpen(false); }}
                 className="flex-row items-center justify-between px-4 border-b border-border/50"
                 style={{ height: ROW_HEIGHT }}
@@ -49,8 +56,8 @@ export function SimplePicker({ value, options, onChange, placeholder = "Pilih...
                 <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{item.label}</Text>
                 {item.value === value && <Check size={16} color={colors.primary} />}
               </Pressable>
-            )}
-          />
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
