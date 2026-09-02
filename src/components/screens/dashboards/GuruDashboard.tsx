@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
@@ -23,7 +23,11 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const [daysPresent, setDaysPresent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
+  // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
+  // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const session = getActiveSession();
   const news = useNewsList();
 

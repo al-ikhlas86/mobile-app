@@ -4,6 +4,7 @@ import { FileText, Plus, BookOpen, User, Ban, Heart, MessageCircle, BarChart3, C
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { type RoleName } from "../../../services/authService";
@@ -19,7 +20,11 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
   const unitLabel = isSD ? "SD" : "TK & Playground";
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const [showAllMenu, setShowAllMenu] = useState(false);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
+  // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
+  // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const [stats, setStats] = useState<StatsSummary | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 

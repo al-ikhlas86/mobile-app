@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { ClipboardCheck, Clock, BarChart3, PieChart } from "lucide-react-native";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { type RoleName } from "../../../services/authService";
 import { DashboardLayout } from "../../DashboardLayout";
@@ -20,7 +21,11 @@ export function KepalaSekolahDashboard({ onNavigate, role }: Props) {
   const unitLabel = isSD ? "SD" : "TK & Playground";
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const [showAllMenu, setShowAllMenu] = useState(false);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
+  // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
+  // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
 
   const menuCategories: MenuCategory[] = [
     { title: "Operasional", items: [

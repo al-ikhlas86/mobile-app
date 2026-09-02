@@ -4,6 +4,7 @@ import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarnin
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { DashboardLayout } from "../../DashboardLayout";
@@ -15,7 +16,11 @@ export function AdminTUDashboard({ onNavigate }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
+  // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
+  // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, Gradu
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
+import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { DashboardLayout } from "../../DashboardLayout";
@@ -21,7 +22,16 @@ export function AdminITDashboard({ onNavigate }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused WAJIB - tanpa ini, useBackWhen TETAP "mendengarkan" tombol
+  // kembali walau Dashboard sedang TIDAK terlihat (mis. user sudah pindah
+  // ke layar lain dari "Semua Menu", spt Jadwal Kerja) krn komponen ini
+  // tidak pernah unmount saat navigasi STACK (cuma di-tumpuk). Tanpa
+  // pengecekan fokus, klik kembali PERTAMA dari layar C cuma diam-diam
+  // menutup showAllMenu yg sudah tidak kelihatan (efek: "ga terjadi apa2"),
+  // BUKAN navigasi sungguhan - dilaporkan user 2026-09-01 (A->B->C, kembali
+  // dari C harusnya balik ke B, ternyata butuh 2x klik & malah lompat ke A).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
 
   useEffect(() => {
     (async () => {
