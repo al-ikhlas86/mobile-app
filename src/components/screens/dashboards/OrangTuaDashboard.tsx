@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
@@ -30,7 +30,11 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   // ref supaya nilai TERBARU terbaca tanpa membuat effect fetch ulang tiap
   // switch anak.
   const activeChildIdRef = useRef<number | null>(null);
-  useBackWhen(showAllMenu, () => setShowAllMenu(false));
+  // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
+  // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
+  // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
+  const isFocused = useIsFocused();
+  useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const colors = useThemeColors();
   const session = getActiveSession();
   const news = useNewsList();
