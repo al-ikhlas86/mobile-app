@@ -73,6 +73,15 @@ jobs:
       - name: Expo prebuild (generate android/ native project)
         run: npx expo prebuild --platform android --clean
 
+      # expo-notifications & @react-native-firebase/messaging sama-sama
+      # mendeklarasikan meta-data notification color di AndroidManifest.xml -
+      # manifest merger gagal tanpa ini (ketemu di build pertama 2026-09-02).
+      # Dijalankan sbg langkah terpisah SETELAH prebuild 100% selesai - lihat
+      # catatan lengkap kenapa ini TIDAK bisa jadi config plugin biasa di
+      # scripts/fix-android-manifest.js.
+      - name: Fix Firebase notification color manifest conflict
+        run: node scripts/fix-android-manifest.js
+
       - name: Build release APK + AAB
         env:
           RELEASE_KEYSTORE_PATH: ${{ github.workspace }}/release.keystore
