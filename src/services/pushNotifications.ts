@@ -71,8 +71,22 @@ function handleNotificationTap(navigate: NavigateFn, data: Record<string, any> |
   }
 }
 
-export async function initPushNotifications(navigate: NavigateFn): Promise<void> {
-  if (isExpoGo) return; // Push native tidak tersedia di Expo Go - lihat catatan di atas.
+// Mengembalikan fungsi pembersih (unsubscribe SEMUA listener yang dipasang).
+// WAJIB dipanggil pemakainya saat effect dibersihkan/ganti akun - BUG NYATA
+// 2026-09-02: sebelumnya fungsi ini tidak mengembalikan apa pun dan listener
+// onMessage/addNotificationResponseReceivedListener TIDAK PERNAH dilepas,
+// padahal RootNavigator memanggilnya ulang tiap ganti akun. Listener
+// menumpuk, jadi SATU push dari server tampil BERKALI-KALI di HP (dilaporkan
+// user: 1x presensi -> 4 notifikasi identik; dikonfirmasi dari DB server
+// cuma ada 1 baris notifikasi & 1 token, jadi duplikasi murni di sisi klien).
+export async function initPushNotifications(navigate: NavigateFn): Promise<() => void> {
+  const cleanups: Array<() => void> = [];
+  const cleanup = () => {
+    for (const fn of cleanups.splice(0)) {
+      try { fn(); } catch { /* unsubscribe gagal tidak boleh bikin crash */ }
+    }
+  };
+  if (isExpoGo) return cleanup; // Push native tidak tersedia di Expo Go - lihat catatan di atas.
   try {
     const {
       getMessaging, getToken, onTokenRefresh, onMessage,
@@ -97,35 +111,41 @@ export async function initPushNotifications(navigate: NavigateFn): Promise<void>
     // Android 13+) - direkomendasikan resmi oleh dokumentasi
     // @react-native-firebase/messaging sendiri sbg pengganti.
     const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== "granted") return;
+    if (status !== "granted") return cleanup;
 
     const messaging = getMessaging();
     const token = await getToken(messaging);
     if (token) await api.registerFcmToken(token).catch(() => {});
 
-    onTokenRefresh(messaging, (newToken: string) => {
-      api.registerFcmToken(newToken).catch(() => {});
-    });
+    cleanups.push(
+      onTokenRefresh(messaging, (newToken: string) => {
+        api.registerFcmToken(newToken).catch(() => {});
+      })
+    );
 
     // Notifikasi masuk selagi app di foreground - Firebase Messaging TIDAK
     // otomatis menampilkan system notification saat app di foreground
     // (perilaku standar Android/iOS), jadi ditampilkan manual lewat
     // expo-notifications supaya konsisten baik foreground/background/terminated.
-    onMessage(messaging, async (remoteMessage) => {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: remoteMessage.notification?.title ?? "Al-Ikhlas 86",
-          body: remoteMessage.notification?.body ?? "",
-          data: remoteMessage.data,
-        },
-        trigger: null,
-      });
-    });
+    cleanups.push(
+      onMessage(messaging, async (remoteMessage) => {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: remoteMessage.notification?.title ?? "Al-Ikhlas 86",
+            body: remoteMessage.notification?.body ?? "",
+            data: remoteMessage.data,
+          },
+          trigger: null,
+        });
+      })
+    );
 
     // Notifikasi di-tap saat app di background (bukan foreground/terminated).
-    onNotificationOpenedApp(messaging, (remoteMessage) => {
-      handleNotificationTap(navigate, remoteMessage.data);
-    });
+    cleanups.push(
+      onNotificationOpenedApp(messaging, (remoteMessage) => {
+        handleNotificationTap(navigate, remoteMessage.data);
+      })
+    );
 
     // App dibuka DARI KONDISI TERTUTUP TOTAL lewat tap notifikasi.
     const initialMessage = await getInitialNotification(messaging);
@@ -133,11 +153,13 @@ export async function initPushNotifications(navigate: NavigateFn): Promise<void>
 
     // Notifikasi lokal (dijadwalkan lewat scheduleNotificationAsync di atas)
     // yang di-tap - path terpisah dari remote message di atas.
-    Notifications.addNotificationResponseReceivedListener((response) => {
+    const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       handleNotificationTap(navigate, response.notification.request.content.data as Record<string, any>);
     });
+    cleanups.push(() => responseSub.remove());
   } catch {
     // Gagal (mis. Google Play Services tidak ada - device tanpa GMS) tidak
     // boleh bikin aplikasi crash - fitur lain tetap harus jalan normal.
   }
+  return cleanup;
 }
