@@ -54,6 +54,17 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
   const [viewMonth, setViewMonth] = useState(() => { const d = new Date(selected + "T00:00:00"); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const cells = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
   const monthLabel = viewMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  // Warna contoh utk keterangan simbol diambil dari agenda yang BENAR2 ada
+  // (warna dipilih Admin TU per kegiatan, bukan tetap) supaya titik di
+  // keterangan sewarna dgn titik yang muncul di tanggalnya.
+  const warnaContohAgenda = useMemo(() => {
+    for (const items of Object.values(agendaByDate)) {
+      for (const a of items) {
+        if (Number(a.is_libur) !== 1 && a.warna) return a.warna;
+      }
+    }
+    return "#f59e0b";
+  }, [agendaByDate]);
 
   return (
     <Card padding="md">
@@ -87,14 +98,49 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
                   dikalibrasi terpisah per tema (abu gelap utk terang,
                   abu terang utk gelap) - tidak perlu opacity tambahan. */}
               <Text className={`text-xs ${libur ? "text-red-700 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{cell.date}</Text>
+              {/* Titik penanda (2026-09-02): SEBELUMNYA native cuma menandai
+                  hari lewat WARNA LATAR - libur dapat latar merah, hari ber-
+                  jadwal dapat latar primary, tapi tanggal yang cuma berisi
+                  KEGIATAN (is_libur=0, mis. "Pembagian buku kelas 1-3")
+                  tampil persis sama seperti tanggal kosong. Akibatnya di
+                  layar Jadwal Kerja pegawai (hasSchedule={} - tanpa latar
+                  jadwal sama sekali) agenda sekolah benar2 tidak kelihatan
+                  sampai tanggalnya diketuk satu per satu. Webview sudah
+                  punya titik ini sejak awal; native ketinggalan - inilah
+                  beda yang dilaporkan user. */}
+              {(agenda.length > 0 || (adaJadwal && !libur)) && (
+                <View className="flex-row absolute bottom-1" style={{ gap: 2 }}>
+                  {adaJadwal && !libur && <View className="w-1 h-1 rounded-full bg-primary" />}
+                  {agenda.length > 0 && (
+                    <View className="w-1 h-1 rounded-full" style={{ backgroundColor: agenda[0].warna || "#f59e0b" }} />
+                  )}
+                </View>
+              )}
             </Pressable>
           );
         })}
       </View>
 
-      <Text className="text-[10px] text-muted-foreground text-center mt-3 leading-relaxed">
-        ada jadwal pelajaran (berulang tiap minggu) · libur / agenda sekolah
-      </Text>
+      {/* Keterangan simbol - item "jadwal pelajaran" hanya muncul kalau
+          pemanggilnya memang mengirim hasSchedule (layar Jadwal Pelajaran).
+          Jadwal Kerja pegawai mengirim {} sehingga tidak lagi menjanjikan
+          penanda yang memang tidak pernah ada di layarnya. */}
+      <View className="flex-row flex-wrap items-center justify-center mt-3" style={{ gap: 10 }}>
+        {Object.keys(hasSchedule).length > 0 && (
+          <View className="flex-row items-center" style={{ gap: 4 }}>
+            <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <Text className="text-[10px] text-muted-foreground">jadwal pelajaran</Text>
+          </View>
+        )}
+        <View className="flex-row items-center" style={{ gap: 4 }}>
+          <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: warnaContohAgenda }} />
+          <Text className="text-[10px] text-muted-foreground">agenda/kegiatan</Text>
+        </View>
+        <View className="flex-row items-center" style={{ gap: 4 }}>
+          <View className="w-2.5 h-2.5 rounded bg-red-100" />
+          <Text className="text-[10px] text-muted-foreground">libur</Text>
+        </View>
+      </View>
     </Card>
   );
 }
