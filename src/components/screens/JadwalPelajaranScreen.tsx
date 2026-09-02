@@ -4,7 +4,8 @@ import { Calendar, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, 
 import { Card } from "../ui/Card";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
-import { useThemeColors } from "../../context/ThemeContext";
+import { useTheme, useThemeColors } from "../../context/ThemeContext";
+import { warnaKontras, WARNA_AGENDA_DEFAULT } from "../../utils/warnaKontras";
 
 interface Slot { hari: string; jam_ke: number | null; jam_mulai: string; jam_selesai: string; mata_pelajaran_nama: string; jenis?: "pelajaran" | "kegiatan"; kelas_nama?: string; guru_nama?: string | null; }
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
@@ -51,6 +52,7 @@ export function indexAgenda(agenda: AgendaItem[]): Record<string, AgendaItem[]> 
 // libur dari kalender akademik MENANG atas jadwal weekday biasa.
 export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onSelectDate }: { hasSchedule: Record<string, boolean>; agendaByDate: Record<string, AgendaItem[]>; selected: string; onSelectDate: (iso: string) => void }) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [viewMonth, setViewMonth] = useState(() => { const d = new Date(selected + "T00:00:00"); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const cells = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
   const monthLabel = viewMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
@@ -63,7 +65,7 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
         if (Number(a.is_libur) !== 1 && a.warna) return a.warna;
       }
     }
-    return "#f59e0b";
+    return WARNA_AGENDA_DEFAULT;
   }, [agendaByDate]);
 
   return (
@@ -106,16 +108,32 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
                   layar Jadwal Kerja pegawai (hasSchedule={} - tanpa latar
                   jadwal sama sekali) agenda sekolah benar2 tidak kelihatan
                   sampai tanggalnya diketuk satu per satu. Webview sudah
-                  punya titik ini sejak awal; native ketinggalan - inilah
-                  beda yang dilaporkan user. */}
-              {(agenda.length > 0 || (adaJadwal && !libur)) && (
-                <View className="flex-row absolute bottom-1" style={{ gap: 2 }}>
-                  {adaJadwal && !libur && <View className="w-1 h-1 rounded-full bg-primary" />}
-                  {agenda.length > 0 && (
-                    <View className="w-1 h-1 rounded-full" style={{ backgroundColor: agenda[0].warna || "#f59e0b" }} />
-                  )}
-                </View>
-              )}
+                  punya titik ini sejak awal; native ketinggalan.
+
+                  Revisi hari yang sama, setelah user memakai APK-nya:
+                  1. Titik 4px yang di-`absolute bottom-1` ternyata JATUH DI
+                     ATAS angka tanggalnya (sel cuma ~45dp, angka mengisi
+                     hampir seluruh tinggi) - terlihat seperti CORETAN di
+                     angka 14-22, bukan penanda. Sekarang angka & titik
+                     ditumpuk normal dlm kolom, dan tinggi baris titik
+                     SELALU dipesan (6px) walau tanggalnya kosong supaya
+                     seluruh angka tetap sebaris rapi.
+                  2. Ukuran dinaikkan 4px -> 7px.
+                  3. Warna agenda dilewatkan warnaKontras() dulu: warna itu
+                     dipilih Admin TU (bisa apa saja, mis. hijau gelap
+                     #198754) dan nyaris lenyap di atas latar HITAM mode
+                     gelap. Libur & jadwal pakai warna tema yang MEMANG
+                     sudah dikalibrasi per tema di ThemeContext. */}
+              <View className="flex-row items-center justify-center mt-0.5" style={{ gap: 3, height: 7 }}>
+                {adaJadwal && !libur && (
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary }} />
+                )}
+                {libur ? (
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.destructive }} />
+                ) : agenda.length > 0 ? (
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: warnaKontras(agenda[0].warna, isDark) }} />
+                ) : null}
+              </View>
             </Pressable>
           );
         })}
@@ -128,16 +146,16 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
       <View className="flex-row flex-wrap items-center justify-center mt-3" style={{ gap: 10 }}>
         {Object.keys(hasSchedule).length > 0 && (
           <View className="flex-row items-center" style={{ gap: 4 }}>
-            <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary }} />
             <Text className="text-[10px] text-muted-foreground">jadwal pelajaran</Text>
           </View>
         )}
         <View className="flex-row items-center" style={{ gap: 4 }}>
-          <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: warnaContohAgenda }} />
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: warnaKontras(warnaContohAgenda, isDark) }} />
           <Text className="text-[10px] text-muted-foreground">agenda/kegiatan</Text>
         </View>
         <View className="flex-row items-center" style={{ gap: 4 }}>
-          <View className="w-2.5 h-2.5 rounded bg-red-100" />
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.destructive }} />
           <Text className="text-[10px] text-muted-foreground">libur</Text>
         </View>
       </View>
@@ -155,6 +173,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const [meta, setMeta] = useState<{ tahunAjaran?: string; semester?: string; message?: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => toISO(new Date()));
   const colors = useThemeColors();
+  const { isDark } = useTheme();
 
   useEffect(() => {
     (async () => {
@@ -278,7 +297,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
                 {selectedNonLiburAgenda.map((a, i) => (
                   <Card key={i} padding="sm">
                     <View className="flex-row items-start gap-2">
-                      <View className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ backgroundColor: a.warna || "#f59e0b" }} />
+                      <View className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ backgroundColor: warnaKontras(a.warna, isDark) }} />
                       <View className="flex-1">
                         <Text className="text-xs font-medium text-foreground">{a.judul}</Text>
                         <Text className="text-[10px] text-muted-foreground">{[a.waktu, a.sasaran].filter(Boolean).join(" · ")}</Text>

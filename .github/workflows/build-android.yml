@@ -12,6 +12,9 @@ on:
 
 permissions:
   contents: write
+  # Dibutuhkan langkah "Bersihkan artefak build lama" di bawah (menghapus
+  # artefak = menulis ke Actions, bukan ke repo).
+  actions: write
 
 jobs:
   build:
@@ -132,3 +135,32 @@ jobs:
           files: |
             android/app/build/outputs/apk/release/app-release.apk
             android/app/build/outputs/bundle/release/app-release.aab
+
+      # Artefak build MEMAKAN KUOTA STORAGE GitHub Actions - repo ini privat,
+      # jadi kena jatah akun (paket Free: 500 MB). 1 build = APK ~34 MB + AAB
+      # ~45 MB = ~80 MB. Terukur 2026-09-02: baru 4 build sudah 318 MB, dan 2
+      # build lagi akan melewati jatah lalu build berikutnya bisa DITOLAK.
+      #
+      # Simpan 3 build terbaru tiap jenis artefak, sisanya dihapus. Ini TIDAK
+      # menyentuh APK yang sudah ter-deploy ke VPS - link unduh
+      # https://alikhlas86.duckdns.org/al-ikhlas-86.apk adalah file terpisah
+      # di server, bukan artefak GitHub.
+      #
+      # if: always() supaya pembersihan tetap jalan walau langkah deploy di
+      # atas sempat gagal - justru saat build bermasalah storage paling
+      # gampang menumpuk.
+      - name: Bersihkan artefak build lama (simpan 3 terbaru)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for nama in al-ikhlas-86-apk al-ikhlas-86-aab; do
+            echo "== $nama =="
+            gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+              --jq ".artifacts[] | select(.name == \"$nama\" and .expired == false) | \"\(.created_at) \(.id)\"" \
+              | sort -r | tail -n +4 | awk '{print $2}' \
+              | while read -r id; do
+                  echo "  hapus artefak lama id=$id"
+                  gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id"
+                done
+          done

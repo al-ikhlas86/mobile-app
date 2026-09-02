@@ -4,7 +4,8 @@ import { Calendar, AlertCircle, PartyPopper, Briefcase } from "lucide-react-nati
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
 import { AcademicMonthCalendar, indexAgenda, toISO, type AgendaItem } from "./JadwalPelajaranScreen";
-import { useThemeColors } from "../../context/ThemeContext";
+import { useTheme, useThemeColors } from "../../context/ThemeContext";
+import { warnaKontras } from "../../utils/warnaKontras";
 
 // Jadwal Kerja Pegawai - BEDA dari Jadwal Pelajaran Guru: Pegawai tidak
 // punya jadwal mengajar per-jam/kelas, yang relevan cuma "hari ini kerja
@@ -13,6 +14,7 @@ import { useThemeColors } from "../../context/ThemeContext";
 // TU di data master.
 export function JadwalKerjaScreen() {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
@@ -75,7 +77,7 @@ export function JadwalKerjaScreen() {
             {selectedNonLiburAgenda.map((a, i) => (
               <Card key={i} padding="sm">
                 <View className="flex-row items-start gap-2">
-                  <View className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ backgroundColor: a.warna || "#f59e0b" }} />
+                  <View className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ backgroundColor: warnaKontras(a.warna, isDark) }} />
                   <View className="flex-1">
                     <Text className="text-xs font-medium text-foreground">{a.judul}</Text>
                     <Text className="text-[10px] text-muted-foreground">{[a.waktu, a.sasaran].filter(Boolean).join(" · ")}</Text>
