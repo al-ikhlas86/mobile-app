@@ -109,6 +109,22 @@ jobs:
           name: al-ikhlas-86-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
 
+      # Supaya link https://alikhlas86.duckdns.org/al-ikhlas-86.apk SELALU
+      # unduh APK terbaru tanpa lewat GitHub Artifacts (yg selalu dibungkus
+      # ZIP) - kirim langsung ke VPS lewat SSH key khusus yg di sisi server
+      # DIPAKSA (authorized_keys command=) cuma bisa jalankan 1 skrip
+      # /usr/local/bin/deploy-mobile-apk.sh, tidak bisa buka shell / akses
+      # file lain sama sekali (dibuat & diuji 2026-09-02).
+      - name: Deploy APK to VPS for direct download link
+        env:
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/vps_deploy_key
+          chmod 600 ~/.ssh/vps_deploy_key
+          cat android/app/build/outputs/apk/release/app-release.apk | ssh -i ~/.ssh/vps_deploy_key -o StrictHostKeyChecking=accept-new ubuntu@168.110.196.103
+          rm -f ~/.ssh/vps_deploy_key
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
