@@ -206,15 +206,30 @@ export function RootNavigator() {
   };
 
   React.useEffect(() => {
-    if (session) {
-      // Deep-link tap notifikasi - SEBELUMNYA no-op (belum disambungkan sama
-      // sekali), sekarang navigasi sungguhan lewat navigationRef (bisa
-      // dipanggil dari mana saja, tidak terikat screen yg sedang fokus -
-      // pas utk notifikasi yg bisa di-tap dari kondisi app apa saja).
-      initPushNotifications((screen, params) => {
-        navigateTo(navigationRef.current as any, resolveNavScreen(screen), params);
-      });
-    }
+    if (!session) return;
+    // Deep-link tap notifikasi - SEBELUMNYA no-op (belum disambungkan sama
+    // sekali), sekarang navigasi sungguhan lewat navigationRef (bisa
+    // dipanggil dari mana saja, tidak terikat screen yg sedang fokus -
+    // pas utk notifikasi yg bisa di-tap dari kondisi app apa saja).
+    //
+    // Cleanup WAJIB (2026-09-02): effect ini jalan ULANG tiap ganti akun,
+    // dan tanpa melepas listener lama, listener onMessage menumpuk -> 1 push
+    // dari server tampil berkali-kali di HP (user melaporkan 4 notifikasi
+    // identik utk 1x presensi). initPushNotifications() async, jadi fungsi
+    // pembersihnya baru ada setelah promise selesai - disimpan di variabel &
+    // ditandai "cancelled" kalau effect keburu dibersihkan duluan.
+    let cancelled = false;
+    let disposePush: (() => void) | null = null;
+    initPushNotifications((screen, params) => {
+      navigateTo(navigationRef.current as any, resolveNavScreen(screen), params);
+    }).then((dispose) => {
+      if (cancelled) dispose();
+      else disposePush = dispose;
+    });
+    return () => {
+      cancelled = true;
+      disposePush?.();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.accountId]);
 

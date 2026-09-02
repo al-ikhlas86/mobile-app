@@ -26,7 +26,20 @@ export function ChildSwitcher({ children, activeId, onChange }: Props) {
   const colors = useThemeColors();
   if (children.length <= 1) return null;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+    // style flexGrow/flexShrink 0 + alignItems flex-start WAJIB - tanpa ini,
+    // ScrollView (yang defaultnya TUMBUH mengisi ruang tersisa) ikut
+    // memanjang vertikal saat dipakai di layar yang induknya flex column
+    // "flex-1" (mis. FaceEnrollmentScreen), lalu tiap tombol anak ikut
+    // ter-stretch setinggi layar krn contentContainer default alignItems-nya
+    // "stretch" - dilaporkan user 2026-09-02 ("tombolnya kegedean, BUG
+    // kacau"). Di Dashboard tidak kelihatan krn induknya ScrollView
+    // (tinggi mengikuti konten), jadi bug ini cuma muncul di sebagian layar.
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ flexGrow: 0, flexShrink: 0 }}
+      contentContainerStyle={{ gap: 8, paddingVertical: 2, alignItems: "flex-start" }}
+    >
       {children.map((c) => {
         const active = c.id === activeId;
         return (
