@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
-import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
+import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
@@ -23,6 +23,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const [daysPresent, setDaysPresent] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  const { prefs: berandaPrefs } = useBerandaPreferensi();
   // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
   // dipakai semua dashboard): tanpa ini, kembali dari layar hasil "Semua
   // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
@@ -83,7 +84,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
     ] },
   ];
 
-  if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
+  if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
     <DashboardLayout name={session?.fullName ?? (isGuruKelas ? "Guru Kelas" : "Guru")} roleLabel={isGuruKelas ? "Ruang Guru Kelas" : "Ruang Guru"} date={todayLabel}>
@@ -107,20 +108,24 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         </View>
       </Pressable>
 
-      <View>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terbaru</Text>
-          <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+      {!berandaPrefs.hideBeritaTerbaru && (
+        <View>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terbaru</Text>
+            <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+          </View>
+          <NewsCarousel items={news.terbaru} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
-        <NewsCarousel items={news.terbaru} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
-      </View>
-      <View>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terpopuler</Text>
-          <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+      )}
+      {!berandaPrefs.hideBeritaTerpopuler && (
+        <View>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terpopuler</Text>
+            <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+          </View>
+          <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
-        <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
-      </View>
+      )}
 
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>

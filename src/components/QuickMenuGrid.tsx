@@ -1,7 +1,43 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Grid3x3 } from "lucide-react-native";
 import { useThemeColors } from "../context/ThemeContext";
+import { api, type BerandaPreferensi } from "../services/api";
+
+const DEFAULT_PREFS: BerandaPreferensi = { hiddenMenu: [], menuOrder: [], hideBeritaTerbaru: false, hideBeritaTerpopuler: false };
+
+// Kustomisasi Beranda per-user (2026-09-03) - padanan native dari webview
+// QuickMenuGrid.tsx, lihat catatan lengkap di sana.
+export function useBerandaPreferensi() {
+  const [prefs, setPrefs] = useState<BerandaPreferensi>(DEFAULT_PREFS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const res = await api.berandaPreferensi();
+      if (res.success) setPrefs({ ...DEFAULT_PREFS, ...res.data });
+      setLoading(false);
+    })();
+  }, []);
+
+  async function simpan(next: BerandaPreferensi) {
+    setPrefs(next);
+    await api.updateBerandaPreferensi(next);
+  }
+
+  return { prefs, loading, simpan };
+}
+
+export function terapkanUrutanMenu<T extends { label: string }>(items: T[], prefs: BerandaPreferensi): T[] {
+  const visible = items.filter((i) => !prefs.hiddenMenu.includes(i.label));
+  if (prefs.menuOrder.length === 0) return visible;
+  const posisi = new Map(prefs.menuOrder.map((label, idx) => [label, idx]));
+  return [...visible].sort((a, b) => {
+    const pa = posisi.has(a.label) ? posisi.get(a.label)! : Infinity;
+    const pb = posisi.has(b.label) ? posisi.get(b.label)! : Infinity;
+    return pa - pb;
+  });
+}
 
 export interface QuickMenuItem {
   label: string;
@@ -42,7 +78,8 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
 
 export function QuickMenuGrid({ items, onSeeAll }: { items: QuickMenuItem[]; onSeeAll: () => void }) {
   const colors = useThemeColors();
-  const preview = items.slice(0, 7);
+  const { prefs } = useBerandaPreferensi();
+  const preview = terapkanUrutanMenu(items, prefs).slice(0, 7);
   return (
     <View className="flex-row flex-wrap gap-2">
       {preview.map((item, idx) => (
