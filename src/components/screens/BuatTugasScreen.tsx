@@ -181,37 +181,36 @@ export function BuatTugasScreen() {
                   <Text className="text-xs font-medium text-foreground mb-1.5">Batas Kumpul</Text>
                   <SimpleCalendarPicker value={deadline} onChange={setDeadline} />
                 </View>
-                {/* Jam batas & kunci hanya relevan kalau tanggalnya sudah
-                    dipilih - tanpa tanggal, tidak ada yang bisa dikunci. */}
-                {deadline !== "" && (
-                  <>
-                    <View>
-                      <Text className="text-xs font-medium text-foreground mb-1.5">Jam Batas (WIB)</Text>
-                      <Input
-                        value={deadlineJam}
-                        onChangeText={setDeadlineJam}
-                        placeholder="Contoh: 15:00 (kosong = sampai akhir hari)"
-                        maxLength={5}
-                        keyboardType="numbers-and-punctuation"
-                      />
-                    </View>
-                    <Pressable
-                      onPress={() => setKunciOtomatis((v) => !v)}
-                      className="flex-row items-start gap-2.5 py-1"
-                    >
-                      <View className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${kunciOtomatis ? "bg-primary border-primary" : "border-border"}`}>
-                        {kunciOtomatis && <Check size={13} color={colors.primaryForeground} />}
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-xs font-medium text-foreground">Kunci pengumpulan setelah lewat batas</Text>
-                        <Text className="text-[11px] text-muted-foreground mt-0.5">
-                          Siswa tidak bisa mengumpulkan lagi setelah lewat jam batas. Anda tetap bisa membukanya
-                          kembali kapan saja lewat daftar di bawah.
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </>
-                )}
+                {/* SEBELUMNYA disembunyikan sampai tanggal diisi dulu -
+                    terbukti membingungkan (dilaporkan user 2026-09-03:
+                    fieldnya dikira tidak ada sama sekali). Sekarang selalu
+                    tampil begitu jenis="tugas", sama seperti Google
+                    Classroom menampilkan tanggal & jam sekaligus. */}
+                <View>
+                  <Text className="text-xs font-medium text-foreground mb-1.5">Jam Batas (WIB)</Text>
+                  <Input
+                    value={deadlineJam}
+                    onChangeText={setDeadlineJam}
+                    placeholder="Contoh: 15:00 (kosong = sampai akhir hari)"
+                    maxLength={5}
+                    keyboardType="numbers-and-punctuation"
+                  />
+                </View>
+                <Pressable
+                  onPress={() => setKunciOtomatis((v) => !v)}
+                  className="flex-row items-start gap-2.5 py-1"
+                >
+                  <View className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${kunciOtomatis ? "bg-primary border-primary" : "border-border"}`}>
+                    {kunciOtomatis && <Check size={13} color={colors.primaryForeground} />}
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-xs font-medium text-foreground">Kunci pengumpulan setelah lewat batas</Text>
+                    <Text className="text-[11px] text-muted-foreground mt-0.5">
+                      Siswa tidak bisa mengumpulkan lagi setelah lewat jam batas. Anda tetap bisa membukanya
+                      kembali kapan saja lewat daftar di bawah.
+                    </Text>
+                  </View>
+                </Pressable>
               </>
             )}
             <Button onPress={handleSubmit} disabled={saving} loading={saving} className="mt-1">
