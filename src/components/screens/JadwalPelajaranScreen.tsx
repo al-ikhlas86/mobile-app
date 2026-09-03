@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import { Calendar, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, PartyPopper } from "lucide-react-native";
+import { Calendar, CalendarDays, BookOpen, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, PartyPopper } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
@@ -16,6 +16,31 @@ const DAY_KEY_BY_INDEX = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat",
 const WEEKDAY_HEADER = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
 function jam(t: string): string { return (t || "").slice(0, 5); }
+
+// Status satu slot jadwal relatif thd waktu SEKARANG di perangkat guru
+// (2026-09-03, diminta user: "beri tanda pada saat sedang berlangsung").
+// Sengaja memakai jam lokal perangkat, konsisten dgn seluruh layar ini yang
+// juga memakai `new Date()` lokal - sekolah & penggunanya sama-sama WIB.
+export type StatusSlot = "berlangsung" | "selesai" | "belum";
+export function statusSlot(isoTanggal: string, jamMulai: string, jamSelesai: string, sekarang: Date): StatusSlot {
+  const isoSekarang = toISO(sekarang);
+  if (isoTanggal < isoSekarang) return "selesai";
+  if (isoTanggal > isoSekarang) return "belum";
+  const menitKe = (t: string): number => {
+    const [h, m] = jam(t).split(":").map((n) => parseInt(n, 10));
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  };
+  const kini = sekarang.getHours() * 60 + sekarang.getMinutes();
+  if (kini < menitKe(jamMulai)) return "belum";
+  if (kini >= menitKe(jamSelesai)) return "selesai";
+  return "berlangsung";
+}
+
+function geserHari(iso: string, selisih: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + selisih);
+  return toISO(d);
+}
 export function toISO(d: Date): string { const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0"); return `${d.getFullYear()}-${m}-${day}`; }
 
 interface CalendarCell { date: number | null; iso: string | null; hariKey: string | null; isToday: boolean; }
@@ -163,6 +188,25 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
   );
 }
 
+// Pemilih tab - pola & gaya SAMA PERSIS dgn PresensiScreen (Hadir/Izin)
+// supaya terasa satu aplikasi, bukan komponen baru yang beda sendiri.
+function TabBar({ activeTab, onChange, colors }: { activeTab: "kalender" | "jadwal"; onChange: (t: "kalender" | "jadwal") => void; colors: ReturnType<typeof useThemeColors> }) {
+  return (
+    <View className="px-4 pt-5">
+      <View className="flex-row gap-2 p-1 bg-muted rounded-xl">
+        <Pressable onPress={() => onChange("kalender")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "kalender" ? "bg-card" : ""}`}>
+          <CalendarDays size={15} color={activeTab === "kalender" ? colors.primary : colors.mutedForeground} />
+          <Text className={`text-sm font-medium ${activeTab === "kalender" ? "text-foreground" : "text-muted-foreground"}`}>Kalender Kegiatan</Text>
+        </Pressable>
+        <Pressable onPress={() => onChange("jadwal")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "jadwal" ? "bg-card" : ""}`}>
+          <BookOpen size={15} color={activeTab === "jadwal" ? colors.primary : colors.mutedForeground} />
+          <Text className={`text-sm font-medium ${activeTab === "jadwal" ? "text-foreground" : "text-muted-foreground"}`}>Jadwal Pelajaran</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -172,8 +216,21 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [meta, setMeta] = useState<{ tahunAjaran?: string; semester?: string; message?: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => toISO(new Date()));
+  // Tab "Jadwal Pelajaran" (2026-09-03) KHUSUS guru - orang tua tetap
+  // melihat satu layar seperti sebelumnya (tab ini soal mapel yang DIAMPU
+  // guru, tidak relevan utk mereka).
+  const [activeTab, setActiveTab] = useState<"kalender" | "jadwal">("kalender");
+  // Jam berjalan utk penanda "sedang berlangsung" - ditik tiap 30 detik
+  // supaya penandanya berpindah sendiri saat jam pelajaran berganti, tanpa
+  // guru perlu menutup & membuka ulang layarnya.
+  const [sekarang, setSekarang] = useState(() => new Date());
   const colors = useThemeColors();
   const { isDark } = useTheme();
+
+  useEffect(() => {
+    const t = setInterval(() => setSekarang(new Date()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -226,8 +283,105 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   const selectedNonLiburAgenda = selectedAgenda.filter((a) => Number(a.is_libur) !== 1);
   const selectedDateLabel = new Date(selectedDate + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+  // ============ TAB "JADWAL PELAJARAN" (guru saja) ============
+  // Daftar mapel yang diampu pada SATU tanggal terpilih, bisa digeser ke
+  // hari berikutnya/sebelumnya sejauh apa pun (diminta user: "bisa cek juga
+  // untuk hari esoknya, lusa, minggu depan dan seterusnya").
+  if (mode === "guru" && activeTab === "jadwal") {
+    const pelajaranHariIni = selectedSlots.filter((s) => s.jenis !== "kegiatan");
+    const isHariIni = selectedDate === toISO(sekarang);
+
+    return (
+      <View className="flex-1 bg-background">
+        <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />
+
+        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 32, paddingTop: 16, gap: 12 }}>
+          <Card padding="sm">
+            <View className="flex-row items-center justify-between">
+              <Pressable onPress={() => setSelectedDate(geserHari(selectedDate, -1))} className="p-2">
+                <ChevronLeft size={18} color={colors.mutedForeground} />
+              </Pressable>
+              <View className="flex-1 items-center">
+                <Text className="text-sm font-semibold text-foreground capitalize">{selectedDateLabel}</Text>
+                {!isHariIni && (
+                  <Pressable onPress={() => setSelectedDate(toISO(sekarang))} className="mt-0.5">
+                    <Text className="text-[11px] text-primary">Kembali ke hari ini</Text>
+                  </Pressable>
+                )}
+              </View>
+              <Pressable onPress={() => setSelectedDate(geserHari(selectedDate, 1))} className="p-2">
+                <ChevronRight size={18} color={colors.mutedForeground} />
+              </Pressable>
+            </View>
+          </Card>
+
+          {isLibur ? (
+            <Card padding="md" className="bg-red-50 border-red-200">
+              <View className="flex-row items-start gap-3">
+                <View className="w-9 h-9 rounded-xl bg-red-100 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-red-700">Libur - tidak ada KBM</Text>
+                  {selectedLiburItems.map((a, i) => (
+                    <Text key={i} className="text-xs text-red-600 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
+                  ))}
+                </View>
+              </View>
+            </Card>
+          ) : pelajaranHariIni.length === 0 ? (
+            <Card padding="lg">
+              <View className="items-center py-4">
+                <Calendar size={32} color={colors.mutedForeground} />
+                <Text className="text-sm text-muted-foreground mt-2 text-center">Tidak ada jadwal mengajar pada hari ini.</Text>
+              </View>
+            </Card>
+          ) : (
+            <>
+              <Text className="text-xs text-muted-foreground">{pelajaranHariIni.length} jam mengajar</Text>
+              {pelajaranHariIni.map((s, idx) => {
+                const status = statusSlot(selectedDate, s.jam_mulai, s.jam_selesai, sekarang);
+                const gayaKartu =
+                  status === "berlangsung" ? "border-primary bg-primary/5"
+                  : status === "selesai" ? "opacity-60" : "";
+                const labelStatus =
+                  status === "berlangsung" ? "Sedang berlangsung"
+                  : status === "selesai" ? "Selesai" : "Belum mulai";
+                const warnaBadge =
+                  status === "berlangsung" ? { bg: "bg-primary", fg: colors.primaryForeground }
+                  : status === "selesai" ? { bg: "bg-muted", fg: colors.mutedForeground }
+                  : { bg: "bg-amber-100", fg: "#92400e" };
+
+                return (
+                  <Card key={idx} padding="md" className={gayaKartu}>
+                    <View className="flex-row items-start gap-3">
+                      <View className="items-center justify-center rounded-lg px-2 py-2 bg-primary/10" style={{ minWidth: 68 }}>
+                        <Text className="text-[11px] font-bold text-primary">{jam(s.jam_mulai)}</Text>
+                        <Text className="text-[10px] text-muted-foreground">s/d</Text>
+                        <Text className="text-[11px] font-semibold text-primary">{jam(s.jam_selesai)}</Text>
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold text-foreground">{s.mata_pelajaran_nama}</Text>
+                        <Text className="text-xs text-muted-foreground mt-0.5">
+                          {[s.kelas_nama ? `Kelas ${s.kelas_nama}` : null, s.jam_ke ? `Jam ke-${s.jam_ke}` : null].filter(Boolean).join(" · ")}
+                        </Text>
+                        <View className={`self-start mt-2 px-2 py-0.5 rounded-full ${warnaBadge.bg}`}>
+                          <Text className="text-[10px] font-medium" style={{ color: warnaBadge.fg }}>{labelStatus}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Card>
+                );
+              })}
+            </>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+    <View className="flex-1 bg-background">
+      {mode === "guru" && <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />}
+      <ScrollView className="flex-1 px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
       {mode === "anak" && <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />}
 
       {mode === "anak" && child && (
@@ -310,6 +464,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
           </View>
         </>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
