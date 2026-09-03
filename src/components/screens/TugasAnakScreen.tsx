@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
-import { ClipboardList, BookOpen, CheckCircle, Paperclip, AlertCircle } from "lucide-react-native";
+import { ClipboardList, BookOpen, CheckCircle, Paperclip, Award, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -9,7 +9,7 @@ import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
-interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; guru_nama: string; status_pengerjaan: "belum" | "sudah"; }
+interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; terkunci: boolean; guru_nama: string; status_pengerjaan: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; }
 
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -100,14 +100,23 @@ export function TugasAnakScreen() {
                 <Badge variant={t.jenis === "tugas" ? "info" : "muted"}>{t.jenis === "tugas" ? "Tugas" : "Materi"}</Badge>
               </View>
               <Text className="text-xs text-muted-foreground mb-2">
-                {t.guru_nama} · {formatDateFull(t.tanggal)}{t.deadline ? ` · batas kumpul ${formatDateFull(t.deadline)}` : ""}
+                {t.guru_nama} · {formatDateFull(t.tanggal)}
+                {t.deadline ? ` · batas kumpul ${formatDateFull(t.deadline)}${t.deadline_jam ? ` pukul ${String(t.deadline_jam).slice(0, 5)} WIB` : ""}` : ""}
               </Text>
               {!!t.deskripsi && <Text className="text-sm text-foreground mb-3">{t.deskripsi}</Text>}
 
               {t.jenis === "tugas" && (
                 <View className="flex-row items-center gap-2 flex-wrap">
                   {t.status_pengerjaan === "sudah" ? (
-                    <Badge variant="success">Sudah Dikerjakan</Badge>
+                    <>
+                      <Badge variant="success">Sudah Dikerjakan</Badge>
+                      {Number(t.terlambat) === 1 && <Badge variant="warning">Terlambat</Badge>}
+                    </>
+                  ) : t.terkunci ? (
+                    // Tombol disembunyikan HANYA sbg kejelasan utk ortu -
+                    // penolakan sungguhannya ada di server (routes/tugas.js),
+                    // jadi tidak bisa ditembus lewat permintaan langsung.
+                    <Badge variant="error">Pengumpulan ditutup guru</Badge>
                   ) : (
                     <Button size="sm" onPress={() => handleTandaiSelesai(t.id)} disabled={busyId === t.id} loading={busyId === t.id}>
                       <CheckCircle size={13} color={colors.primaryForeground} />{"  "}Tandai Sudah Dikerjakan
@@ -116,6 +125,18 @@ export function TugasAnakScreen() {
                   <Button size="sm" variant="outline" disabled style={{ opacity: 0.6 }}>
                     <Paperclip size={13} color={colors.mutedForeground} />{"  "}Upload Berkas (Segera Hadir)
                   </Button>
+                </View>
+              )}
+
+              {t.jenis === "tugas" && (t.nilai || t.catatan_guru) && (
+                <View className="mt-3 pt-3 border-t border-border">
+                  <View className="flex-row items-center gap-2">
+                    <Award size={14} color={colors.primary} />
+                    <Text className="text-xs font-semibold text-foreground">
+                      Penilaian Guru{t.nilai ? `: ${t.nilai}` : ""}
+                    </Text>
+                  </View>
+                  {!!t.catatan_guru && <Text className="text-xs text-muted-foreground mt-1">{t.catatan_guru}</Text>}
                 </View>
               )}
             </Card>
