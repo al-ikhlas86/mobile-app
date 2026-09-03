@@ -250,7 +250,15 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
         if (res.success) { setSlots(res.data); setMeta(res.meta ?? null); } else setError(res.message ?? "Gagal memuat jadwal mengajar.");
       }
       const kal = await kalenderPromise;
-      if (kal?.success) setAgenda(kal.data ?? []);
+      if (kal?.success) {
+        const rawAgenda: AgendaItem[] = kal.data ?? [];
+        // Diminta user 2026-09-03: ortu cuma perlu lihat jadwal pelajaran
+        // anaknya sendiri, BUKAN agenda internal sekolah (rapat guru dst)
+        // yang unit-wide dan tidak relevan buat mereka. Penanda LIBUR tetap
+        // disertakan (bukan "agenda", tapi bagian dari status jadwal - hari
+        // itu memang tidak ada KBM, ortu wajib tahu).
+        setAgenda(mode === "anak" ? rawAgenda.filter((a) => Number(a.is_libur) === 1) : rawAgenda);
+      }
       setLoading(false);
     })();
   }, [mode]);

@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Linking } from "react-native";
-import { ClipboardList, BookOpen, CheckCircle, Paperclip, Award, AlertCircle } from "lucide-react-native";
+import * as DocumentPicker from "expo-document-picker";
+import { ClipboardList, BookOpen, CheckCircle, Paperclip, Award, AlertCircle, FileText, X, Send, Pencil } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
+import { Input } from "../ui/Input";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api, API_URL } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
-interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; terkunci: boolean; guru_nama: string; status_pengerjaan: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; lampiran_filename: string | null; lampiran_nama_asli: string | null; lampiran_ukuran: number | null; }
+interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; terkunci: boolean; guru_nama: string; status_pengerjaan: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; lampiran_filename: string | null; lampiran_nama_asli: string | null; lampiran_ukuran: number | null; jawaban_teks: string | null; jawaban_lampiran_filename: string | null; jawaban_lampiran_nama_asli: string | null; jawaban_lampiran_ukuran: number | null; }
 
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -21,9 +23,15 @@ function formatUkuranBerkas(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// Batas & format SAMA PERSIS dgn backend (routes/tugas.js) - lihat catatan
+// di BuatTugasScreen.tsx.
+const MAX_LAMPIRAN_MB = 10;
+
 // Orang Tua - lihat Tugas & Materi Pembelajaran utk kelas anaknya. Port
-// native dari webview TugasAnakScreen.tsx - tombol "Upload Berkas" SENGAJA
-// placeholder (nonaktif), lihat catatan lengkap di versi webview.
+// native dari webview TugasAnakScreen.tsx. "Isi Jawaban" (2026-09-03,
+// diminta user: "seperti Google Classroom") GANTIKAN tombol placeholder
+// lama - kirim jawaban teks &/atau lampiran SUNGGUHAN lewat
+// tugasKumpulkanJawaban, bukan cuma tandai status.
 export function TugasAnakScreen() {
   const colors = useThemeColors();
   const [children, setChildren] = useState<ChildData[]>([]);
@@ -31,7 +39,13 @@ export function TugasAnakScreen() {
   const [tugasList, setTugasList] = useState<TugasRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState<number | null>(null);
+
+  // Form "Isi Jawaban" - 1 per layar (accordion).
+  const [activeFormId, setActiveFormId] = useState<number | null>(null);
+  const [jawabanTeks, setJawabanTeks] = useState("");
+  const [lampiranBaru, setLampiranBaru] = useState<{ uri: string; name: string; mimeType: string; size: number } | null>(null);
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const loadTugas = async (childId: number) => {
     const res = await api.tugasAnak(childId);
@@ -63,12 +77,64 @@ export function TugasAnakScreen() {
     setLoading(false);
   }
 
-  async function handleTandaiSelesai(tugasId: number) {
+  function bukaFormJawaban(t: TugasRow) {
+    setActiveFormId(t.id);
+    setJawabanTeks(t.jawaban_teks ?? "");
+    setLampiranBaru(null);
+    setFormError("");
+  }
+
+  function tutupFormJawaban() {
+    setActiveFormId(null);
+    setJawabanTeks("");
+    setLampiranBaru(null);
+    setFormError("");
+  }
+
+  async function pilihLampiranJawaban() {
+    const hasil = await DocumentPicker.getDocumentAsync({
+      type: [
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "image/jpeg", "image/png", "image/webp", "image/gif",
+      ],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (hasil.canceled || !hasil.assets?.[0]) return;
+    const berkas = hasil.assets[0];
+    if ((berkas.size ?? 0) > MAX_LAMPIRAN_MB * 1024 * 1024) {
+      setFormError(`Berkas terlalu besar, maksimal ${MAX_LAMPIRAN_MB} MB.`);
+      return;
+    }
+    setFormError("");
+    setLampiranBaru({ uri: berkas.uri, name: berkas.name, mimeType: berkas.mimeType || "application/octet-stream", size: berkas.size ?? 0 });
+  }
+
+  async function kirimJawaban(t: TugasRow) {
     if (!activeChildId) return;
-    setBusyId(tugasId);
-    const res = await api.tugasTandaiSelesai(tugasId, activeChildId);
-    setBusyId(null);
-    if (res.success) loadTugas(activeChildId);
+    if (!jawabanTeks.trim() && !lampiranBaru && !t.jawaban_lampiran_filename) {
+      setFormError("Isi jawaban teks atau lampirkan berkas dulu.");
+      return;
+    }
+    setSubmitting(true);
+    setFormError("");
+    const res = await api.tugasKumpulkanJawaban(t.id, {
+      studentCacheId: activeChildId,
+      jawabanTeks: jawabanTeks.trim() || undefined,
+      lampiran: lampiranBaru,
+    });
+    setSubmitting(false);
+    if (res.success) {
+      tutupFormJawaban();
+      loadTugas(activeChildId);
+    } else {
+      setFormError(res.message ?? "Gagal mengirim jawaban.");
+    }
   }
 
   const child = children.find((c) => c.id === activeChildId) ?? null;
@@ -125,25 +191,82 @@ export function TugasAnakScreen() {
               )}
 
               {t.jenis === "tugas" && (
-                <View className="flex-row items-center gap-2 flex-wrap">
-                  {t.status_pengerjaan === "sudah" ? (
-                    <>
-                      <Badge variant="success">Sudah Dikerjakan</Badge>
-                      {Number(t.terlambat) === 1 && <Badge variant="warning">Terlambat</Badge>}
-                    </>
-                  ) : t.terkunci ? (
-                    // Tombol disembunyikan HANYA sbg kejelasan utk ortu -
-                    // penolakan sungguhannya ada di server (routes/tugas.js),
-                    // jadi tidak bisa ditembus lewat permintaan langsung.
-                    <Badge variant="error">Pengumpulan ditutup guru</Badge>
-                  ) : (
-                    <Button size="sm" onPress={() => handleTandaiSelesai(t.id)} disabled={busyId === t.id} loading={busyId === t.id}>
-                      <CheckCircle size={13} color={colors.primaryForeground} />{"  "}Tandai Sudah Dikerjakan
-                    </Button>
+                <View className="gap-2">
+                  <View className="flex-row items-center gap-2 flex-wrap">
+                    {t.status_pengerjaan === "sudah" && (
+                      <>
+                        <Badge variant="success">Sudah Dikerjakan</Badge>
+                        {Number(t.terlambat) === 1 && <Badge variant="warning">Terlambat</Badge>}
+                      </>
+                    )}
+                    {t.terkunci && t.status_pengerjaan !== "sudah" && (
+                      // Tombol disembunyikan HANYA sbg kejelasan utk ortu -
+                      // penolakan sungguhannya ada di server (routes/tugas.js),
+                      // jadi tidak bisa ditembus lewat permintaan langsung.
+                      <Badge variant="error">Pengumpulan ditutup guru</Badge>
+                    )}
+                    {!t.terkunci && activeFormId !== t.id && (
+                      <Button size="sm" variant={t.status_pengerjaan === "sudah" ? "outline" : "primary"} onPress={() => bukaFormJawaban(t)}>
+                        {t.status_pengerjaan === "sudah" ? <Pencil size={13} color={colors.primary} /> : <Send size={13} color={colors.primaryForeground} />}
+                        {"  "}{t.status_pengerjaan === "sudah" ? "Ubah Jawaban" : "Isi Jawaban"}
+                      </Button>
+                    )}
+                  </View>
+
+                  {/* Jawaban yang sudah dikirim - tampil walau form tertutup */}
+                  {activeFormId !== t.id && (!!t.jawaban_teks || !!t.jawaban_lampiran_filename) && (
+                    <View className="bg-muted rounded-xl px-3 py-2">
+                      <Text className="text-[10px] font-semibold text-muted-foreground mb-1">Jawaban Anda</Text>
+                      {!!t.jawaban_teks && <Text className="text-xs text-foreground">{t.jawaban_teks}</Text>}
+                      {!!t.jawaban_lampiran_filename && (
+                        <Pressable onPress={() => Linking.openURL(`${API_URL}/uploads/tugas/${t.jawaban_lampiran_filename}`)} className="flex-row items-center gap-1.5 mt-1 self-start">
+                          <FileText size={13} color={colors.primary} />
+                          <Text className="text-xs font-medium text-primary underline" numberOfLines={1}>{t.jawaban_lampiran_nama_asli}</Text>
+                          {typeof t.jawaban_lampiran_ukuran === "number" && (
+                            <Text className="text-[10px] text-muted-foreground">({formatUkuranBerkas(t.jawaban_lampiran_ukuran)})</Text>
+                          )}
+                        </Pressable>
+                      )}
+                    </View>
                   )}
-                  <Button size="sm" variant="outline" disabled style={{ opacity: 0.6 }}>
-                    <Paperclip size={13} color={colors.mutedForeground} />{"  "}Upload Berkas (Segera Hadir)
-                  </Button>
+
+                  {/* Form isi/ubah jawaban */}
+                  {activeFormId === t.id && (
+                    <View className="gap-2 bg-muted rounded-xl p-3">
+                      <Input
+                        value={jawabanTeks}
+                        onChangeText={setJawabanTeks}
+                        placeholder="Tulis jawaban di sini (opsional kalau melampirkan berkas)..."
+                        multiline
+                        numberOfLines={3}
+                        style={{ minHeight: 72, textAlignVertical: "top", paddingTop: 12 }}
+                      />
+                      {lampiranBaru ? (
+                        <View className="flex-row items-center justify-between gap-2 bg-card rounded-lg px-3 py-2">
+                          <View className="flex-row items-center gap-1.5 flex-1">
+                            <FileText size={13} color={colors.primary} />
+                            <Text className="text-xs text-foreground flex-1" numberOfLines={1}>{lampiranBaru.name}</Text>
+                            <Text className="text-[10px] text-muted-foreground">({formatUkuranBerkas(lampiranBaru.size)})</Text>
+                          </View>
+                          <Pressable onPress={() => setLampiranBaru(null)}>
+                            <X size={14} color={colors.mutedForeground} />
+                          </Pressable>
+                        </View>
+                      ) : (
+                        <Pressable onPress={pilihLampiranJawaban} className="flex-row items-center gap-1.5 bg-card rounded-lg px-3 py-2 self-start">
+                          <Paperclip size={13} color={colors.primary} />
+                          <Text className="text-xs text-primary">{t.jawaban_lampiran_filename ? "Ganti lampiran" : "Lampirkan berkas"} (maks {MAX_LAMPIRAN_MB} MB)</Text>
+                        </Pressable>
+                      )}
+                      {!!formError && <Text className="text-xs text-red-600 dark:text-red-400">{formError}</Text>}
+                      <View className="flex-row items-center gap-2">
+                        <Button size="sm" onPress={() => kirimJawaban(t)} disabled={submitting} loading={submitting}>
+                          <Send size={13} color={colors.primaryForeground} />{"  "}Kirim Jawaban
+                        </Button>
+                        <Button size="sm" variant="outline" onPress={tutupFormJawaban} disabled={submitting}>Batal</Button>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 
