@@ -73,6 +73,7 @@
       ],
       "./plugins/withDebugAppIdSuffix.js",
       "./plugins/withReleaseSigning.js",
+      "./plugins/withGradleBuildCache.js",
       "expo-sharing"
     ],
     "extra": {
