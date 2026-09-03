@@ -317,6 +317,15 @@ export const api = {
   tugasAnak: (studentCacheId: number) => authedFetch(`/api/tugas/anak?studentCacheId=${studentCacheId}`),
   tugasTandaiSelesai: (id: number, studentCacheId: number) =>
     authedFetch(`/api/tugas/${id}/tandai-selesai`, { method: "POST", body: JSON.stringify({ studentCacheId }) }),
+  // Kirim jawaban SUNGGUHAN (teks dan/atau lampiran) - superset tandai-selesai
+  // di atas, seperti Google Classroom (2026-09-03).
+  tugasKumpulkanJawaban: (id: number, data: { studentCacheId: number; jawabanTeks?: string; lampiran?: { uri: string; name: string; mimeType: string } | null }) => {
+    const form = new FormData();
+    form.append("studentCacheId", String(data.studentCacheId));
+    if (data.jawabanTeks) form.append("jawabanTeks", data.jawabanTeks);
+    if (data.lampiran) form.append("lampiran", fileFromUri(data.lampiran.uri, data.lampiran.name, data.lampiran.mimeType));
+    return authedUpload(`/api/tugas/${id}/kumpulkan-jawaban`, form);
+  },
 
   // Aduan - lihat routes/aduan.js (Node)
   aduanSubmit: (data: { studentCacheId: number; kategori: "wali_kelas" | "admin_it" | "keuangan" | "tu"; isi: string; buktiFotoUri?: string; buktiFotoMime?: string }) => {
