@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
-import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
+import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { Card } from "../../ui/Card";
@@ -26,6 +26,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [showAllMenu, setShowAllMenu] = useState(false);
+  const { prefs: berandaPrefs } = useBerandaPreferensi();
   // Dibaca dalam useFocusEffect (deps [], jangan re-jalan tiap ganti anak) -
   // ref supaya nilai TERBARU terbaca tanpa membuat effect fetch ulang tiap
   // switch anak.
@@ -110,7 +111,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
     ] },
   ];
 
-  if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
+  if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
     <DashboardLayout name={session?.fullName ?? "Orang Tua"} roleLabel="Portal Orang Tua" date={todayLabel}>
@@ -140,20 +141,24 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
         </View>
       </View>
 
-      <View>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terbaru</Text>
-          <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+      {!berandaPrefs.hideBeritaTerbaru && (
+        <View>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terbaru</Text>
+            <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+          </View>
+          <NewsCarousel items={news.terbaru} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
-        <NewsCarousel items={news.terbaru} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
-      </View>
-      <View>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terpopuler</Text>
-          <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+      )}
+      {!berandaPrefs.hideBeritaTerpopuler && (
+        <View>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terpopuler</Text>
+            <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
+          </View>
+          <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
-        <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
-      </View>
+      )}
 
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>

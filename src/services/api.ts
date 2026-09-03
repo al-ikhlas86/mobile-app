@@ -31,6 +31,13 @@ export function resolveAvatarUrl(url: string | null | undefined): string | null 
   return `${API_URL}${path}`;
 }
 
+export interface BerandaPreferensi {
+  hiddenMenu: string[];
+  menuOrder: string[];
+  hideBeritaTerbaru: boolean;
+  hideBeritaTerpopuler: boolean;
+}
+
 export const ROLE_MAP: Record<string, RoleName> = {
   admin_it: "Admin IT",
   supervisor: "Supervisor",
@@ -202,6 +209,9 @@ export const api = {
   notificationPreferences: () => authedFetch("/api/notifications/preferences"),
   updateNotificationPreferences: (prefs: Partial<Record<"notif_komentar" | "notif_like" | "notif_presensi" | "notif_bayaran" | "notif_tagihan", boolean>>) =>
     authedFetch("/api/notifications/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
+  berandaPreferensi: (): Promise<{ success: boolean; data: BerandaPreferensi }> => authedFetch("/api/auth/beranda-preferensi"),
+  updateBerandaPreferensi: (data: BerandaPreferensi) =>
+    authedFetch("/api/auth/beranda-preferensi", { method: "PUT", body: JSON.stringify(data) }),
   attendanceMyChildren: () => authedFetch("/api/attendance/my-children"),
   attendanceMe: () => authedFetch("/api/attendance/me"),
   attendanceAll: (entityType: "siswa" | "guru" | "karyawan", date: string) =>
