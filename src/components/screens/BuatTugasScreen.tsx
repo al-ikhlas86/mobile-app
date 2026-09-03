@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import { View, Text, Pressable, Alert, Linking } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { ClipboardList, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, Lock, Unlock, Check, Save } from "lucide-react-native";
+import * as DocumentPicker from "expo-document-picker";
+import { ClipboardList, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, Lock, Unlock, Check, Save, Paperclip, X, FileText, Download } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
-import { api } from "../../services/api";
+import { api, API_URL } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface KelasOption { id: number; nama: string; tingkat: string | null; }
-interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; kunci_otomatis: number; dibuka_manual: number; terkunci: boolean; kelas_nama: string; jumlah_selesai: number; jumlah_dinilai?: number; total_tugas_kelas?: number; }
+interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; kunci_otomatis: number; dibuka_manual: number; terkunci: boolean; kelas_nama: string; jumlah_selesai: number; jumlah_dinilai?: number; total_tugas_kelas?: number; lampiran_filename: string | null; lampiran_nama_asli: string | null; lampiran_ukuran: number | null; }
 interface RekapSiswa { student_cache_id: number; nama: string; status: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; dikerjakan_at: string | null; }
 
 const JENIS_OPTIONS = [
@@ -21,13 +22,24 @@ const JENIS_OPTIONS = [
   { value: "materi", label: "Materi (catatan pembelajaran)" },
 ];
 
+// Batas & format SAMA PERSIS dgn backend (routes/tugas.js ALLOWED_MIME_LAMPIRAN/
+// MAX_LAMPIRAN_BYTES) - daftar di sini cuma penyaring di picker supaya user
+// tidak salah pilih; penegakan SEBENARNYA tetap di server (2 tempat sengaja
+// tidak disatukan lewat import - beda runtime, RN vs Node).
+const MAX_LAMPIRAN_MB = 10;
+
+function formatUkuranBerkas(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 // Guru/Guru Kelas - buat tugas atau materi utk 1 kelas. Port native dari
-// webview BuatTugasScreen.tsx - lihat catatan lengkap di sana (upload
-// berkas SENGAJA belum ada, ditunda keputusan user 2026-08-30).
+// webview BuatTugasScreen.tsx.
 export function BuatTugasScreen() {
   const colors = useThemeColors();
   const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([]);
@@ -42,6 +54,7 @@ export function BuatTugasScreen() {
   const [deadline, setDeadline] = useState("");
   const [deadlineJam, setDeadlineJam] = useState("");
   const [kunciOtomatis, setKunciOtomatis] = useState(false);
+  const [lampiran, setLampiran] = useState<{ uri: string; name: string; mimeType: string; size: number } | null>(null);
   // Draf nilai/catatan per siswa, dikunci per (tugasId, siswaId) supaya
   // pengetikan di satu siswa tidak bocor ke siswa lain.
   const [draftNilai, setDraftNilai] = useState<Record<string, { nilai: string; catatan: string }>>({});
@@ -66,6 +79,29 @@ export function BuatTugasScreen() {
 
   useEffect(() => { load(); }, []);
 
+  async function pilihLampiran() {
+    const hasil = await DocumentPicker.getDocumentAsync({
+      type: [
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "image/jpeg", "image/png", "image/webp", "image/gif",
+      ],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (hasil.canceled || !hasil.assets?.[0]) return;
+    const berkas = hasil.assets[0];
+    if ((berkas.size ?? 0) > MAX_LAMPIRAN_MB * 1024 * 1024) {
+      setMessage({ text: `Berkas terlalu besar, maksimal ${MAX_LAMPIRAN_MB} MB.`, ok: false });
+      return;
+    }
+    setLampiran({ uri: berkas.uri, name: berkas.name, mimeType: berkas.mimeType || "application/octet-stream", size: berkas.size ?? 0 });
+  }
+
   async function handleSubmit() {
     if (!kelasId || !judul.trim()) {
       setMessage({ text: "Kelas dan judul wajib diisi.", ok: false });
@@ -82,11 +118,12 @@ export function BuatTugasScreen() {
       deadline: jenis === "tugas" ? (deadline || undefined) : undefined,
       deadlineJam: jenis === "tugas" ? (deadlineJam || undefined) : undefined,
       kunciOtomatis: jenis === "tugas" ? kunciOtomatis : undefined,
+      lampiran: lampiran ? { uri: lampiran.uri, name: lampiran.name, mimeType: lampiran.mimeType } : undefined,
     });
     setSaving(false);
     setMessage({ text: res.message ?? (res.success ? `${jenis === "tugas" ? "Tugas" : "Materi"} berhasil dibuat.` : "Gagal membuat."), ok: !!res.success });
     if (res.success) {
-      setJudul(""); setDeskripsi(""); setDeadline(""); setDeadlineJam(""); setKunciOtomatis(false);
+      setJudul(""); setDeskripsi(""); setDeadline(""); setDeadlineJam(""); setKunciOtomatis(false); setLampiran(null);
       load();
     }
   }
@@ -213,6 +250,30 @@ export function BuatTugasScreen() {
                 </Pressable>
               </>
             )}
+
+            {/* Lampiran berkas (2026-09-03) - berlaku utk Tugas MAUPUN Materi,
+                spt Google Classroom lampirkan worksheet/bahan ajar ke keduanya. */}
+            <View>
+              <Text className="text-xs font-medium text-foreground mb-1.5">Lampiran Berkas (opsional)</Text>
+              {lampiran ? (
+                <View className="flex-row items-center gap-2 bg-muted rounded-xl px-3 py-2.5">
+                  <FileText size={16} color={colors.primary} />
+                  <View className="flex-1">
+                    <Text className="text-xs font-medium text-foreground" numberOfLines={1}>{lampiran.name}</Text>
+                    <Text className="text-[10px] text-muted-foreground">{formatUkuranBerkas(lampiran.size)}</Text>
+                  </View>
+                  <Pressable onPress={() => setLampiran(null)} className="p-1">
+                    <X size={16} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable onPress={pilihLampiran} className="flex-row items-center justify-center gap-2 border border-dashed border-border rounded-xl px-3 py-3">
+                  <Paperclip size={15} color={colors.mutedForeground} />
+                  <Text className="text-xs text-muted-foreground">Pilih berkas (PDF/Word/PPT/Excel/gambar, maks {MAX_LAMPIRAN_MB} MB)</Text>
+                </Pressable>
+              )}
+            </View>
+
             <Button onPress={handleSubmit} disabled={saving} loading={saving} className="mt-1">
               <Plus size={14} color={colors.primaryForeground} />{"  "}{saving ? "Menyimpan..." : `Buat ${jenis === "tugas" ? "Tugas" : "Materi"}`}
             </Button>
@@ -240,6 +301,18 @@ export function BuatTugasScreen() {
                       Kelas {t.kelas_nama} · {formatDateFull(t.tanggal)}
                       {t.deadline ? ` · batas ${formatDateFull(t.deadline)}${t.deadline_jam ? ` ${String(t.deadline_jam).slice(0, 5)} WIB` : ""}` : ""}
                     </Text>
+                    {t.lampiran_filename && (
+                      <Pressable
+                        onPress={() => Linking.openURL(`${API_URL}/uploads/tugas/${t.lampiran_filename}`)}
+                        className="flex-row items-center gap-1.5 mt-1 self-start"
+                      >
+                        <Paperclip size={11} color={colors.primary} />
+                        <Text className="text-[11px] text-primary underline" numberOfLines={1}>{t.lampiran_nama_asli}</Text>
+                        {typeof t.lampiran_ukuran === "number" && (
+                          <Text className="text-[10px] text-muted-foreground">({formatUkuranBerkas(t.lampiran_ukuran)})</Text>
+                        )}
+                      </Pressable>
+                    )}
                     {t.jenis === "tugas" && (
                       <>
                         <Text className="text-xs text-primary mt-0.5">

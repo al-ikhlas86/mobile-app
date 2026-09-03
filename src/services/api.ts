@@ -288,8 +288,23 @@ export const api = {
 
   // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
   tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
-  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string; deadlineJam?: string; kunciOtomatis?: boolean }) =>
-    authedFetch("/api/tugas/create", { method: "POST", body: JSON.stringify(data) }),
+  // SELALU FormData (bukan cabang JSON vs FormData terpisah) - konsisten
+  // dgn berapa pun jumlah field, dan backend (multer .single()) mengurai
+  // field teks dari multipart sama baiknya dgn tanpa file sama sekali.
+  // `lampiran` opsional: { uri, name, mimeType } dari expo-document-picker.
+  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string; deadlineJam?: string; kunciOtomatis?: boolean; lampiran?: { uri: string; name: string; mimeType: string } }) => {
+    const form = new FormData();
+    form.append("jenis", data.jenis);
+    form.append("judul", data.judul);
+    form.append("tanggal", data.tanggal);
+    if (data.deskripsi) form.append("deskripsi", data.deskripsi);
+    if (data.deadline) form.append("deadline", data.deadline);
+    if (data.deadlineJam) form.append("deadlineJam", data.deadlineJam);
+    if (data.kunciOtomatis) form.append("kunciOtomatis", "1");
+    form.append("kelasId", String(data.kelasId));
+    if (data.lampiran) form.append("lampiran", fileFromUri(data.lampiran.uri, data.lampiran.name, data.lampiran.mimeType));
+    return authedUpload("/api/tugas/create", form);
+  },
   // Buka/tutup pengumpulan (2026-09-03). `dibukaManual` MENGALAHKAN kunci
   // otomatis - dipakai guru utk membuka kembali tugas yg sudah lewat tenggat.
   tugasSetKunci: (id: number, body: { kunciOtomatis?: boolean; dibukaManual?: boolean }) =>

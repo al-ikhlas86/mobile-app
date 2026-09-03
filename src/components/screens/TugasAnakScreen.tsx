@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Linking } from "react-native";
 import { ClipboardList, BookOpen, CheckCircle, Paperclip, Award, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { ChildSwitcher } from "../ChildSwitcher";
-import { api } from "../../services/api";
+import { api, API_URL } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
-interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; terkunci: boolean; guru_nama: string; status_pengerjaan: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; }
+interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; terkunci: boolean; guru_nama: string; status_pengerjaan: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; lampiran_filename: string | null; lampiran_nama_asli: string | null; lampiran_ukuran: number | null; }
 
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatUkuranBerkas(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 // Orang Tua - lihat Tugas & Materi Pembelajaran utk kelas anaknya. Port
@@ -104,6 +110,19 @@ export function TugasAnakScreen() {
                 {t.deadline ? ` · batas kumpul ${formatDateFull(t.deadline)}${t.deadline_jam ? ` pukul ${String(t.deadline_jam).slice(0, 5)} WIB` : ""}` : ""}
               </Text>
               {!!t.deskripsi && <Text className="text-sm text-foreground mb-3">{t.deskripsi}</Text>}
+
+              {t.lampiran_filename && (
+                <Pressable
+                  onPress={() => Linking.openURL(`${API_URL}/uploads/tugas/${t.lampiran_filename}`)}
+                  className="flex-row items-center gap-2 bg-muted rounded-xl px-3 py-2 mb-3 self-start"
+                >
+                  <Paperclip size={14} color={colors.primary} />
+                  <Text className="text-xs font-medium text-primary underline" numberOfLines={1}>{t.lampiran_nama_asli}</Text>
+                  {typeof t.lampiran_ukuran === "number" && (
+                    <Text className="text-[10px] text-muted-foreground">({formatUkuranBerkas(t.lampiran_ukuran)})</Text>
+                  )}
+                </Pressable>
+              )}
 
               {t.jenis === "tugas" && (
                 <View className="flex-row items-center gap-2 flex-wrap">
