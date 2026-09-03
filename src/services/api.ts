@@ -288,8 +288,14 @@ export const api = {
 
   // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
   tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
-  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string }) =>
+  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string; deadlineJam?: string; kunciOtomatis?: boolean }) =>
     authedFetch("/api/tugas/create", { method: "POST", body: JSON.stringify(data) }),
+  // Buka/tutup pengumpulan (2026-09-03). `dibukaManual` MENGALAHKAN kunci
+  // otomatis - dipakai guru utk membuka kembali tugas yg sudah lewat tenggat.
+  tugasSetKunci: (id: number, body: { kunciOtomatis?: boolean; dibukaManual?: boolean }) =>
+    authedFetch(`/api/tugas/${id}/kunci`, { method: "PATCH", body: JSON.stringify(body) }),
+  tugasBeriNilai: (id: number, body: { studentCacheId: number; nilai?: string; catatan?: string }) =>
+    authedFetch(`/api/tugas/${id}/nilai`, { method: "POST", body: JSON.stringify(body) }),
   tugasMine: () => authedFetch("/api/tugas/mine"),
   tugasRekap: (id: number) => authedFetch(`/api/tugas/${id}/rekap`),
   tugasDelete: (id: number) => authedFetch(`/api/tugas/${id}`, { method: "DELETE" }),

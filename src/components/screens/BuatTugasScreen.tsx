@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { ClipboardList, BookOpen, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react-native";
+import { ClipboardList, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, Lock, Unlock, Check, Save } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -13,8 +13,8 @@ import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface KelasOption { id: number; nama: string; tingkat: string | null; }
-interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; kelas_nama: string; jumlah_selesai: number; }
-interface RekapSiswa { student_cache_id: number; nama: string; status: "belum" | "sudah"; }
+interface TugasRow { id: number; jenis: "tugas" | "materi"; judul: string; deskripsi: string | null; tanggal: string; deadline: string | null; deadline_jam: string | null; kunci_otomatis: number; dibuka_manual: number; terkunci: boolean; kelas_nama: string; jumlah_selesai: number; jumlah_dinilai?: number; total_tugas_kelas?: number; }
+interface RekapSiswa { student_cache_id: number; nama: string; status: "belum" | "sudah"; nilai: string | null; catatan_guru: string | null; terlambat: number | null; dikerjakan_at: string | null; }
 
 const JENIS_OPTIONS = [
   { value: "tugas", label: "Tugas (perlu dikerjakan siswa)" },
@@ -40,6 +40,12 @@ export function BuatTugasScreen() {
   const [deskripsi, setDeskripsi] = useState("");
   const [tanggal, setTanggal] = useState(getTodayLocal());
   const [deadline, setDeadline] = useState("");
+  const [deadlineJam, setDeadlineJam] = useState("");
+  const [kunciOtomatis, setKunciOtomatis] = useState(false);
+  // Draf nilai/catatan per siswa, dikunci per (tugasId, siswaId) supaya
+  // pengetikan di satu siswa tidak bocor ke siswa lain.
+  const [draftNilai, setDraftNilai] = useState<Record<string, { nilai: string; catatan: string }>>({});
+  const [menyimpanNilai, setMenyimpanNilai] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -74,12 +80,45 @@ export function BuatTugasScreen() {
       deskripsi: deskripsi.trim() || undefined,
       tanggal,
       deadline: jenis === "tugas" ? (deadline || undefined) : undefined,
+      deadlineJam: jenis === "tugas" ? (deadlineJam || undefined) : undefined,
+      kunciOtomatis: jenis === "tugas" ? kunciOtomatis : undefined,
     });
     setSaving(false);
     setMessage({ text: res.message ?? (res.success ? `${jenis === "tugas" ? "Tugas" : "Materi"} berhasil dibuat.` : "Gagal membuat."), ok: !!res.success });
     if (res.success) {
-      setJudul(""); setDeskripsi(""); setDeadline("");
+      setJudul(""); setDeskripsi(""); setDeadline(""); setDeadlineJam(""); setKunciOtomatis(false);
       load();
+    }
+  }
+
+  /**
+   * Buka/tutup pengumpulan. Yang di-toggle adalah `dibukaManual` (bukan
+   * kunci otomatisnya) - niat guru saat membuat tugas tetap tersimpan, yang
+   * berubah cuma "saya izinkan lagi untuk sekarang".
+   */
+  async function toggleKunci(t: TugasRow) {
+    const res = await api.tugasSetKunci(t.id, { dibukaManual: !Number(t.dibuka_manual) });
+    if (res.success) load();
+    else setMessage({ text: res.message ?? "Gagal mengubah kunci.", ok: false });
+  }
+
+  async function simpanNilai(tugasId: number, studentCacheId: number, draf: { nilai: string; catatan: string }) {
+    const kunciDraf = `${tugasId}:${studentCacheId}`;
+    setMenyimpanNilai(kunciDraf);
+    const res = await api.tugasBeriNilai(tugasId, {
+      studentCacheId,
+      nilai: draf.nilai.trim() || undefined,
+      catatan: draf.catatan.trim() || undefined,
+    });
+    setMenyimpanNilai(null);
+    if (res.success) {
+      // Muat ulang rekap tugas ini saja supaya nilai tersimpan terlihat
+      // apa adanya dari server, bukan cuma dari draf lokal.
+      const segar = await api.tugasRekap(tugasId);
+      if (segar.success) setRekapByTugas((prev) => ({ ...prev, [tugasId]: segar.data.siswa }));
+      load();
+    } else {
+      setMessage({ text: res.message ?? "Gagal menyimpan nilai.", ok: false });
     }
   }
 
@@ -137,10 +176,43 @@ export function BuatTugasScreen() {
               <SimpleCalendarPicker value={tanggal} onChange={setTanggal} />
             </View>
             {jenis === "tugas" && (
-              <View>
-                <Text className="text-xs font-medium text-foreground mb-1.5">Batas Kumpul</Text>
-                <SimpleCalendarPicker value={deadline} onChange={setDeadline} />
-              </View>
+              <>
+                <View>
+                  <Text className="text-xs font-medium text-foreground mb-1.5">Batas Kumpul</Text>
+                  <SimpleCalendarPicker value={deadline} onChange={setDeadline} />
+                </View>
+                {/* Jam batas & kunci hanya relevan kalau tanggalnya sudah
+                    dipilih - tanpa tanggal, tidak ada yang bisa dikunci. */}
+                {deadline !== "" && (
+                  <>
+                    <View>
+                      <Text className="text-xs font-medium text-foreground mb-1.5">Jam Batas (WIB)</Text>
+                      <Input
+                        value={deadlineJam}
+                        onChangeText={setDeadlineJam}
+                        placeholder="Contoh: 15:00 (kosong = sampai akhir hari)"
+                        maxLength={5}
+                        keyboardType="numbers-and-punctuation"
+                      />
+                    </View>
+                    <Pressable
+                      onPress={() => setKunciOtomatis((v) => !v)}
+                      className="flex-row items-start gap-2.5 py-1"
+                    >
+                      <View className={`w-5 h-5 rounded border items-center justify-center mt-0.5 ${kunciOtomatis ? "bg-primary border-primary" : "border-border"}`}>
+                        {kunciOtomatis && <Check size={13} color={colors.primaryForeground} />}
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-xs font-medium text-foreground">Kunci pengumpulan setelah lewat batas</Text>
+                        <Text className="text-[11px] text-muted-foreground mt-0.5">
+                          Siswa tidak bisa mengumpulkan lagi setelah lewat jam batas. Anda tetap bisa membukanya
+                          kembali kapan saja lewat daftar di bawah.
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </>
+                )}
+              </>
             )}
             <Button onPress={handleSubmit} disabled={saving} loading={saving} className="mt-1">
               <Plus size={14} color={colors.primaryForeground} />{"  "}{saving ? "Menyimpan..." : `Buat ${jenis === "tugas" ? "Tugas" : "Materi"}`}
@@ -166,9 +238,33 @@ export function BuatTugasScreen() {
                       <Badge variant={t.jenis === "tugas" ? "info" : "muted"}>{t.jenis === "tugas" ? "Tugas" : "Materi"}</Badge>
                     </View>
                     <Text className="text-xs text-muted-foreground">
-                      Kelas {t.kelas_nama} · {formatDateFull(t.tanggal)}{t.deadline ? ` · batas ${formatDateFull(t.deadline)}` : ""}
+                      Kelas {t.kelas_nama} · {formatDateFull(t.tanggal)}
+                      {t.deadline ? ` · batas ${formatDateFull(t.deadline)}${t.deadline_jam ? ` ${String(t.deadline_jam).slice(0, 5)} WIB` : ""}` : ""}
                     </Text>
-                    {t.jenis === "tugas" && <Text className="text-xs text-primary mt-0.5">{t.jumlah_selesai} siswa sudah mengerjakan</Text>}
+                    {t.jenis === "tugas" && (
+                      <>
+                        <Text className="text-xs text-primary mt-0.5">
+                          {t.jumlah_selesai} siswa sudah mengerjakan
+                          {typeof t.jumlah_dinilai === "number" ? ` · ${t.jumlah_dinilai} dinilai` : ""}
+                        </Text>
+                        {typeof t.total_tugas_kelas === "number" && (
+                          <Text className="text-[11px] text-muted-foreground mt-0.5">
+                            Total {t.total_tugas_kelas} tugas Anda di kelas ini
+                          </Text>
+                        )}
+                        {t.deadline ? (
+                          <Pressable
+                            onPress={() => toggleKunci(t)}
+                            className="self-start mt-1.5 flex-row items-center gap-1.5 px-2 py-1 rounded-full bg-muted"
+                          >
+                            {t.terkunci ? <Lock size={11} color="#dc2626" /> : <Unlock size={11} color={colors.primary} />}
+                            <Text className={`text-[10px] font-medium ${t.terkunci ? "text-red-600" : "text-primary"}`}>
+                              {t.terkunci ? "Terkunci - ketuk untuk buka" : Number(t.dibuka_manual) ? "Dibuka kembali - ketuk untuk tutup" : Number(t.kunci_otomatis) ? "Akan terkunci setelah batas" : "Tidak dikunci"}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </>
+                    )}
                   </View>
                   <View className="flex-row items-center gap-1">
                     {t.jenis === "tugas" && (
@@ -188,13 +284,46 @@ export function BuatTugasScreen() {
                     ) : (rekapByTugas[t.id]?.length ?? 0) === 0 ? (
                       <Text className="text-xs text-muted-foreground text-center py-2">Tidak ada siswa aktif di kelas ini.</Text>
                     ) : (
-                      <View className="gap-1">
-                        {rekapByTugas[t.id].map((s) => (
-                          <View key={s.student_cache_id} className="flex-row items-center justify-between py-1">
-                            <Text className="text-xs text-foreground">{s.nama}</Text>
-                            <Badge variant={s.status === "sudah" ? "success" : "muted"}>{s.status === "sudah" ? "Sudah" : "Belum"}</Badge>
-                          </View>
-                        ))}
+                      <View className="gap-2.5">
+                        {rekapByTugas[t.id].map((s) => {
+                          const kunciDraf = `${t.id}:${s.student_cache_id}`;
+                          const draf = draftNilai[kunciDraf] ?? { nilai: s.nilai ?? "", catatan: s.catatan_guru ?? "" };
+                          return (
+                            <View key={s.student_cache_id} className="pb-2.5 border-b border-border">
+                              <View className="flex-row items-center justify-between mb-1.5">
+                                <Text className="text-xs text-foreground flex-1">{s.nama}</Text>
+                                <View className="flex-row items-center gap-1">
+                                  {Number(s.terlambat) === 1 && <Badge variant="warning">Terlambat</Badge>}
+                                  <Badge variant={s.status === "sudah" ? "success" : "muted"}>{s.status === "sudah" ? "Sudah" : "Belum"}</Badge>
+                                </View>
+                              </View>
+                              <View className="flex-row gap-1.5">
+                                <View style={{ width: 76 }}>
+                                  <Input
+                                    value={draf.nilai}
+                                    onChangeText={(v) => setDraftNilai((d) => ({ ...d, [kunciDraf]: { ...draf, nilai: v } }))}
+                                    placeholder="Nilai"
+                                    maxLength={10}
+                                  />
+                                </View>
+                                <View className="flex-1">
+                                  <Input
+                                    value={draf.catatan}
+                                    onChangeText={(v) => setDraftNilai((d) => ({ ...d, [kunciDraf]: { ...draf, catatan: v } }))}
+                                    placeholder="Catatan untuk siswa"
+                                  />
+                                </View>
+                                <Pressable
+                                  onPress={() => simpanNilai(t.id, s.student_cache_id, draf)}
+                                  disabled={menyimpanNilai === kunciDraf}
+                                  className="px-3 justify-center rounded-lg bg-primary"
+                                >
+                                  <Save size={14} color={colors.primaryForeground} />
+                                </Pressable>
+                              </View>
+                            </View>
+                          );
+                        })}
                       </View>
                     )}
                   </View>
