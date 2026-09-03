@@ -359,7 +359,7 @@ export function RootNavigator() {
                 />
               )}
             </Stack.Screen>
-            <Stack.Screen name="jadwal-pelajaran" options={{ headerShown: true, title: "Jadwal Pelajaran" }}>
+            <Stack.Screen name="jadwal-pelajaran" options={{ headerShown: true, title: "Kalender Akademik" }}>
               {() => <JadwalPelajaranScreen mode={session.role === "Orang Tua" ? "anak" : "guru"} />}
             </Stack.Screen>
             <Stack.Screen name="buat-tugas" options={{ headerShown: true, title: "Buat Tugas / Materi" }} component={BuatTugasScreen} />

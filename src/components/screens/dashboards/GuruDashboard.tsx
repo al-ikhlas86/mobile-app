@@ -69,7 +69,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ] : []),
     ] },
     { title: "Mengajar", items: [
-      { label: "Jadwal Pelajaran", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
+      { label: "Kalender Akademik", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
       { label: "Buat Tugas / Materi", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("buat-tugas") },
     ] },
     { title: "Administrasi", items: [
