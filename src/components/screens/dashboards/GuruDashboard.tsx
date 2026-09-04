@@ -18,7 +18,6 @@ interface AttendanceRow { tanggal: string; status: string; }
 
 export function GuruDashboard({ onNavigate, role }: Props) {
   const colors = useThemeColors();
-  const isGuruKelas = role === "Guru Kelas";
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [daysPresent, setDaysPresent] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -37,6 +36,10 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar, BUKAN dashboard
   // terpisah lagi. Lihat catatan lengkap di webview GuruDashboard.tsx.
   const isKepalaSekolah = session?.isKepalaSekolah === true;
+  // Guru Kelas jadi FLAG (2026-09-04, Fase 3) - dulu `isGuruKelas = role ===
+  // "Guru Kelas"`, sekarang session flag, pola PERSIS isKepalaSekolah di
+  // atas - lihat catatan lengkap di webview GuruDashboard.tsx.
+  const isWaliKelas = session?.isWaliKelas === true;
   // Manajemen Pengguna multi-flag (2026-09-04) - lihat catatan lengkap di
   // webview GuruDashboard.tsx.
   const capabilities = session?.capabilities ?? [];
@@ -72,9 +75,9 @@ export function GuruDashboard({ onNavigate, role }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Presensi & Wajah", items: [
-      { label: isGuruKelas ? "Kehadiran Diri" : "Presensi Guru", icon: <Clock size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
+      { label: isWaliKelas ? "Kehadiran Diri" : "Presensi Guru", icon: <Clock size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
-      ...(isGuruKelas ? [
+      ...(isWaliKelas ? [
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Persetujuan Izin", icon: <ClipboardCheck size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("persetujuan-izin") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
@@ -87,7 +90,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ] : []),
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04, capability jamak) -
       // lihat catatan lengkap di webview GuruDashboard.tsx.
-      ...(isTuLike && !isGuruKelas && !isKepalaSekolah ? [
+      ...(isTuLike && !isWaliKelas && !isKepalaSekolah ? [
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
         { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
@@ -127,7 +130,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
-    <DashboardLayout name={session?.fullName ?? (isGuruKelas ? "Guru Kelas" : "Guru")} roleLabel={`${isGuruKelas ? "Ruang Guru Kelas" : "Ruang Guru"}${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel}>
+    <DashboardLayout name={session?.fullName ?? (isWaliKelas ? "Guru Kelas" : "Guru")} roleLabel={`${isWaliKelas ? "Ruang Guru Kelas" : "Ruang Guru"}${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel}>
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Hari Ini</Text>
         {loading ? (

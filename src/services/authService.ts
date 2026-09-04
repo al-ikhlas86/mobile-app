@@ -38,7 +38,8 @@ export type RoleName =
   | "Keuangan"
   | "Orang Tua"
   | "Guru"
-  | "Guru Kelas"
+  // Guru Kelas (2026-09-04, Fase 3) JUGA SENGAJA TIDAK ADA lagi - sama
+  // seperti Kepala Sekolah, sekarang FLAG (isWaliKelas) di bawah.
   | "Pegawai";
 
 export interface SavedAccount {
@@ -53,6 +54,9 @@ export interface SavedAccount {
   // Manajemen Pengguna multi-flag (2026-09-04) - lihat catatan lengkap di
   // webview authService.ts.
   capabilities?: string[];
+  // Guru Kelas (2026-09-04, Fase 3) - FLAG tambahan di atas role dasar
+  // 'Guru', lihat catatan lengkap di webview authService.ts.
+  isWaliKelas?: boolean;
 }
 
 export interface ActiveSession {
@@ -65,6 +69,7 @@ export interface ActiveSession {
   loginAt: string;
   isKepalaSekolah?: boolean;
   capabilities?: string[];
+  isWaliKelas?: boolean;
 }
 
 const KEYS = {
@@ -119,6 +124,7 @@ async function purgeAdminItOnColdStart(
       avatarUrl: next.avatarUrl, loginAt: new Date().toISOString(),
       isKepalaSekolah: next.isKepalaSekolah,
       capabilities: next.capabilities,
+      isWaliKelas: next.isWaliKelas,
     };
     await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(newSession));
     await AsyncStorage.setItem(KEYS.activeAccountId, next.id);
@@ -184,6 +190,7 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
     loginAt: new Date().toISOString(),
     isKepalaSekolah: account.isKepalaSekolah,
     capabilities: account.capabilities,
+    isWaliKelas: account.isWaliKelas,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
@@ -205,6 +212,7 @@ export async function refreshActiveSessionCapabilities(fresh: {
   avatarUrl: string | null;
   isKepalaSekolah?: boolean;
   capabilities?: string[];
+  isWaliKelas?: boolean;
 }): Promise<ActiveSession | null> {
   assertLoaded();
   if (!cachedSession) return null;
@@ -249,6 +257,7 @@ export function getActiveSession(): ActiveSession | null {
       loginAt: new Date().toISOString(),
       isKepalaSekolah: demo.isKepalaSekolah,
       capabilities: demo.capabilities,
+      isWaliKelas: demo.isWaliKelas,
     };
   }
   return getRealActiveSession();
@@ -279,6 +288,7 @@ export async function switchAccount(accountId: string): Promise<ActiveSession | 
     loginAt: new Date().toISOString(),
     isKepalaSekolah: saved.isKepalaSekolah,
     capabilities: saved.capabilities,
+    isWaliKelas: saved.isWaliKelas,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));

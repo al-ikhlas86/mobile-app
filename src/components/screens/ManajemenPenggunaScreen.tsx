@@ -91,7 +91,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
-        Halaman ini khusus akun administratif MANDIRI. Akun Guru/Guru Kelas/Pegawai/Orang Tua tidak tampil di
+        Halaman ini khusus akun administratif MANDIRI. Akun Guru/Pegawai/Orang Tua tidak tampil di
         sini. Untuk memberi guru/pegawai yang sudah punya akun kapasitas tambahan (mis. guru yang juga Admin
         Media SD), gunakan menu Kapasitas Tambahan, bukan di sini.
       </Text>

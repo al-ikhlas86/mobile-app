@@ -31,7 +31,7 @@ export function DashboardScreen({ role, onNavigate }: Props) {
   if (ADMIN_MEDIA_ROLES.includes(role)) return <AdminMediaDashboard onNavigate={onNavigate} role={role} />;
   if (role === "Keuangan") return <KeuanganDashboard onNavigate={onNavigate} />;
   if (role === "Orang Tua") return <OrangTuaDashboard onNavigate={onNavigate} />;
-  if (role === "Guru" || role === "Guru Kelas") return <GuruDashboard onNavigate={onNavigate} role={role} />;
+  if (role === "Guru") return <GuruDashboard onNavigate={onNavigate} role={role} />;
   if (role === "Pegawai") return <PegawaiDashboard onNavigate={onNavigate} />;
   return <AdminITDashboard onNavigate={onNavigate} />;
 }

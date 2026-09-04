@@ -16,6 +16,9 @@ import { useThemeColors } from "../../context/ThemeContext";
 
 interface Props {
   role: string;
+  // Guru Kelas jadi FLAG (2026-09-04, Fase 3) - dulu dibaca dari
+  // `role === "Guru Kelas"`, sekarang di-thread sbg prop terpisah.
+  isWaliKelas?: boolean;
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
 }
 
@@ -92,7 +95,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
   return "muted"; // Libur
 }
 
-export function PresensiScreen({ role, onNavigate }: Props) {
+export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
   const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [records, setRecords] = useState<AttendanceRow[]>([]);
@@ -275,7 +278,7 @@ export function PresensiScreen({ role, onNavigate }: Props) {
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-foreground">Rekap Kehadiran</Text>
-                <Text className="text-xs text-muted-foreground">{role === "Guru Kelas" ? "Kehadiran Anda & siswa kelas Anda" : "Kehadiran Anda"}</Text>
+                <Text className="text-xs text-muted-foreground">{isWaliKelas ? "Kehadiran Anda & siswa kelas Anda" : "Kehadiran Anda"}</Text>
               </View>
               <ChevronRight size={16} color={colors.mutedForeground} />
             </View>

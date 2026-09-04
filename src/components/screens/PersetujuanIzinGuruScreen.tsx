@@ -68,7 +68,7 @@ export function PersetujuanIzinGuruScreen() {
           <ClipboardCheck size={18} color={colors.primary} />
           <Text className="text-sm font-semibold text-foreground">Persetujuan Izin/Sakit Guru</Text>
         </View>
-        <Text className="text-xs text-muted-foreground mt-1">Berlaku untuk Guru Kelas & Guru Bidang. Pegawai non-guru tidak melalui persetujuan ini.</Text>
+        <Text className="text-xs text-muted-foreground mt-1">Berlaku untuk semua guru (wali kelas maupun bukan). Pegawai non-guru tidak melalui persetujuan ini.</Text>
       </View>
 
       <FlatList

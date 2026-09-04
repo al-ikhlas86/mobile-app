@@ -12,9 +12,8 @@ const ROLES: { name: string; desc: string; auto?: string }[] = [
   { name: "Admin Media (SD)", desc: "Kelola Berita Acara & media unit SD." },
   { name: "Admin Media (TK & Playground)", desc: "Kelola Berita Acara & media unit TK/Playground." },
   { name: "Keuangan", desc: "Akses data pembayaran & tagihan." },
-  { name: "Guru", desc: "Akses presensi & data mengajar sendiri.", auto: "Otomatis dari jabatan pegawai (guru_bidang) di Hub API" },
-  { name: "Guru Kelas", desc: "Sama seperti Guru, plus akses data wali kelas.", auto: "Otomatis dari jabatan pegawai (guru_kelas) di Hub API" },
-  { name: "Kepala Sekolah", desc: "BUKAN role tersendiri - tambahan di atas role apa pun (Guru/Guru Kelas/Pegawai): menyetujui/menolak izin guru unitnya, pantau rekap presensi unitnya. Role dasar TIDAK berubah.", auto: "Otomatis dari penanda di Data Master (tabel kepala_sekolah, pola sama Wali Kelas) - TIDAK bisa di-assign manual lewat Manajemen Pengguna" },
+  { name: "Guru", desc: "Akses presensi & data mengajar sendiri. Guru yang berstatus wali kelas otomatis mendapat menu tambahan (data siswa kelasnya, persetujuan izin, dst).", auto: "Otomatis dari jabatan pegawai (guru_kelas/guru_bidang) di Hub API - status wali kelas sendiri BUKAN role terpisah, tambahan otomatis dari penetapan Wali Kelas di Data Master" },
+  { name: "Kepala Sekolah", desc: "BUKAN role tersendiri - tambahan di atas role apa pun (Guru/Pegawai): menyetujui/menolak izin guru unitnya, pantau rekap presensi unitnya. Role dasar TIDAK berubah.", auto: "Otomatis dari penanda di Data Master (tabel kepala_sekolah, pola sama Wali Kelas) - TIDAK bisa di-assign manual lewat Manajemen Pengguna" },
   { name: "Pegawai", desc: "Akses presensi pribadi.", auto: "Otomatis dari jabatan pegawai (karyawan) di Hub API" },
   { name: "Orang Tua", desc: "Akses data & presensi anak.", auto: "Otomatis dari data siswa - tidak bisa dipromosikan manual" },
 ];

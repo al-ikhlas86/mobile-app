@@ -27,7 +27,8 @@ function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen
   // admin-wide (Siswa/Guru/Pegawai) utk kepsek apa pun role dasarnya.
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
   if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
-  return <PresensiScreen role={role} onNavigate={onNavigate} />;
+  const isWaliKelas = getActiveSession()?.isWaliKelas === true;
+  return <PresensiScreen role={role} isWaliKelas={isWaliKelas} onNavigate={onNavigate} />;
 }
 
 const Tab = createBottomTabNavigator();
