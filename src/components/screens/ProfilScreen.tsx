@@ -22,7 +22,9 @@ interface Props {
   onOpenDemoSwitcher: () => void;
 }
 
-const STAFF_ROLES: RoleName[] = ["Guru", "Guru Kelas", "Pegawai"];
+// "Guru Kelas" DIHAPUS dari daftar ini (2026-09-04, Fase 3) - bukan nilai
+// RoleName terpisah lagi, sudah tercakup oleh "Guru".
+const STAFF_ROLES: RoleName[] = ["Guru", "Pegawai"];
 
 export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();

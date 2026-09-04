@@ -28,6 +28,7 @@ async function refreshSessionFromServer() {
     avatarUrl: res.user.avatar_url ?? null,
     isKepalaSekolah: Number(res.user.is_kepala_sekolah) === 1,
     capabilities: res.user.capabilities ?? [],
+    isWaliKelas: Number(res.user.is_wali_kelas) === 1,
   });
 }
 

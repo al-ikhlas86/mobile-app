@@ -160,7 +160,7 @@ export function PresensiAnak() {
         <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
           <Card padding="lg">
             <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit untuk {child.nama}</Text>
-            <Text className="text-xs text-muted-foreground mb-4">Pengajuan akan berstatus Menunggu Persetujuan sampai disetujui Guru Kelas. Jika ditolak, hari itu dianggap Alfa.</Text>
+            <Text className="text-xs text-muted-foreground mb-4">Pengajuan akan berstatus Menunggu Persetujuan sampai disetujui wali kelas. Jika ditolak, hari itu dianggap Alfa.</Text>
             <View className="gap-3">
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Tanggal</Text>

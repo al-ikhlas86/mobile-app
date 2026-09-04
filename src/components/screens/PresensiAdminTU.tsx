@@ -19,10 +19,12 @@ const TAB_TO_ENTITY: Record<TabType, "siswa" | "guru" | "karyawan"> = { Siswa: "
 const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
 
 // isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
-// "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah.
-function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean): TabType[] {
+// "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah. isWaliKelas (2026-09-04,
+// Fase 3) - Guru Kelas JUGA FLAG sekarang, sama pola - dulu `role === "Guru
+// Kelas"`.
+function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean): TabType[] {
   if (!role || isKepalaSekolah || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
-  if (role === "Guru Kelas") return ["Siswa", "Guru"];
+  if (role === "Guru" && isWaliKelas) return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
@@ -43,7 +45,8 @@ interface Props { role?: RoleName; onNavigate?: (screen: string, params?: Record
 export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const colors = useThemeColors();
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
-  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah), [role, isKepalaSekolah]);
+  const isWaliKelas = getActiveSession()?.isWaliKelas === true;
+  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas), [role, isKepalaSekolah, isWaliKelas]);
   const unrestricted = isUnrestricted(role, isKepalaSekolah);
   const [tab, setTab] = useState<TabType>(tabs[0]);
   const [search, setSearch] = useState("");

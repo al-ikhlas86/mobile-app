@@ -26,6 +26,7 @@ export interface DemoAccountShape {
   token: string;
   isKepalaSekolah?: boolean;
   capabilities?: string[];
+  isWaliKelas?: boolean;
 }
 
 export interface DemoRoleOption {
@@ -91,11 +92,12 @@ const DEMO_ROLE_MAP: Record<string, string> = {
   admin_tu_tk: "Admin TU (TK & Playground)",
   admin_media_tk: "Admin Media (TK & Playground)",
   // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, lihat
-  // authService.ts RoleName.
+  // authService.ts RoleName. guru_kelas JUGA DIHAPUS (Fase 3, 2026-09-04) -
+  // sama alasannya, sekarang FLAG (DemoAccountShape.isWaliKelas di atas)
+  // di atas role dasar 'guru'.
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",
-  guru_kelas: "Guru Kelas",
   pegawai: "Pegawai",
 };
 
@@ -134,6 +136,7 @@ export async function startDemoSession(
       token: body.token,
       isKepalaSekolah: Number(body.user.is_kepala_sekolah) === 1,
       capabilities: Array.isArray(body.user.capabilities) ? body.user.capabilities : [],
+      isWaliKelas: Number(body.user.is_wali_kelas) === 1,
     };
     const session: StoredDemoSession = {
       account,

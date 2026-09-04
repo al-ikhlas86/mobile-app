@@ -47,10 +47,11 @@ export const ROLE_MAP: Record<string, RoleName> = {
   admin_media_tk: "Admin Media (TK & Playground)",
   // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, Kepala
   // Sekolah sekarang FLAG (isKepalaSekolah) - lihat authService.ts.
+  // guru_kelas JUGA DIHAPUS (Fase 3, 2026-09-04) - sama alasannya, sekarang
+  // FLAG (isWaliKelas) di atas role dasar 'guru'.
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",
-  guru_kelas: "Guru Kelas",
   pegawai: "Pegawai",
 };
 
@@ -66,6 +67,7 @@ interface ServerUser {
   avatar_filename?: string | null;
   is_kepala_sekolah?: boolean | number;
   capabilities?: string[];
+  is_wali_kelas?: boolean | number;
 }
 
 function toSavedAccount(user: ServerUser, token: string): SavedAccount {
@@ -80,6 +82,7 @@ function toSavedAccount(user: ServerUser, token: string): SavedAccount {
     token,
     isKepalaSekolah: Number(user.is_kepala_sekolah) === 1,
     capabilities: user.capabilities ?? [],
+    isWaliKelas: Number(user.is_wali_kelas) === 1,
   };
 }
 
