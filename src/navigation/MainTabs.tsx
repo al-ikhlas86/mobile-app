@@ -57,6 +57,7 @@ interface Props {
   onLogout: () => void;
   onAvatarChanged: (url: string | null) => void;
   onOpenSwitcher: () => void;
+  onOpenTahunAjaranSwitcher: () => void;
   onNavigateStack: (screen: string, params?: Record<string, unknown>) => void;
   canUseDemoMode: boolean;
   demoActive: boolean;
@@ -69,7 +70,7 @@ interface Props {
 // Presensi/Notifikasi/Profil kelihatan "kurang turun" (konten mepet ke
 // status bar tanpa judul layar spt versi web). Beranda TETAP headerShown:
 // false krn py header custom sendiri di dalam DashboardLayout (hero+ikon).
-export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNavigateStack, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
+export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOpenTahunAjaranSwitcher, onNavigateStack, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
   // Badge angka notifikasi (2026-08-31, spt WA/Line) - lihat catatan
@@ -152,6 +153,7 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onNa
             onNavigate={onNavigateStack}
             onAvatarChanged={onAvatarChanged}
             onOpenSwitcher={onOpenSwitcher}
+            onOpenTahunAjaranSwitcher={onOpenTahunAjaranSwitcher}
             canUseDemoMode={canUseDemoMode}
             demoActive={demoActive}
             onOpenDemoSwitcher={onOpenDemoSwitcher}
