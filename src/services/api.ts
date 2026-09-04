@@ -8,8 +8,11 @@ import { DeviceEventEmitter } from "react-native";
 import Constants from "expo-constants";
 import {
   saveSession, addLinkedAccount, getActiveToken, logout,
+  refreshActiveSessionCapabilities, getRealActiveSession,
   type RoleName, type SavedAccount,
 } from "./authService";
+import { isDemoActive } from "./demoService";
+import { getViewingYear } from "./viewingYearService";
 
 export const API_URL: string =
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ||
@@ -163,9 +166,20 @@ export async function verifyOtp(
 
 async function authedFetch(path: string, options: RequestInit = {}) {
   const token = getActiveToken();
+  // X-Viewing-Tahun-Ajaran (2026-09-04, Fase 4) - dipasang di SETIAP request
+  // HANYA kalau popup "Ganti Tahun Ajaran" sedang aktif memilih tahun BUKAN
+  // aktif (getViewingYear() null = default, backend otomatis pakai tahun
+  // aktif spt sebelum Fase 4 ada - lihat middleware/auth.js). Sama persis
+  // pola webview api.ts.
+  const viewingYear = getViewingYear();
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: { ...(options.headers || {}), Authorization: token ? `Bearer ${token}` : "", "Content-Type": "application/json" },
+    headers: {
+      ...(options.headers || {}),
+      Authorization: token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json",
+      ...(viewingYear ? { "X-Viewing-Tahun-Ajaran": String(viewingYear.id) } : {}),
+    },
   });
   if (res.status === 401 && token && getActiveToken() === token) {
     await logout();
@@ -193,8 +207,31 @@ export function fileFromUri(uri: string, name: string, mimeType: string) {
   return { uri, name, type: mimeType } as unknown as Blob;
 }
 
+// Refresh sesi dari server (2026-09-04) - PINDAH dari App.tsx (root) ke sini
+// supaya bisa dipanggil ULANG dari RootNavigator.tsx juga (popup "Ganti
+// Tahun Ajaran" perlu memicu refresh SEGERA setelah pilih tahun, bukan
+// nunggu siklus foreground berikutnya) tanpa impor melingkar App.tsx<->
+// RootNavigator.tsx. Lihat catatan panjang aslinya (bug capability tidak
+// pernah muncul) di authService.ts::refreshActiveSessionCapabilities.
+export async function refreshSessionFromServer() {
+  if (isDemoActive()) return;
+  if (!getRealActiveSession()) return;
+  const res = await authedFetch("/api/auth/me");
+  if (!res.success) return;
+  await refreshActiveSessionCapabilities({
+    role: (ROLE_MAP[res.user.role] ?? res.user.role) as RoleName,
+    fullName: res.user.full_name,
+    avatarInitials: initials(res.user.full_name),
+    avatarUrl: res.user.avatar_url ?? null,
+    isKepalaSekolah: Number(res.user.is_kepala_sekolah) === 1,
+    capabilities: res.user.capabilities ?? [],
+    isWaliKelas: Number(res.user.is_wali_kelas) === 1,
+  });
+}
+
 export const api = {
   me: () => authedFetch("/api/auth/me"),
+  tahunAjaranPilihan: () => authedFetch("/api/tahun-ajaran/pilihan"),
   uploadAvatar: (uri: string, mimeType: string) => {
     const form = new FormData();
     form.append("file", fileFromUri(uri, "avatar.jpg", mimeType));

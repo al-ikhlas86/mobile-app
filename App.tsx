@@ -6,31 +6,20 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import { loadAuthState, getRealActiveSession, refreshActiveSessionCapabilities, type RoleName } from "./src/services/authService";
-import { loadDemoState, isDemoActive } from "./src/services/demoService";
-import { api, ROLE_MAP } from "./src/services/api";
+import { loadAuthState } from "./src/services/authService";
+import { loadDemoState } from "./src/services/demoService";
+import { refreshSessionFromServer } from "./src/services/api";
+import { resetViewingYear } from "./src/services/viewingYearService";
 
 // BUG NYATA ditemukan 2026-09-04 (laporan user, dites nyata: tempel
 // capability Admin Media SD ke akun sungguhan, menu barunya TIDAK PERNAH
 // muncul di HP) - lihat catatan lengkap di webview App.tsx/authService.ts.
 // Native: dipanggil begitu app siap DAN tiap kali app kembali ke foreground
 // (AppState 'active' - skenario paling umum: HP di-lock/pindah app lalu
-// dibuka lagi), bukan cuma sekali saat start.
-async function refreshSessionFromServer() {
-  if (isDemoActive()) return;
-  if (!getRealActiveSession()) return;
-  const res = await api.me();
-  if (!res.success) return;
-  await refreshActiveSessionCapabilities({
-    role: (ROLE_MAP[res.user.role] ?? res.user.role) as RoleName,
-    fullName: res.user.full_name,
-    avatarInitials: String(res.user.full_name).split(" ").filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join(""),
-    avatarUrl: res.user.avatar_url ?? null,
-    isKepalaSekolah: Number(res.user.is_kepala_sekolah) === 1,
-    capabilities: res.user.capabilities ?? [],
-    isWaliKelas: Number(res.user.is_wali_kelas) === 1,
-  });
-}
+// dibuka lagi), bukan cuma sekali saat start. Fungsinya sendiri SEKARANG
+// tinggal di services/api.ts (2026-09-04, Fase 4) - dipanggil juga dari
+// RootNavigator.tsx (popup "Ganti Tahun Ajaran"), pindah kesana biar tidak
+// perlu impor melingkar App.tsx<->RootNavigator.tsx.
 
 function Splash() {
   return (
@@ -63,6 +52,10 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // resetViewingYear() (2026-09-04, Fase 4) - "reset ke tahun aktif tiap
+    // login" (diminta eksplisit user) - app-start adalah salah satu titiknya
+    // (2 lainnya: handleLogin/handleSwitchAccount di RootNavigator.tsx).
+    resetViewingYear();
     Promise.all([loadAuthState(), loadDemoState()]).finally(() => {
       setReady(true);
       refreshSessionFromServer();

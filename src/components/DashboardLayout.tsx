@@ -1,11 +1,12 @@
 import React from "react";
 import { View, Text, Image, ScrollView, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CalendarDays, Bell, Sun, Moon } from "lucide-react-native";
+import { CalendarDays, CalendarClock, Bell, Sun, Moon } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { useAccountSwitcher } from "../context/AccountSwitcherContext";
 import { getActiveSession } from "../services/authService";
 import { resolveAvatarUrl } from "../services/api";
+import { getViewingYear, useViewingYearTick } from "../services/viewingYearService";
 
 interface DashboardLayoutProps {
   name: string;
@@ -27,6 +28,12 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children }: 
   const { open: openSwitcher } = useAccountSwitcher();
   const session = getActiveSession();
   const avatarUrl = resolveAvatarUrl(session?.avatarUrl ?? null);
+  // Badge "sedang melihat tahun X" (2026-09-04, Fase 4) - murni indikator,
+  // TIDAK py aksi cepat sendiri (dipakai lintas banyak dashboard, lihat
+  // catatan lengkap di versi webview DashboardLayout.tsx soal kenapa baca
+  // langsung dari viewingYearService bukan prop).
+  useViewingYearTick();
+  const viewingYear = getViewingYear();
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 }}>
@@ -65,6 +72,14 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children }: 
         </View>
       </View>
       <View className="-mt-4 bg-background rounded-t-3xl px-4 pt-5" style={{ gap: 20 }}>
+        {viewingYear && (
+          <View className="flex-row items-center gap-2 rounded-xl bg-amber-50 border border-amber-300 px-3 py-2.5">
+            <CalendarClock size={14} color="#B45309" />
+            <Text className="flex-1 text-xs text-amber-700">
+              Sedang melihat tahun ajaran <Text className="font-bold">{viewingYear.nama}</Text> - buka Profil untuk kembali ke tahun aktif.
+            </Text>
+          </View>
+        )}
         {children}
       </View>
     </ScrollView>

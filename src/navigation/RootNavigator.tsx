@@ -45,6 +45,9 @@ import { AccountSwitcherProvider } from "../context/AccountSwitcherContext";
 import { AccountSwitcher } from "../components/AccountSwitcher";
 import { DemoModeSwitcher } from "../components/DemoModeSwitcher";
 import { DemoModeBanner } from "../components/DemoModeBanner";
+import { GantiTahunAjaranSwitcher } from "../components/GantiTahunAjaranSwitcher";
+import { getViewingYear, setViewingYear, resetViewingYear, useViewingYearTick, type TahunAjaranOption } from "../services/viewingYearService";
+import { api, refreshSessionFromServer } from "../services/api";
 import { initPushNotifications } from "../services/pushNotifications";
 import { resolveNavScreen } from "../utils/navAlias";
 
@@ -87,6 +90,41 @@ export function RootNavigator() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const canUseDemoMode = getRealActiveSession()?.role === "Admin IT" || demoActive;
+
+  // ---- Ganti Tahun Ajaran (2026-09-04, Fase 4) - lihat catatan lengkap di
+  // versi webview App.tsx soal desain (header X-Viewing-Tahun-Ajaran,
+  // refresh sesi otomatis setelah pilih tahun). useViewingYearTick() bikin
+  // komponen ini re-render begitu viewingYearService berubah dari mana pun
+  // (pola sama useSessionRefreshTick di authService.ts).
+  useViewingYearTick();
+  const viewingYear = getViewingYear();
+  const [showTahunAjaranSwitcher, setShowTahunAjaranSwitcher] = useState(false);
+  const [tahunAjaranOptions, setTahunAjaranOptions] = useState<TahunAjaranOption[]>([]);
+  const [tahunAjaranLoading, setTahunAjaranLoading] = useState(false);
+  const [tahunAjaranError, setTahunAjaranError] = useState<string | null>(null);
+
+  const handleLoadTahunAjaranPilihan = async () => {
+    if (tahunAjaranOptions.length > 0) return;
+    const res = await api.tahunAjaranPilihan();
+    if (res.success) setTahunAjaranOptions(res.data);
+  };
+
+  // Setelah pilih tahun: setViewingYear() menulis state in-memory (dibaca
+  // authedFetch/api.ts, akan ikut terpasang di header X-Viewing-Tahun-Ajaran
+  // pada request BERIKUTNYA), lalu refreshSessionFromServer() SEGERA
+  // dipanggil ulang (bukan tunggu siklus foreground berikutnya) - GET
+  // /api/auth/me sekarang membawa header itu, hasilnya disimpan lewat
+  // refreshActiveSessionCapabilities() yang SUDAH ADA, memicu re-render
+  // GuruDashboard dkk via useSessionRefreshTick TANPA perubahan apa pun di
+  // dashboard itu sendiri.
+  const handlePickTahunAjaran = async (year: TahunAjaranOption | null) => {
+    setTahunAjaranLoading(true);
+    setTahunAjaranError(null);
+    setViewingYear(year);
+    await refreshSessionFromServer();
+    setTahunAjaranLoading(false);
+    setShowTahunAjaranSwitcher(false);
+  };
 
   const handleLoadDemoRoles = async () => {
     if (demoRoles.length > 0) return;
@@ -137,6 +175,10 @@ export function RootNavigator() {
         setShowAddAccount(false);
         return true;
       }
+      if (showTahunAjaranSwitcher) {
+        setShowTahunAjaranSwitcher(false);
+        return true;
+      }
       if (showSwitcher) {
         setShowSwitcher(false);
         return true;
@@ -148,7 +190,7 @@ export function RootNavigator() {
       return false;
     });
     return () => sub.remove();
-  }, [showSwitcher, showAddAccount]);
+  }, [showSwitcher, showAddAccount, showTahunAjaranSwitcher]);
 
   const applySession = (s: ActiveSession) => {
     setSession(s);
@@ -156,6 +198,7 @@ export function RootNavigator() {
   };
 
   const handleSwitchAccount = async (accountId: string) => {
+    resetViewingYear(); // Fase 4 - "reset ke tahun aktif tiap login" berlaku juga tiap ganti akun.
     const s = await switchAccount(accountId);
     if (s) applySession(s);
     setShowSwitcher(false);
@@ -172,12 +215,14 @@ export function RootNavigator() {
   };
 
   const handleAddAccountLogin = (_role: RoleName, _fullName: string, _avatarInitials: string, _accountId: string) => {
+    resetViewingYear(); // Fase 4 - akun baru ditambahkan = mulai dari tahun aktif.
     const s = getActiveSession();
     if (s) applySession(s);
     setShowAddAccount(false);
   };
 
   const handleLogin = (role: RoleName, fullName: string, avatarInitials: string, accountId: string) => {
+    resetViewingYear(); // Fase 4 - "reset ke tahun aktif tiap login".
     const s = getActiveSession();
     if (s) applySession(s);
   };
@@ -196,6 +241,7 @@ export function RootNavigator() {
 
   const handleLogout = async () => {
     if (!session) return;
+    resetViewingYear(); // Fase 4 - akun baru (walau otomatis gaya Instagram) = mulai dari tahun aktif.
     await removeAccount(session.accountId);
     const remaining = getSavedAccounts();
     setSavedAccounts(remaining);
@@ -290,6 +336,7 @@ export function RootNavigator() {
                   onLogout={handleLogout}
                   onAvatarChanged={handleAvatarChanged}
                   onOpenSwitcher={() => setShowSwitcher(true)}
+                  onOpenTahunAjaranSwitcher={() => { handleLoadTahunAjaranPilihan(); setShowTahunAjaranSwitcher(true); }}
                   onNavigateStack={(screen, params) => navigateTo(navigation, screen, params)}
                   canUseDemoMode={canUseDemoMode}
                   demoActive={demoActive}
@@ -408,6 +455,17 @@ export function RootNavigator() {
         onPick={handlePickDemoRole}
         onExitDemo={handleExitDemo}
         onClose={() => setShowDemoSwitcher(false)}
+      />
+    )}
+    {session && (
+      <GantiTahunAjaranSwitcher
+        visible={showTahunAjaranSwitcher}
+        options={tahunAjaranOptions}
+        viewingYear={viewingYear}
+        loading={tahunAjaranLoading}
+        errorMessage={tahunAjaranError}
+        onPick={handlePickTahunAjaran}
+        onClose={() => setShowTahunAjaranSwitcher(false)}
       />
     )}
     {/* SENGAJA BUKAN <Modal> lagi - lihat catatan panjang di

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check } from "lucide-react-native";
+import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check, CalendarClock } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -17,6 +17,7 @@ interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
   onAvatarChanged: (url: string | null) => void;
   onOpenSwitcher: () => void;
+  onOpenTahunAjaranSwitcher: () => void;
   canUseDemoMode: boolean;
   demoActive: boolean;
   onOpenDemoSwitcher: () => void;
@@ -26,7 +27,7 @@ interface Props {
 // RoleName terpisah lagi, sudah tercakup oleh "Guru".
 const STAFF_ROLES: RoleName[] = ["Guru", "Pegawai"];
 
-export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
+export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, onOpenTahunAjaranSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const colors = useThemeColors();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -239,6 +240,13 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Pressable onPress={onOpenSwitcher} className="flex-row items-center gap-3 py-1">
           <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center"><Users size={16} color="#D0AF68" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ganti Akun</Text>
+          <ChevronRight size={16} color={colors.mutedForeground} />
+        </Pressable>
+        {/* Ganti Tahun Ajaran (2026-09-04, Fase 4) - lihat catatan lengkap di
+            versi webview soal desain popup + refresh sesi otomatis. */}
+        <Pressable onPress={onOpenTahunAjaranSwitcher} className="flex-row items-center gap-3 py-1 mt-2">
+          <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center"><CalendarClock size={16} color="#D0AF68" /></View>
+          <Text className="text-sm font-medium text-foreground flex-1">Ganti Tahun Ajaran</Text>
           <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
         {canUseDemoMode && (
