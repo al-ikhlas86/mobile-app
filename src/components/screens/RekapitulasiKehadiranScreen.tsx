@@ -5,7 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api, API_URL } from "../../services/api";
-import type { RoleName } from "../../services/authService";
+import { getActiveSession, type RoleName } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ClassOption { tingkat: string; kelas: string; label: string; }
@@ -21,11 +21,13 @@ const STATUS_TEXT: Record<string, string> = {
 const CELL_W = 28;
 const NAME_W = 130;
 
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Kepala Sekolah (SD)", "Kepala Sekolah (TK & Playground)", "Keuangan"];
+const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
 
+// isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
+// "Kepala Sekolah (SD/TK)" terpisah.
 export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const colors = useThemeColors();
-  const isAdmin = !role || UNRESTRICTED_ROLES.includes(role);
+  const isAdmin = !role || getActiveSession()?.isKepalaSekolah === true || UNRESTRICTED_ROLES.includes(role);
   const [scope, setScope] = useState<"kelas" | "pegawai">("kelas");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");

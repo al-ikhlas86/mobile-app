@@ -11,11 +11,10 @@ const ROLES: { name: string; desc: string; auto?: string }[] = [
   { name: "Admin TU (TK & Playground)", desc: "Kelola administrasi & presensi unit TK/Playground." },
   { name: "Admin Media (SD)", desc: "Kelola Berita Acara & media unit SD." },
   { name: "Admin Media (TK & Playground)", desc: "Kelola Berita Acara & media unit TK/Playground." },
-  { name: "Kepala Sekolah (SD)", desc: "Menyetujui/menolak izin guru unit SD, pantau rekap presensi." },
-  { name: "Kepala Sekolah (TK & Playground)", desc: "Menyetujui/menolak izin guru unit TK/Playground, pantau rekap presensi." },
   { name: "Keuangan", desc: "Akses data pembayaran & tagihan." },
   { name: "Guru", desc: "Akses presensi & data mengajar sendiri.", auto: "Otomatis dari jabatan pegawai (guru_bidang) di Hub API" },
   { name: "Guru Kelas", desc: "Sama seperti Guru, plus akses data wali kelas.", auto: "Otomatis dari jabatan pegawai (guru_kelas) di Hub API" },
+  { name: "Kepala Sekolah", desc: "BUKAN role tersendiri - tambahan di atas role apa pun (Guru/Guru Kelas/Pegawai): menyetujui/menolak izin guru unitnya, pantau rekap presensi unitnya. Role dasar TIDAK berubah.", auto: "Otomatis dari penanda di Data Master (tabel kepala_sekolah, pola sama Wali Kelas) - TIDAK bisa di-assign manual lewat Manajemen Pengguna" },
   { name: "Pegawai", desc: "Akses presensi pribadi.", auto: "Otomatis dari jabatan pegawai (karyawan) di Hub API" },
   { name: "Orang Tua", desc: "Akses data & presensi anak.", auto: "Otomatis dari data siswa - tidak bisa dipromosikan manual" },
 ];

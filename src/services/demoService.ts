@@ -24,6 +24,7 @@ export interface DemoAccountShape {
   avatarInitials: string;
   avatarUrl: string | null;
   token: string;
+  isKepalaSekolah?: boolean;
 }
 
 export interface DemoRoleOption {
@@ -88,8 +89,8 @@ const DEMO_ROLE_MAP: Record<string, string> = {
   admin_media_sd: "Admin Media (SD)",
   admin_tu_tk: "Admin TU (TK & Playground)",
   admin_media_tk: "Admin Media (TK & Playground)",
-  kepala_sekolah_sd: "Kepala Sekolah (SD)",
-  kepala_sekolah_tk: "Kepala Sekolah (TK & Playground)",
+  // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, lihat
+  // authService.ts RoleName.
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",
@@ -130,6 +131,7 @@ export async function startDemoSession(
       avatarInitials: demoInitials(body.user.full_name),
       avatarUrl: null,
       token: body.token,
+      isKepalaSekolah: Number(body.user.is_kepala_sekolah) === 1,
     };
     const session: StoredDemoSession = {
       account,

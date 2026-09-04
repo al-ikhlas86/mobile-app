@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -30,6 +30,9 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const isFocused = useIsFocused();
   useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const session = getActiveSession();
+  // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar, BUKAN dashboard
+  // terpisah lagi. Lihat catatan lengkap di webview GuruDashboard.tsx.
+  const isKepalaSekolah = session?.isKepalaSekolah === true;
   const news = useNewsList();
 
   // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
@@ -68,6 +71,14 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
+      ...(isKepalaSekolah ? [
+        { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
+        ...(!isGuruKelas ? [
+          { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
+          { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+          { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
+        ] : []),
+      ] : []),
     ] },
     { title: "Mengajar", items: [
       { label: "Kalender Akademik", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
@@ -87,7 +98,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
-    <DashboardLayout name={session?.fullName ?? (isGuruKelas ? "Guru Kelas" : "Guru")} roleLabel={isGuruKelas ? "Ruang Guru Kelas" : "Ruang Guru"} date={todayLabel}>
+    <DashboardLayout name={session?.fullName ?? (isGuruKelas ? "Guru Kelas" : "Guru")} roleLabel={`${isGuruKelas ? "Ruang Guru Kelas" : "Ruang Guru"}${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel}>
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Hari Ini</Text>
         {loading ? (
