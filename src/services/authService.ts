@@ -6,7 +6,24 @@
 // data ini bukan rahasia super-sensitif, cuma token sesi yang expire).
 // ============================================================
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 import { getActiveDemoAccount, exitDemoMode as clearDemoSession } from "./demoService";
+
+// Pub-sub sesi (2026-09-04) - lihat catatan lengkap di webview authService.ts.
+type Listener = () => void;
+const sessionListeners = new Set<Listener>();
+function notifySessionListeners(): void {
+  sessionListeners.forEach((fn) => fn());
+}
+export function useSessionRefreshTick(): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const listener = () => setTick((t) => t + 1);
+    sessionListeners.add(listener);
+    return () => { sessionListeners.delete(listener); };
+  }, []);
+  return tick;
+}
 
 export type RoleName =
   | "Admin IT"
@@ -172,6 +189,38 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
   await AsyncStorage.setItem(KEYS.activeAccountId, account.id);
   return session;
+}
+
+// BUG NYATA ditemukan 2026-09-04 - lihat catatan lengkap di webview
+// authService.ts. Versi native: cachedSession/cachedAccounts di memori
+// JUGA ditulis ulang (bukan cuma AsyncStorage) - state di memori itu yang
+// dibaca getActiveSession()/getRealActiveSession() sinkron, kalau cuma
+// AsyncStorage yang diupdate tapi cache memori tidak, perubahan tidak
+// pernah kelihatan sampai app di-restart total (loadAuthState() cuma
+// jalan sekali per app start).
+export async function refreshActiveSessionCapabilities(fresh: {
+  role: RoleName;
+  fullName: string;
+  avatarInitials: string;
+  avatarUrl: string | null;
+  isKepalaSekolah?: boolean;
+  capabilities?: string[];
+}): Promise<ActiveSession | null> {
+  assertLoaded();
+  if (!cachedSession) return null;
+
+  const merged: ActiveSession = { ...cachedSession, ...fresh };
+  cachedSession = merged;
+  await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(merged));
+
+  const idx = cachedAccounts.findIndex((a) => a.id === merged.accountId);
+  if (idx >= 0) {
+    cachedAccounts[idx] = { ...cachedAccounts[idx], ...fresh };
+    await persistAccounts();
+  }
+
+  notifySessionListeners();
+  return merged;
 }
 
 // Versi "asli" (bukan demo-aware) - lihat catatan lengkap di authService.ts
