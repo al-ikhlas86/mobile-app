@@ -43,12 +43,21 @@ export function KapasitasTambahanScreen() {
   }, [capability]);
 
   const handleSearch = async () => {
-    if (query.trim().length < 2) { setResults([]); return; }
+    if (query.trim().length < 1) { setResults([]); return; }
     setSearching(true);
     const res = await api.adminCariPegawai(query.trim());
     setSearching(false);
     if (res.success) setResults(res.data); else setError(res.message ?? "Gagal mencari.");
   };
+
+  // Cari LANGSUNG begitu mengetik (2026-09-04) - lihat catatan lengkap di
+  // webview KapasitasTambahanScreen.tsx.
+  useEffect(() => {
+    if (query.trim().length < 1) { setResults([]); return; }
+    const timer = setTimeout(handleSearch, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   const addToCapability = async (person: Holder) => {
     setBusyId(person.id);
@@ -100,7 +109,7 @@ export function KapasitasTambahanScreen() {
             />
             <Button onPress={handleSearch} loading={searching}>Cari</Button>
           </View>
-          {results.length === 0 && query.trim().length >= 2 && !searching ? (
+          {results.length === 0 && query.trim().length >= 1 && !searching ? (
             <Text className="text-xs text-muted-foreground">Tidak ada hasil.</Text>
           ) : null}
           <View className="gap-2">

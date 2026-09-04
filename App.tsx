@@ -1,13 +1,35 @@
 import "./src/styles/global.css";
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, StatusBar } from "react-native";
+import { View, ActivityIndicator, StatusBar, AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import { loadAuthState } from "./src/services/authService";
-import { loadDemoState } from "./src/services/demoService";
+import { loadAuthState, getRealActiveSession, refreshActiveSessionCapabilities, type RoleName } from "./src/services/authService";
+import { loadDemoState, isDemoActive } from "./src/services/demoService";
+import { api, ROLE_MAP } from "./src/services/api";
+
+// BUG NYATA ditemukan 2026-09-04 (laporan user, dites nyata: tempel
+// capability Admin Media SD ke akun sungguhan, menu barunya TIDAK PERNAH
+// muncul di HP) - lihat catatan lengkap di webview App.tsx/authService.ts.
+// Native: dipanggil begitu app siap DAN tiap kali app kembali ke foreground
+// (AppState 'active' - skenario paling umum: HP di-lock/pindah app lalu
+// dibuka lagi), bukan cuma sekali saat start.
+async function refreshSessionFromServer() {
+  if (isDemoActive()) return;
+  if (!getRealActiveSession()) return;
+  const res = await api.me();
+  if (!res.success) return;
+  await refreshActiveSessionCapabilities({
+    role: (ROLE_MAP[res.user.role] ?? res.user.role) as RoleName,
+    fullName: res.user.full_name,
+    avatarInitials: String(res.user.full_name).split(" ").filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join(""),
+    avatarUrl: res.user.avatar_url ?? null,
+    isKepalaSekolah: Number(res.user.is_kepala_sekolah) === 1,
+    capabilities: res.user.capabilities ?? [],
+  });
+}
 
 function Splash() {
   return (
@@ -40,7 +62,22 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadAuthState(), loadDemoState()]).finally(() => setReady(true));
+    Promise.all([loadAuthState(), loadDemoState()]).finally(() => {
+      setReady(true);
+      refreshSessionFromServer();
+    });
+  }, []);
+
+  // Refresh sesi tiap app kembali ke foreground (2026-09-04) - lihat
+  // catatan panjang di atas. 'active' = app kembali kelihatan/dipakai
+  // (dari background ATAU dari terkunci) - skenario paling umum di HP:
+  // TU/Admin IT kasih capability baru, guru yg appnya SUDAH terbuka
+  // minimize sebentar lalu buka lagi.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshSessionFromServer();
+    });
+    return () => sub.remove();
   }, []);
 
   return (

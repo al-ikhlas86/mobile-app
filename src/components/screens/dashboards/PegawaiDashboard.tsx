@@ -8,7 +8,7 @@ import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
-import { getActiveSession } from "../../../services/authService";
+import { getActiveSession, useSessionRefreshTick } from "../../../services/authService";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -27,6 +27,9 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   // Menu" butuh 2x klik & lompat ke Beranda (bukan balik ke Semua Menu).
   const isFocused = useIsFocused();
   useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
+  // useSessionRefreshTick() (2026-09-04) - lihat catatan lengkap di
+  // webview GuruDashboard.tsx.
+  useSessionRefreshTick();
   const session = getActiveSession();
   // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar, BUKAN dashboard
   // terpisah lagi. Lihat catatan lengkap di webview PegawaiDashboard.tsx.
