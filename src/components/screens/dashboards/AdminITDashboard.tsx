@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin } from "lucide-react-native";
+import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2 } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -47,6 +47,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
   const menuCategories: MenuCategory[] = [
     { title: "Administrasi Pengguna", items: [
       { label: "Manajemen Pengguna", icon: <Users size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("manajemen-pengguna") },
+      { label: "Kapasitas Tambahan", icon: <Users2 size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kapasitas-tambahan") },
       { label: "Role & Hak Akses", icon: <Shield size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("role-hak-akses") },
       { label: "Koneksi Bot WhatsApp", icon: <MessageCircle size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("koneksi-wa-bot") },
       { label: "Buat Pengumuman", icon: <Megaphone size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("buat-pengumuman") },

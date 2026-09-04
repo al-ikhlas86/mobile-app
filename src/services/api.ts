@@ -374,6 +374,7 @@ export const api = {
   adminCariPegawai: (q: string) => authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}`),
   adminUpdateCapabilities: (id: number, capabilities: string[]) =>
     authedFetch(`/api/admin/users/${id}/capabilities`, { method: "PATCH", body: JSON.stringify({ capabilities }) }),
+  adminCapabilityHolders: (capability: string) => authedFetch(`/api/admin/capabilities/${capability}/holders`),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
   adminLinkAccountReview: (id: number) => authedFetch(`/api/admin/account-link-reviews/${id}/link`, { method: "POST" }),
   adminRejectAccountReview: (id: number, note?: string) =>

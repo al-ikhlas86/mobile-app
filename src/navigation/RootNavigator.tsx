@@ -19,6 +19,7 @@ import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiK
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
 import { ManajemenPenggunaScreen } from "../components/screens/ManajemenPenggunaScreen";
+import { KapasitasTambahanScreen } from "../components/screens/KapasitasTambahanScreen";
 import { RoleHakAksesScreen } from "../components/screens/RoleHakAksesScreen";
 import { BuatPengumumanScreen } from "../components/screens/BuatPengumumanScreen";
 import { BackupDatabaseScreen } from "../components/screens/BackupDatabaseScreen";
@@ -336,7 +337,10 @@ export function RootNavigator() {
             <Stack.Screen name="performa-cari" options={{ headerShown: true, title: "Performa Individu" }} component={PerformaCariScreen} />
             <Stack.Screen name="kirim-aduan" options={{ headerShown: true, title: "Kirim Aduan" }} component={KirimAduanScreen} />
             <Stack.Screen name="aduan-masuk" options={{ headerShown: true, title: "Aduan Masuk" }} component={AduanMasukScreen} />
-            <Stack.Screen name="manajemen-pengguna" options={{ headerShown: true, title: "Manajemen Pengguna" }} component={ManajemenPenggunaScreen} />
+            <Stack.Screen name="manajemen-pengguna" options={{ headerShown: true, title: "Manajemen Pengguna" }}>
+              {({ navigation }) => <ManajemenPenggunaScreen onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
+            </Stack.Screen>
+            <Stack.Screen name="kapasitas-tambahan" options={{ headerShown: true, title: "Kapasitas Tambahan" }} component={KapasitasTambahanScreen} />
             <Stack.Screen name="role-hak-akses" options={{ headerShown: true, title: "Role & Hak Akses" }} component={RoleHakAksesScreen} />
             <Stack.Screen name="buat-pengumuman" options={{ headerShown: true, title: "Buat Pengumuman" }} component={BuatPengumumanScreen} />
             <Stack.Screen name="backup-database" options={{ headerShown: true, title: "Backup Database" }} component={BackupDatabaseScreen} />
