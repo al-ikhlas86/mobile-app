@@ -25,6 +25,7 @@ export interface DemoAccountShape {
   avatarUrl: string | null;
   token: string;
   isKepalaSekolah?: boolean;
+  capabilities?: string[];
 }
 
 export interface DemoRoleOption {
@@ -132,6 +133,7 @@ export async function startDemoSession(
       avatarUrl: null,
       token: body.token,
       isKepalaSekolah: Number(body.user.is_kepala_sekolah) === 1,
+      capabilities: Array.isArray(body.user.capabilities) ? body.user.capabilities : [],
     };
     const session: StoredDemoSession = {
       account,
