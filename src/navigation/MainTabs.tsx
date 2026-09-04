@@ -13,7 +13,7 @@ import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
 import { NotifikasiScreen } from "../components/screens/NotifikasiScreen";
 import { ProfilScreen } from "../components/screens/ProfilScreen";
 import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
-import type { RoleName } from "../services/authService";
+import { getActiveSession, type RoleName } from "../services/authService";
 
 const ADMIN_MEDIA_ROLES: RoleName[] = ["Admin Media (SD)", "Admin Media (TK & Playground)"];
 const ADMIN_TU_ROLES: RoleName[] = ["Admin TU (SD)", "Admin TU (TK & Playground)"];
@@ -21,7 +21,12 @@ const ADMIN_TU_ROLES: RoleName[] = ["Admin TU (SD)", "Admin TU (TK & Playground)
 function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
   if (role === "Orang Tua") return <PresensiAnak />;
   if (ADMIN_MEDIA_ROLES.includes(role)) return <PlaceholderScreen title="Akun administratif - gunakan akun utama utk presensi" />;
-  if (ADMIN_TU_ROLES.includes(role) || role === "Kepala Sekolah (SD)" || role === "Kepala Sekolah (TK & Playground)" || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar (BUKAN lagi role
+  // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah, string itu tidak
+  // pernah ada lagi) - dicek terpisah, tab Presensi tetap tampilkan view
+  // admin-wide (Siswa/Guru/Pegawai) utk kepsek apa pun role dasarnya.
+  const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
+  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
   return <PresensiScreen role={role} onNavigate={onNavigate} />;
 }
 

@@ -45,8 +45,8 @@ export const ROLE_MAP: Record<string, RoleName> = {
   admin_media_sd: "Admin Media (SD)",
   admin_tu_tk: "Admin TU (TK & Playground)",
   admin_media_tk: "Admin Media (TK & Playground)",
-  kepala_sekolah_sd: "Kepala Sekolah (SD)",
-  kepala_sekolah_tk: "Kepala Sekolah (TK & Playground)",
+  // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, Kepala
+  // Sekolah sekarang FLAG (isKepalaSekolah) - lihat authService.ts.
   keuangan: "Keuangan",
   orang_tua: "Orang Tua",
   guru: "Guru",
@@ -64,6 +64,7 @@ interface ServerUser {
   role: string;
   full_name: string;
   avatar_filename?: string | null;
+  is_kepala_sekolah?: boolean | number;
 }
 
 function toSavedAccount(user: ServerUser, token: string): SavedAccount {
@@ -76,6 +77,7 @@ function toSavedAccount(user: ServerUser, token: string): SavedAccount {
     avatarInitials: initials(user.full_name),
     avatarUrl: user.avatar_filename ? `${API_URL}/uploads/avatars/${user.avatar_filename}` : null,
     token,
+    isKepalaSekolah: Number(user.is_kepala_sekolah) === 1,
   };
 }
 

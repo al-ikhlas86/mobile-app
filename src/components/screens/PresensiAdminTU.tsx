@@ -8,7 +8,7 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
-import type { RoleName } from "../../services/authService";
+import { getActiveSession, type RoleName } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 type TabType = "Siswa" | "Guru" | "Pegawai";
@@ -16,16 +16,18 @@ interface AttendanceRow { id: number; entity_name: string; kelas_nama?: string |
 interface ClassOption { tingkat: string; kelas: string; label: string; }
 const TAB_TO_ENTITY: Record<TabType, "siswa" | "guru" | "karyawan"> = { Siswa: "siswa", Guru: "guru", Pegawai: "karyawan" };
 
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Kepala Sekolah (SD)", "Kepala Sekolah (TK & Playground)", "Keuangan"];
+const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
 
-function allowedTabsForRole(role?: RoleName): TabType[] {
-  if (!role || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
+// isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
+// "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah.
+function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean): TabType[] {
+  if (!role || isKepalaSekolah || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
   if (role === "Guru Kelas") return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
-function isUnrestricted(role?: RoleName): boolean {
-  return !role || UNRESTRICTED_ROLES.includes(role);
+function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean): boolean {
+  return !role || !!isKepalaSekolah || UNRESTRICTED_ROLES.includes(role);
 }
 function badgeVariantForStatus(status: string): "success" | "error" | "warning" | "info" | "muted" {
   if (status === "Hadir") return "success";
@@ -40,8 +42,9 @@ interface Props { role?: RoleName; onNavigate?: (screen: string, params?: Record
 
 export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const colors = useThemeColors();
-  const tabs = useMemo(() => allowedTabsForRole(role), [role]);
-  const unrestricted = isUnrestricted(role);
+  const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
+  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah), [role, isKepalaSekolah]);
+  const unrestricted = isUnrestricted(role, isKepalaSekolah);
   const [tab, setTab] = useState<TabType>(tabs[0]);
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState<AttendanceRow[]>([]);

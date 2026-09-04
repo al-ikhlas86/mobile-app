@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, CheckCircle, Award } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -28,6 +28,9 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   const isFocused = useIsFocused();
   useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const session = getActiveSession();
+  // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar, BUKAN dashboard
+  // terpisah lagi. Lihat catatan lengkap di webview PegawaiDashboard.tsx.
+  const isKepalaSekolah = session?.isKepalaSekolah === true;
   const news = useNewsList();
 
   // useFocusEffect (bukan useEffect biasa) - bottom-tabs TIDAK unmount
@@ -65,6 +68,12 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     { title: "Presensi & Wajah", items: [
       { label: "Presensi Pegawai", icon: <Clock size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
+      ...(isKepalaSekolah ? [
+        { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
+        { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
+        { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+        { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
+      ] : []),
     ] },
     { title: "Informasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
@@ -81,7 +90,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
 
   return (
-    <DashboardLayout name={session?.fullName ?? "Pegawai"} roleLabel="Ruang Pegawai" date={todayLabel}>
+    <DashboardLayout name={session?.fullName ?? "Pegawai"} roleLabel={`Ruang Pegawai${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel}>
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Hari Ini</Text>
         {loading ? (

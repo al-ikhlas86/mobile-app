@@ -15,8 +15,9 @@ export type RoleName =
   | "Admin Media (SD)"
   | "Admin TU (TK & Playground)"
   | "Admin Media (TK & Playground)"
-  | "Kepala Sekolah (SD)"
-  | "Kepala Sekolah (TK & Playground)"
+  // Kepala Sekolah (2026-09-04) SENGAJA TIDAK ADA lagi - bukan role,
+  // sekarang FLAG (isKepalaSekolah) di atas role dasar apa pun - lihat
+  // SavedAccount/ActiveSession di bawah.
   | "Keuangan"
   | "Orang Tua"
   | "Guru"
@@ -31,6 +32,7 @@ export interface SavedAccount {
   avatarInitials: string;
   avatarUrl: string | null;
   token: string;
+  isKepalaSekolah?: boolean;
 }
 
 export interface ActiveSession {
@@ -41,6 +43,7 @@ export interface ActiveSession {
   avatarInitials: string;
   avatarUrl: string | null;
   loginAt: string;
+  isKepalaSekolah?: boolean;
 }
 
 const KEYS = {
@@ -93,6 +96,7 @@ async function purgeAdminItOnColdStart(
       accountId: next.id, role: next.role, username: next.username,
       fullName: next.fullName, avatarInitials: next.avatarInitials,
       avatarUrl: next.avatarUrl, loginAt: new Date().toISOString(),
+      isKepalaSekolah: next.isKepalaSekolah,
     };
     await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(newSession));
     await AsyncStorage.setItem(KEYS.activeAccountId, next.id);
@@ -156,6 +160,7 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
     avatarInitials: account.avatarInitials,
     avatarUrl: account.avatarUrl,
     loginAt: new Date().toISOString(),
+    isKepalaSekolah: account.isKepalaSekolah,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
@@ -187,6 +192,7 @@ export function getActiveSession(): ActiveSession | null {
       avatarInitials: demo.avatarInitials,
       avatarUrl: demo.avatarUrl,
       loginAt: new Date().toISOString(),
+      isKepalaSekolah: demo.isKepalaSekolah,
     };
   }
   return getRealActiveSession();
@@ -215,6 +221,7 @@ export async function switchAccount(accountId: string): Promise<ActiveSession | 
     avatarInitials: saved.avatarInitials,
     avatarUrl: saved.avatarUrl,
     loginAt: new Date().toISOString(),
+    isKepalaSekolah: saved.isKepalaSekolah,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
