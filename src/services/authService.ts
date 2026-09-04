@@ -33,6 +33,9 @@ export interface SavedAccount {
   avatarUrl: string | null;
   token: string;
   isKepalaSekolah?: boolean;
+  // Manajemen Pengguna multi-flag (2026-09-04) - lihat catatan lengkap di
+  // webview authService.ts.
+  capabilities?: string[];
 }
 
 export interface ActiveSession {
@@ -44,6 +47,7 @@ export interface ActiveSession {
   avatarUrl: string | null;
   loginAt: string;
   isKepalaSekolah?: boolean;
+  capabilities?: string[];
 }
 
 const KEYS = {
@@ -97,6 +101,7 @@ async function purgeAdminItOnColdStart(
       fullName: next.fullName, avatarInitials: next.avatarInitials,
       avatarUrl: next.avatarUrl, loginAt: new Date().toISOString(),
       isKepalaSekolah: next.isKepalaSekolah,
+      capabilities: next.capabilities,
     };
     await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(newSession));
     await AsyncStorage.setItem(KEYS.activeAccountId, next.id);
@@ -161,6 +166,7 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
     avatarUrl: account.avatarUrl,
     loginAt: new Date().toISOString(),
     isKepalaSekolah: account.isKepalaSekolah,
+    capabilities: account.capabilities,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));
@@ -193,6 +199,7 @@ export function getActiveSession(): ActiveSession | null {
       avatarUrl: demo.avatarUrl,
       loginAt: new Date().toISOString(),
       isKepalaSekolah: demo.isKepalaSekolah,
+      capabilities: demo.capabilities,
     };
   }
   return getRealActiveSession();
@@ -222,6 +229,7 @@ export async function switchAccount(accountId: string): Promise<ActiveSession | 
     avatarUrl: saved.avatarUrl,
     loginAt: new Date().toISOString(),
     isKepalaSekolah: saved.isKepalaSekolah,
+    capabilities: saved.capabilities,
   };
   cachedSession = session;
   await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(session));

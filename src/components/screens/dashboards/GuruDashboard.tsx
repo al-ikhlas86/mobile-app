@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -33,6 +33,13 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar, BUKAN dashboard
   // terpisah lagi. Lihat catatan lengkap di webview GuruDashboard.tsx.
   const isKepalaSekolah = session?.isKepalaSekolah === true;
+  // Manajemen Pengguna multi-flag (2026-09-04) - lihat catatan lengkap di
+  // webview GuruDashboard.tsx.
+  const capabilities = session?.capabilities ?? [];
+  const hasCap = (cap: string) => capabilities.includes(cap);
+  const isTuLike = hasCap("admin_tu_sd") || hasCap("admin_tu_tk") || hasCap("supervisor");
+  const isMediaLike = hasCap("admin_media_sd") || hasCap("admin_media_tk");
+  const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
 
   // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
@@ -73,11 +80,29 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ] : []),
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
-        ...(!isGuruKelas ? [
-          { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
-          { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
-          { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
-        ] : []),
+      ] : []),
+      // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04, capability jamak) -
+      // lihat catatan lengkap di webview GuruDashboard.tsx.
+      ...(isTuLike && !isGuruKelas && !isKepalaSekolah ? [
+        { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
+        { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+        { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
+        { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
+      ...(isTuLike ? [
+        { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-psb") },
+        { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("cari-siswa-guru") },
+      ] : []),
+      // Kapasitas Admin Media SD/TK (2026-09-04).
+      ...(isMediaLike ? [
+        { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
+        { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") },
+        { label: "Pengguna Diblokir", icon: <Ban size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("blokiran-komentar") },
+      ] : []),
+      // Kapasitas Keuangan (2026-09-04).
+      ...(isKeuangan ? [
+        { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("keuangan-admin") },
       ] : []),
     ] },
     { title: "Mengajar", items: [

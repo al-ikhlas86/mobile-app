@@ -65,6 +65,7 @@ interface ServerUser {
   full_name: string;
   avatar_filename?: string | null;
   is_kepala_sekolah?: boolean | number;
+  capabilities?: string[];
 }
 
 function toSavedAccount(user: ServerUser, token: string): SavedAccount {
@@ -78,6 +79,7 @@ function toSavedAccount(user: ServerUser, token: string): SavedAccount {
     avatarUrl: user.avatar_filename ? `${API_URL}/uploads/avatars/${user.avatar_filename}` : null,
     token,
     isKepalaSekolah: Number(user.is_kepala_sekolah) === 1,
+    capabilities: user.capabilities ?? [],
   };
 }
 
@@ -368,6 +370,10 @@ export const api = {
   adminUpdateUser: (id: number, data: { role?: string; full_name?: string; phone?: string }) =>
     authedFetch(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   adminDeleteUser: (id: number) => authedFetch(`/api/admin/users/${id}`, { method: "DELETE" }),
+  // Manajemen Pengguna multi-flag (2026-09-04) - lihat routes/admin.js.
+  adminCariPegawai: (q: string) => authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}`),
+  adminUpdateCapabilities: (id: number, capabilities: string[]) =>
+    authedFetch(`/api/admin/users/${id}/capabilities`, { method: "PATCH", body: JSON.stringify({ capabilities }) }),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
   adminLinkAccountReview: (id: number) => authedFetch(`/api/admin/account-link-reviews/${id}/link`, { method: "POST" }),
   adminRejectAccountReview: (id: number, note?: string) =>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle } from "lucide-react-native";
+import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Search, Check } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -10,8 +10,11 @@ import { api, ROLE_MAP } from "../../services/api";
 import { getActiveSession } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
-interface AdminUser { id: number; username: string; phone: string | null; full_name: string; role: string; is_active: 0 | 1; employee_cache_id: number | null; }
+interface AdminUser { id: number; username: string; phone: string | null; full_name: string; role: string; is_active: 0 | 1; employee_cache_id: number | null; capabilities: string[]; }
 interface AccountLinkReview { id: number; nama: string; jabatan: string | null; role: string; phone: string; existing_full_name: string; existing_phone: string | null; status: string; }
+// Hasil GET /api/admin/users/cari-pegawai - guru/guru_kelas/pegawai yg
+// sudah sinkron dari Hub API (beda dari AdminUser di atas).
+interface PegawaiHasil { id: number; username: string; full_name: string; role: string; unit_id: number | null; capabilities: string[]; }
 
 // kepala_sekolah_sd/tk DIKELUARKAN dari daftar ini 2026-09-04 - sekarang
 // jabatan asli di Data Master (spt guru_kelas), auto-provisioning penuh,
@@ -23,7 +26,36 @@ interface AccountLinkReview { id: number; nama: string; jabatan: string | null; 
 // (src/app/components/screens/ManajemenPenggunaScreen.tsx).
 const ASSIGNABLE_ROLES = ["admin_it", "supervisor", "admin_tu_sd", "admin_media_sd", "admin_tu_tk", "admin_media_tk", "keuangan"];
 const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
+// CAPABILITY_ROLES (2026-09-04) - subset ASSIGNABLE_ROLES TANPA admin_it,
+// bisa ditempel sbg flag TAMBAHAN JAMAK ke SIAPA SAJA (termasuk guru/
+// guru_kelas/pegawai yg sudah sinkron) - lihat catatan lengkap di webview
+// ManajemenPenggunaScreen.tsx.
+const CAPABILITY_ROLES = ASSIGNABLE_ROLES.filter((r) => r !== "admin_it");
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
+
+function CapabilityCheckboxes({ current, saving, onToggle }: { current: string[]; saving: boolean; onToggle: (cap: string) => void }) {
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {CAPABILITY_ROLES.map((cap) => {
+        const active = current.includes(cap);
+        return (
+          <Pressable
+            key={cap}
+            disabled={saving}
+            onPress={() => onToggle(cap)}
+            className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${active ? "bg-primary/10 border-primary" : "bg-muted border-transparent"}`}
+            style={{ opacity: saving ? 0.5 : 1 }}
+          >
+            <View className={`w-3.5 h-3.5 rounded items-center justify-center border ${active ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+              {active && <Check size={10} color="#fff" />}
+            </View>
+            <Text className={`text-xs font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>{ROLE_MAP[cap] ?? cap}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 export function ManajemenPenggunaScreen() {
   const colors = useThemeColors();
@@ -42,6 +74,15 @@ export function ManajemenPenggunaScreen() {
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
   const currentUserId = Number(getActiveSession()?.accountId?.replace(/^USR/, "")) || null;
+
+  // Cari Pegawai (2026-09-04) - tempelkan capability tambahan ke guru/
+  // guru_kelas/pegawai yg sudah sinkron, terpisah dari daftar akun
+  // administratif mandiri di atas (GET /users cuma ASSIGNABLE_ROLES).
+  const [showPegawaiSearch, setShowPegawaiSearch] = useState(false);
+  const [pegawaiQuery, setPegawaiQuery] = useState("");
+  const [pegawaiResults, setPegawaiResults] = useState<PegawaiHasil[]>([]);
+  const [pegawaiSearching, setPegawaiSearching] = useState(false);
+  const [capSavingId, setCapSavingId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true); setError("");
@@ -70,6 +111,25 @@ export function ManajemenPenggunaScreen() {
     setSavingId(null);
     if (res.success) setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role } : u))); else setError(res.message ?? "Gagal mengubah role.");
   };
+  // Toggle 1 capability lalu kirim SELURUH himpunan baru (replace-all) -
+  // dipakai baik utk akun administratif (users) maupun hasil cari pegawai
+  // (pegawaiResults).
+  const toggleCapability = async (userId: number, current: string[], capability: string, applyLocal: (next: string[]) => void) => {
+    const next = current.includes(capability) ? current.filter((c) => c !== capability) : [...current, capability];
+    setCapSavingId(userId);
+    const res = await api.adminUpdateCapabilities(userId, next);
+    setCapSavingId(null);
+    if (res.success) applyLocal(next); else setError(res.message ?? "Gagal mengubah capability.");
+  };
+
+  const handleSearchPegawai = async () => {
+    if (pegawaiQuery.trim().length < 2) { setPegawaiResults([]); return; }
+    setPegawaiSearching(true);
+    const res = await api.adminCariPegawai(pegawaiQuery.trim());
+    setPegawaiSearching(false);
+    if (res.success) setPegawaiResults(res.data); else setError(res.message ?? "Gagal mencari pegawai.");
+  };
+
   const handleDelete = async (userId: number) => {
     if (confirmDeleteId !== userId) { setConfirmDeleteId(userId); return; }
     setConfirmDeleteId(null);
@@ -91,8 +151,9 @@ export function ManajemenPenggunaScreen() {
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
-        Halaman ini khusus akun administratif (Admin IT, Supervisor, Admin TU, Admin Media, Keuangan). Akun Guru/Guru
-        Kelas/Pegawai/Orang Tua tidak tampil di sini - role-nya sudah otomatis benar dari data sekolah.
+        Daftar di bawah khusus akun administratif mandiri. Akun Guru/Guru Kelas/Pegawai/Orang Tua tidak tampil di
+        sini. Untuk peran ganda (mis. guru yang juga Admin Media SD), gunakan "Cari Pegawai" - centang kapasitas
+        tambahan langsung, tanpa akun kedua.
       </Text>
       {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
 
@@ -115,9 +176,56 @@ export function ManajemenPenggunaScreen() {
         </Card>
       )}
 
-      {!showAddForm ? (
-        <Button variant="outline" onPress={() => setShowAddForm(true)}><Plus size={16} color={colors.primary} />{"  "}Tambah Akun</Button>
-      ) : (
+      <View className="flex-row gap-2.5">
+        {!showAddForm && (
+          <Button variant="outline" onPress={() => setShowAddForm(true)}><Plus size={16} color={colors.primary} />{"  "}Tambah Akun</Button>
+        )}
+        {!showPegawaiSearch && (
+          <Button variant="outline" onPress={() => setShowPegawaiSearch(true)}><Search size={16} color={colors.primary} />{"  "}Cari Pegawai</Button>
+        )}
+      </View>
+
+      {showPegawaiSearch && (
+        <Card padding="md">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-foreground">Cari Guru/Pegawai</Text>
+            <Pressable onPress={() => { setShowPegawaiSearch(false); setPegawaiQuery(""); setPegawaiResults([]); }}>
+              <X size={16} color={colors.mutedForeground} />
+            </Pressable>
+          </View>
+          <Text className="text-xs text-muted-foreground mb-3">Cari berdasar nama, lalu centang kapasitas tambahan - tanpa membuat akun baru.</Text>
+          <View className="flex-row gap-2 mb-3">
+            <TextInput
+              value={pegawaiQuery}
+              onChangeText={setPegawaiQuery}
+              onSubmitEditing={handleSearchPegawai}
+              placeholder="Nama guru/pegawai..."
+              className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground"
+            />
+            <Button onPress={handleSearchPegawai} loading={pegawaiSearching}>Cari</Button>
+          </View>
+          {pegawaiResults.length === 0 && pegawaiQuery.trim().length >= 2 && !pegawaiSearching ? (
+            <Text className="text-xs text-muted-foreground">Tidak ada hasil.</Text>
+          ) : null}
+          <View className="gap-3">
+            {pegawaiResults.map((p) => (
+              <View key={p.id} className="border border-border rounded-xl p-3">
+                <Text className="text-sm font-semibold text-foreground">{p.full_name}</Text>
+                <Text className="text-xs text-muted-foreground mb-2">{ROLE_MAP[p.role] ?? p.role}</Text>
+                <CapabilityCheckboxes
+                  current={p.capabilities}
+                  saving={capSavingId === p.id}
+                  onToggle={(cap) => toggleCapability(p.id, p.capabilities, cap, (next) => {
+                    setPegawaiResults((prev) => prev.map((x) => (x.id === p.id ? { ...x, capabilities: next } : x)));
+                  })}
+                />
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
+
+      {!showAddForm ? null : (
         <Card padding="md">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-sm font-semibold text-foreground">Tambah Akun Baru</Text>
@@ -158,13 +266,23 @@ export function ManajemenPenggunaScreen() {
           {confirmDeleteId === u.id && (
             <Text className="text-xs text-red-500 mt-1">{u.employee_cache_id ? "Akun ini tertaut pegawai aktif - akan dibuat ulang otomatis saat sync berikutnya. " : ""}Ketuk ikon hapus sekali lagi untuk konfirmasi.</Text>
           )}
-          <View className="mt-3">
+          <Text className="text-[11px] font-semibold text-muted-foreground uppercase mt-3 mb-1">Role Dasar</Text>
+          <View>
             {savingId === u.id ? (
               <View className="px-3 py-2.5 rounded-xl bg-muted"><Text className="text-sm text-muted-foreground">Menyimpan...</Text></View>
             ) : (
               <SimplePicker value={u.role} options={ROLE_OPTIONS} onChange={(role) => handleChangeRole(u.id, role)} />
             )}
           </View>
+
+          <Text className="text-[11px] font-semibold text-muted-foreground uppercase mt-3 mb-1">Kapasitas Tambahan</Text>
+          <CapabilityCheckboxes
+            current={u.capabilities}
+            saving={capSavingId === u.id}
+            onToggle={(cap) => toggleCapability(u.id, u.capabilities, cap, (next) => {
+              setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, capabilities: next } : x)));
+            })}
+          />
         </Card>
       ))}
     </KeyboardAwareScrollView>
