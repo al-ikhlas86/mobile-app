@@ -73,8 +73,9 @@ export function KapasitasTambahanScreen() {
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
-        Pilih 1 sistem di bawah, lalu tambahkan guru/pegawai (atau akun administratif) yang boleh mengelolanya.
-        Begitu ditambahkan, menu sistem itu otomatis muncul di akun mereka sendiri.
+        Pilih 1 sistem di bawah, lalu cari LANGSUNG nama guru/pegawai yang sudah ada di sistem sekolah (tidak
+        perlu dibuat dulu di Manajemen Pengguna). Begitu ditambahkan, menu sistem itu otomatis muncul di akun
+        mereka sendiri.
       </Text>
 
       <SimplePicker value={capability} options={CAPABILITY_SELECT_OPTIONS} onChange={setCapability} />
