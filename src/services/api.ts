@@ -188,18 +188,36 @@ async function authedFetch(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
+// Timeout+try/catch (2026-09-05, W4B) - SEBELUMNYA fetch() polos tanpa
+// batas waktu SAMA SEKALI - kalau koneksi stall (bukan gagal total, cuma
+// lambat), promise ini tidak pernah resolve/reject, spinner upload di UI
+// berputar SELAMANYA (laporan user, upload 1.57MB "muter doang"). 30 detik
+// dianggap wajar utk 1 foto (server sendiri sudah resize+compress via
+// sharp, lihat imageProcessing.js). AbortController didukung fetch RN
+// bawaan, TIDAK nambah dependency baru.
+const UPLOAD_TIMEOUT_MS = 30000;
 async function authedUpload(path: string, formData: FormData, method: string = "POST") {
   const token = getActiveToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers: { Authorization: token ? `Bearer ${token}` : "" },
-    body: formData,
-  });
-  if (res.status === 401 && token && getActiveToken() === token) {
-    await logout();
-    DeviceEventEmitter.emit(SESSION_EXPIRED_EVENT);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      method,
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+      body: formData,
+      signal: controller.signal,
+    });
+    if (res.status === 401 && token && getActiveToken() === token) {
+      await logout();
+      DeviceEventEmitter.emit(SESSION_EXPIRED_EVENT);
+    }
+    return await res.json();
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === "AbortError";
+    return { success: false, message: timedOut ? "Upload gagal (waktu habis), coba lagi." : "Tidak dapat menghubungi server. Cek koneksi internet Anda." };
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return res.json();
 }
 
 // Utk upload dari expo-image-picker (uri lokal), bukan File Web API.
