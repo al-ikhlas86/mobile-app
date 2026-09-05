@@ -166,6 +166,14 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         </View>
       </Pressable>
 
+      <View>
+        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
+        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
+      </View>
+
+      {/* Berita dipindah ke BAWAH menu (2026-09-05, W9) - laporan user:
+          menu lebih penting, jangan bikin orang scroll lewatin berita
+          dulu utk melakukan sesuatu. */}
       {!berandaPrefs.hideBeritaTerbaru && (
         <View>
           <View className="flex-row items-center justify-between mb-3">
@@ -184,11 +192,6 @@ export function GuruDashboard({ onNavigate, role }: Props) {
           <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
       )}
-
-      <View>
-        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
-        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
-      </View>
     </DashboardLayout>
   );
 }
