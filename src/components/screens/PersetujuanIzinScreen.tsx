@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle, XCircle, Image as ImageIcon, ClipboardCheck } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -27,6 +28,7 @@ function formatDateFull(dateStr: string): string {
 // Guru Kelas saja - tinjau pengajuan Izin/Sakit siswa kelasnya (dibatasi
 // server-side, lihat LeaveRequestController::pending di Absen).
 export function PersetujuanIzinScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [rows, setRows] = useState<PendingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export function PersetujuanIzinScreen() {
 
       <FlatList
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 32, gap: 12 }}
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}
         data={rows}
         keyExtractor={(item) => String(item.id)}
         ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-6">{loading ? "Memuat..." : "Tidak ada pengajuan yang menunggu persetujuan."}</Text>}

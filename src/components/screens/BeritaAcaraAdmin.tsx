@@ -5,6 +5,7 @@
 // ============================================================
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, Pressable, Image, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -42,6 +43,7 @@ function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-I
 function mediaUrl(m: Media) { return resolveAvatarUrl(m.url) ?? undefined; }
 
 export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role?: RoleName }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const unitScopes = unitScopesFor(role);
   const [view, setView] = useState<AdminView>("list");
@@ -189,7 +191,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
 
   if (view === "form") {
     return (
-      <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+      <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
         <Pressable onPress={() => setView("list")} className="flex-row items-center gap-1.5 -ml-1"><ArrowLeft size={16} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground">Kembali ke Daftar</Text></Pressable>
         <Text className="text-lg font-bold text-foreground">{editingId ? "Edit Berita" : "Buat Berita Baru"}</Text>
 
@@ -284,7 +286,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   }
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Text className="text-base font-bold text-foreground">Kelola Berita Acara</Text>
         <Pressable onPress={openCreate} className="flex-row items-center gap-1.5 bg-primary px-3 py-2 rounded-xl"><Plus size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">Tambah</Text></Pressable>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image as ImageIcon, CheckCircle, Inbox } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -36,6 +37,7 @@ function statusLabel(status: string): string {
 }
 
 export function AduanMasukScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [rows, setRows] = useState<AduanRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export function AduanMasukScreen() {
 
       <FlatList
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 32, gap: 12 }}
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}
         data={rows}
         keyExtractor={(item) => String(item.id)}
         ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-6">{loading ? "Memuat..." : "Belum ada aduan masuk."}</Text>}

@@ -8,6 +8,7 @@
 // ============================================================
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, Pressable, ScrollView, TextInput, ActivityIndicator, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Calendar, User, ImageIcon, Tag, Link2, X, Heart, MessageCircle, Send, Ban } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../../services/api";
@@ -93,6 +94,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
 }
 
 export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [post, setPost] = useState<BeritaDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,7 +182,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
 
   return (
     <>
-    <KeyboardAwareScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }} bottomOffset={20}>
       {thumbnail ? (
         <Pressable onPress={() => setLightbox(resolveAvatarUrl(thumbnail.url))}>
           <Image key={reloadGen} source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-52" resizeMode="cover" />

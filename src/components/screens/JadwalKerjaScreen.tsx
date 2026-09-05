@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, AlertCircle, PartyPopper, Briefcase } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
@@ -13,6 +14,7 @@ import { warnaKontras } from "../../utils/warnaKontras";
 // unit-scoped otomatis dari employee_cache_id akun ini) yang diatur Admin
 // TU di data master.
 export function JadwalKerjaScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { isDark } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export function JadwalKerjaScreen() {
   const selectedDateLabel = new Date(selectedDate + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
       {agenda.length === 0 && (
         <Card padding="lg"><View className="items-center py-4"><Calendar size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground mt-2">Belum ada kalender akademik yang diatur Admin TU.</Text></View></Card>
       )}

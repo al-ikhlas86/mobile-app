@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { CheckCircle, Calendar, Clock, AlertCircle, CalendarCheck, FileWarning, Send, Paperclip } from "lucide-react-native";
 import { Badge } from "../ui/Badge";
@@ -33,6 +34,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 }
 
 export function PresensiAnak() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [loading, setLoading] = useState(true);
@@ -157,7 +159,7 @@ export function PresensiAnak() {
       </View>
 
       {activeTab === "izin" ? (
-        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
           <Card padding="lg">
             <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit untuk {child.nama}</Text>
             <Text className="text-xs text-muted-foreground mb-4">Pengajuan akan berstatus Menunggu Persetujuan sampai disetujui wali kelas. Jika ditolak, hari itu dianggap Alfa.</Text>
@@ -191,7 +193,7 @@ export function PresensiAnak() {
           </Card>
         </ScrollView>
       ) : (
-        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
+        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }}>
           <Card padding="lg">
             <View className="flex-row items-center gap-2 mb-4">
               <Calendar size={18} color={colors.primary} />

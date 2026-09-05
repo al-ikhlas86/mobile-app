@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
@@ -29,6 +30,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 }
 
 export function SyncStatusScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [data, setData] = useState<{ hubApi: SourceStatus } | null>(null);
   const [error, setError] = useState("");
@@ -48,7 +50,7 @@ export function SyncStatusScreen() {
   }, []);
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
       <Text className="text-xs text-muted-foreground">Kondisi sinkronisasi data terkini. "Sehat" berarti siklus terakhir berhasil. Setelah 3x gagal berturut-turut, alarm WA otomatis terkirim.</Text>
       {error ? (
         <Card padding="lg"><View className="items-center py-4"><AlertTriangle size={40} color="#ef4444" /><Text className="text-sm text-muted-foreground mt-2">{error}</Text></View></Card>

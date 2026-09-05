@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FileText, Heart, MessageCircle, Clock } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
@@ -12,6 +13,7 @@ interface StatsData { total_berita: number; total_published: number; total_pendi
 function formatDate(iso: string | null) { if (!iso) return "-"; return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
 
 export function StatistikKontenScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export function StatistikKontenScreen({ onNavigate }: { onNavigate: (screen: str
   }
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }}>
       <Text className="text-xs text-muted-foreground">Statistik keterlibatan (suka + komentar) berita acara di unit Anda. Cuma berita yang sudah terbit yang dihitung keterlibatannya.</Text>
 
       <View className="flex-row flex-wrap gap-3">

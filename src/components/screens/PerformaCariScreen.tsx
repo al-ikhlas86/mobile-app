@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Search } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -36,6 +37,7 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
 // routes/performa.js Node & plan migrasi Absen, Blocker 4). Endpoint
 // /me & /anak yang sudah ada TIDAK terpengaruh sama sekali.
 export function PerformaCariScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [identifier, setIdentifier] = useState("");
   const now = new Date();
@@ -57,7 +59,7 @@ export function PerformaCariScreen() {
   }
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">Masukkan NIS siswa atau No HP guru/pegawai untuk melihat performa presensinya.</Text>
 
       <View className="gap-2.5">

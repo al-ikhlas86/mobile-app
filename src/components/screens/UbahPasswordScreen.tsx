@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Lock, Eye, EyeOff } from "lucide-react-native";
 import { Input } from "../ui/Input";
@@ -8,6 +9,7 @@ import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
 export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string) => void }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -29,7 +31,7 @@ export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string
   };
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-6 pt-6" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-6 pt-6" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       {success ? (
         <View className="items-center py-10 gap-2">
           <Text className="text-base font-bold text-foreground">Kata Sandi Berhasil Diubah</Text>

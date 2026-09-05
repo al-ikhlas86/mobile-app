@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check, CalendarClock } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -28,6 +29,7 @@ interface Props {
 const STAFF_ROLES: RoleName[] = ["Guru", "Pegawai"];
 
 export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOpenSwitcher, onOpenTahunAjaranSwitcher, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
+  const insets = useSafeAreaInsets();
   const { isDark, toggleTheme } = useTheme();
   const colors = useThemeColors();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -108,7 +110,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
   if (!session) return null;
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
       <Card padding="lg" className="bg-primary border-0 items-center">
         <View className="relative mb-3">
           <View className="w-24 h-24 rounded-full bg-white/15 items-center justify-center overflow-hidden">

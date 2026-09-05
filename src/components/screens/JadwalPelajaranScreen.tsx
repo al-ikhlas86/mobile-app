@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, CalendarDays, BookOpen, Clock, AlertCircle, User, ChevronLeft, ChevronRight, Coffee, PartyPopper } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { ChildSwitcher } from "../ChildSwitcher";
@@ -208,6 +209,7 @@ function TabBar({ activeTab, onChange, colors }: { activeTab: "kalender" | "jadw
 }
 
 export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [children, setChildren] = useState<ChildData[]>([]);
@@ -303,7 +305,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
       <View className="flex-1 bg-background">
         <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />
 
-        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 32, paddingTop: 16, gap: 12 }}>
+        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, paddingTop: 16, gap: 12 }}>
           <Card padding="sm">
             <View className="flex-row items-center justify-between">
               <Pressable onPress={() => setSelectedDate(geserHari(selectedDate, -1))} className="p-2">
@@ -389,7 +391,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   return (
     <View className="flex-1 bg-background">
       {mode === "guru" && <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />}
-      <ScrollView className="flex-1 px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+      <ScrollView className="flex-1 px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
       {mode === "anak" && <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />}
 
       {mode === "anak" && child && (

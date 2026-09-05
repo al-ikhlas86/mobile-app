@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { MapPin, Plus, X, Power } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -23,6 +24,7 @@ interface LocationRow {
 // jadi menghapus lokasi terakhir/menonaktifkan semua akan mengunci total
 // presensi GPS seluruh sekolah, disampaikan jelas lewat peringatan di UI.
 export function PengaturanLokasiScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [rows, setRows] = useState<LocationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ export function PengaturanLokasiScreen() {
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
         Presensi GPS (check-in/check-out) hanya diterima kalau lokasi HP berada di dalam radius salah satu titik di
         bawah ini. Tiap lokasi bisa punya radius berbeda.

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Alert, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as DocumentPicker from "expo-document-picker";
 import { ClipboardList, BookOpen, Plus, Trash2, ChevronDown, ChevronUp, Lock, Unlock, Check, Save, Paperclip, X, FileText, Download } from "lucide-react-native";
@@ -41,6 +42,7 @@ function formatDateFull(dateStr: string): string {
 // Guru/Guru Kelas - buat tugas atau materi utk 1 kelas. Port native dari
 // webview BuatTugasScreen.tsx.
 export function BuatTugasScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([]);
   const [tugasList, setTugasList] = useState<TugasRow[]>([]);
@@ -178,7 +180,7 @@ export function BuatTugasScreen() {
   }
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }} bottomOffset={20}>
       <Card padding="lg">
         <View className="flex-row items-center gap-1.5 mb-1">
           <ClipboardList size={16} color={colors.primary} />

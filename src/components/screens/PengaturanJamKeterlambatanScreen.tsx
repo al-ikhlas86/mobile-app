@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Clock } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -13,6 +14,7 @@ const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // SettingsController+jam_telat.php di Absen (lihat plan migrasi Absen,
 // Node/system_settings sekarang jadi sumber kebenaran baru).
 export function PengaturanJamKeterlambatanScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [siswa, setSiswa] = useState("");
   const [staff, setStaff] = useState("");
@@ -63,7 +65,7 @@ export function PengaturanJamKeterlambatanScreen() {
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
         Batas jam ini menentukan status "Terlambat" di seluruh statistik & rekap presensi - siapapun yang absen masuk
         SETELAH jam ini akan tercatat Terlambat, sebelum/sama dengan jam ini tercatat Hadir.

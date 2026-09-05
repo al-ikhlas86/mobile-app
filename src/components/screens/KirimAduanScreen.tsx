@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { AlertCircle, Send, Paperclip, MessageSquareWarning } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -37,6 +38,7 @@ function statusLabel(status: string): string {
 }
 
 export function KirimAduanScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
@@ -102,7 +104,7 @@ export function KirimAduanScreen() {
   const alreadySentToday = riwayat.some((r) => r.created_at.slice(0, 10) === getTodayLocal());
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 20 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }}>
       <ChildSwitcher children={children} activeId={activeChildId} onChange={setActiveChildId} />
 
       <Card padding="lg">
