@@ -3,6 +3,7 @@ import { View, Text, Image, Pressable, ScrollView } from "react-native";
 import { Newspaper } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../services/api";
 import { useThemeColors } from "../context/ThemeContext";
+import { useImageReloadGeneration } from "../services/networkService";
 
 export interface NewsItem {
   id: number;
@@ -51,12 +52,16 @@ function NewsSlide({ news, onPress }: { news: NewsItem; onPress: () => void }) {
   const bgColor = CATEGORY_COLORS[news.category ?? ""] ?? "#356447";
   const initial = news.title.charAt(0).toUpperCase();
   const thumbnail = news.media.find((m) => m.media_type === "thumbnail");
+  // Reload otomatis begitu online kembali (2026-09-05, W4E) - lihat
+  // catatan lengkap di services/networkService.ts. `key` berubah = <Image>
+  // di-remount dari nol = attempt request baru.
+  const reloadGen = useImageReloadGeneration();
 
   return (
     <Pressable onPress={onPress} className="rounded-3xl overflow-hidden bg-card border border-border mr-3" style={{ width: 260 }}>
       <View className="h-32 items-center justify-center overflow-hidden" style={{ backgroundColor: thumbnail ? undefined : bgColor + "22" }}>
         {thumbnail ? (
-          <Image source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-full" resizeMode="cover" />
+          <Image key={reloadGen} source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-full" resizeMode="cover" />
         ) : (
           <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: bgColor }}>
             <Text className="text-white font-bold text-xl">{initial}</Text>

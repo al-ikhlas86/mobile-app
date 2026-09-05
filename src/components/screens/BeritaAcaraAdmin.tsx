@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, Pressable, Image, ActivityIndicator } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { Plus, Edit2, Trash2, Eye, Upload, CheckCircle, ImageIcon, Send, Save, ArrowLeft, X, Link2 } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
@@ -112,6 +113,28 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
     if (res.success) load();
   }
 
+  // Resize sisi klien sebelum upload (2026-09-05, W4C) - server (sharp,
+  // imageProcessing.js) SUDAH resize+compress ke WebP, tapi itu terjadi
+  // SETELAH file mentah (bisa 8-10MB dari kamera HP) sudah selesai
+  // dikirim penuh lewat jaringan - mengecilkan DULU di HP mempercepat
+  // TRANSFER-nya, bukan cuma ukuran akhir di server. Lebar target 1600px
+  // konsisten dgn resize server (imageProcessing.js). GIF SENGAJA
+  // dilewati (tidak diresize) - ImageManipulator akan meratakan/merusak
+  // animasinya jadi 1 frame JPEG.
+  async function resizeForUpload(uri: string, mime: string): Promise<{ uri: string; mime: string }> {
+    if (mime === "image/gif") return { uri, mime };
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1600 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      return { uri: result.uri, mime: "image/jpeg" };
+    } catch {
+      return { uri, mime }; // gagal resize (mis. gambar sudah kecil) - upload apa adanya, bukan blokir user.
+    }
+  }
+
   async function pickAndUpload(type: "thumbnail" | "activity") {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { setFormMessage("Izin galeri ditolak."); return; }
@@ -126,8 +149,8 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
     if (!id) return;
     if (type === "thumbnail") setUploadingThumb(true); else setUploadingActivity(true);
     for (const asset of result.assets) {
-      const mime = asset.mimeType ?? "image/jpeg";
-      const res = await api.beritaAcaraUploadMedia(id, asset.uri, mime, type);
+      const { uri, mime } = await resizeForUpload(asset.uri, asset.mimeType ?? "image/jpeg");
+      const res = await api.beritaAcaraUploadMedia(id, uri, mime, type);
       if (res.success) {
         setEditingMedia((prev) => type === "thumbnail" ? [...prev.filter((m) => m.media_type !== "thumbnail"), res.data] : [...prev, res.data]);
       } else {
@@ -242,12 +265,18 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
           </View>
         </View>
 
+        {/* uploadingThumb/uploadingActivity ikut masuk disabled (2026-09-05,
+            W4A) - SEBELUMNYA cuma formSaving/judul kosong yg dicek, jadi bisa
+            tap Terbitkan SAAT upload gambar masih berjalan: publish langsung
+            jalan (status berubah) padahal baris media belum sempat ke-INSERT
+            - hasilnya berita terbit dgn gambar blank/hilang total (laporan
+            user, terbukti pas upload >1MB yg makan waktu lumayan). */}
         <View className="flex-row gap-3">
-          <Pressable onPress={handleSaveDraft} disabled={formSaving || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 border border-border rounded-xl">
+          <Pressable onPress={handleSaveDraft} disabled={formSaving || uploadingThumb || uploadingActivity || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 border border-border rounded-xl">
             <Save size={15} color={colors.foreground} /><Text className="text-sm font-medium text-foreground">{formSaving ? "Menyimpan..." : "Simpan Draft"}</Text>
           </Pressable>
-          <Pressable onPress={handlePublish} disabled={formSaving || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 bg-primary rounded-xl">
-            <Send size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">{formSaving ? "Memproses..." : "Terbitkan"}</Text>
+          <Pressable onPress={handlePublish} disabled={formSaving || uploadingThumb || uploadingActivity || !formTitle.trim()} className="flex-1 flex-row items-center justify-center gap-2 py-3 bg-primary rounded-xl">
+            <Send size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">{(uploadingThumb || uploadingActivity) ? "Menunggu upload..." : formSaving ? "Memproses..." : "Terbitkan"}</Text>
           </Pressable>
         </View>
       </KeyboardAwareScrollView>

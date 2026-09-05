@@ -4,6 +4,7 @@ import { Search, ChevronRight, FileText } from "lucide-react-native";
 import { Input } from "../ui/Input";
 import { api, resolveAvatarUrl } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
+import { useImageReloadGeneration } from "../../services/networkService";
 
 interface Media { media_type: "thumbnail" | "activity"; url: string; }
 interface BeritaItem { id: number; title: string; activity_date: string | null; created_by_name: string; author_name: string | null; media: Media[]; }
@@ -15,6 +16,9 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
   const [items, setItems] = useState<BeritaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // Reload gambar otomatis begitu online kembali (2026-09-05, W4E) - lihat
+  // catatan lengkap di services/networkService.ts.
+  const reloadGen = useImageReloadGeneration();
 
   const load = useCallback(async () => {
     const res = await api.beritaAcaraList();
@@ -51,7 +55,7 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
         return (
           <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="rounded-2xl overflow-hidden bg-card border border-border">
             <View className="h-40 bg-muted items-center justify-center">
-              {thumb ? <Image source={{ uri: resolveAvatarUrl(thumb.url) ?? undefined }} className="w-full h-full" resizeMode="cover" /> : <FileText size={20} color={colors.mutedForeground} />}
+              {thumb ? <Image key={reloadGen} source={{ uri: resolveAvatarUrl(thumb.url) ?? undefined }} className="w-full h-full" resizeMode="cover" /> : <FileText size={20} color={colors.mutedForeground} />}
             </View>
             <View className="p-4 gap-2">
               <Text numberOfLines={2} className="text-base font-bold text-foreground">{item.title}</Text>

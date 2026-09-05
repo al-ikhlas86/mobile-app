@@ -13,6 +13,7 @@ import { Calendar, User, ImageIcon, Tag, Link2, X, Heart, MessageCircle, Send, B
 import { api, resolveAvatarUrl } from "../../services/api";
 import { getActiveSession } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
+import { useImageReloadGeneration } from "../../services/networkService";
 
 interface Media { id: number; media_type: "thumbnail" | "activity"; url: string; }
 interface LinkItem { id: number; url: string; thumbnail_url: string | null; }
@@ -40,6 +41,8 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
 }) {
   const colors = useThemeColors();
   const avatar = resolveAvatarUrl(comment.avatar_url);
+  // Reload gambar otomatis begitu online kembali (2026-09-05, W4E).
+  const reloadGen = useImageReloadGeneration();
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.comment);
@@ -48,7 +51,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
     return (
       <View className="flex-row items-start gap-2">
         <View className="w-7 h-7 rounded-full bg-secondary items-center justify-center overflow-hidden">
-          {avatar ? <Image source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-[10px] font-bold text-foreground">{initials(comment.full_name)}</Text>}
+          {avatar ? <Image key={reloadGen} source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-[10px] font-bold text-foreground">{initials(comment.full_name)}</Text>}
         </View>
         <View className="flex-1 gap-1.5">
           <TextInput value={draft} onChangeText={setDraft} multiline className="bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
@@ -64,7 +67,7 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
   return (
     <View className="flex-row items-start gap-2">
       <View className="w-7 h-7 rounded-full bg-secondary items-center justify-center overflow-hidden">
-        {avatar ? <Image source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-[10px] font-bold text-foreground">{initials(comment.full_name)}</Text>}
+        {avatar ? <Image key={reloadGen} source={{ uri: avatar }} className="w-full h-full" /> : <Text className="text-[10px] font-bold text-foreground">{initials(comment.full_name)}</Text>}
       </View>
       <Pressable onPress={() => setExpanded((v) => !v)} className="flex-1 bg-muted rounded-xl px-3 py-2">
         <Text className="text-xs font-semibold text-foreground">{comment.full_name}</Text>
@@ -104,6 +107,9 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
   const session = getActiveSession();
   const myUserId = Number(session?.accountId.replace("USR", ""));
   const canModerate = session ? CAN_MODERATE_ROLES.includes(session.role) : false;
+  // Reload gambar otomatis begitu online kembali (2026-09-05, W4E) - lihat
+  // catatan lengkap di services/networkService.ts.
+  const reloadGen = useImageReloadGeneration();
 
   useEffect(() => {
     if (!newsId) { setError("Berita tidak ditemukan."); setLoading(false); return; }
@@ -177,7 +183,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
     <KeyboardAwareScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 }} bottomOffset={20}>
       {thumbnail ? (
         <Pressable onPress={() => setLightbox(resolveAvatarUrl(thumbnail.url))}>
-          <Image source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-52" resizeMode="cover" />
+          <Image key={reloadGen} source={{ uri: resolveAvatarUrl(thumbnail.url) ?? undefined }} className="w-full h-52" resizeMode="cover" />
         </Pressable>
       ) : (
         <View className="w-full h-40 bg-primary/10 items-center justify-center"><ImageIcon size={40} color={colors.primary} /></View>
@@ -218,7 +224,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {activityImages.map((img) => (
                 <Pressable key={img.id} onPress={() => setLightbox(resolveAvatarUrl(img.url))} className="mr-2">
-                  <Image source={{ uri: resolveAvatarUrl(img.url) ?? undefined }} className="w-40 h-40 rounded-xl" resizeMode="cover" />
+                  <Image key={reloadGen} source={{ uri: resolveAvatarUrl(img.url) ?? undefined }} className="w-40 h-40 rounded-xl" resizeMode="cover" />
                 </Pressable>
               ))}
             </ScrollView>
@@ -300,7 +306,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
     {!!lightbox && (
       <Pressable className="absolute inset-0 bg-black/90 items-center justify-center p-4" style={{ zIndex: 50, elevation: 50 }} onPress={() => setLightbox(null)}>
         <Pressable className="absolute top-10 right-4" onPress={() => setLightbox(null)}><X size={28} color="#fff" /></Pressable>
-        <Image source={{ uri: lightbox }} className="w-full h-2/3" resizeMode="contain" />
+        <Image key={reloadGen} source={{ uri: lightbox }} className="w-full h-2/3" resizeMode="contain" />
       </Pressable>
     )}
     </>
