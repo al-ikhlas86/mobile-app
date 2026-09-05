@@ -41,6 +41,21 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const news = useNewsList();
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+  // fetchChildrenData murni fetch (TIDAK setState sendiri) - dipakai 2
+  // pemanggil dgn kebutuhan guard beda, lihat catatan lengkap di
+  // GuruDashboard.tsx (pola identik).
+  const fetchChildrenData = useCallback(() => Promise.all([api.myChildren(), api.attendanceMyChildren()]), []);
+  function applyChildrenData(childrenRes: Awaited<ReturnType<typeof api.myChildren>>, attendanceRes: Awaited<ReturnType<typeof api.attendanceMyChildren>>) {
+    if (childrenRes.success) {
+      setChildren(childrenRes.data);
+      const keepActive = activeChildIdRef.current !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildIdRef.current);
+      const nextActiveId = keepActive ? activeChildIdRef.current : (childrenRes.data[0]?.id ?? null);
+      activeChildIdRef.current = nextActiveId;
+      setActiveChildId(nextActiveId);
+    } else setError(childrenRes.message ?? "Gagal memuat data anak.");
+    if (attendanceRes.success) setAttendance(attendanceRes.data);
+  }
+
   // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
   // presensi basi krn tab tidak pernah unmount saat pindah tab).
   useFocusEffect(
@@ -48,21 +63,19 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       let active = true;
       (async () => {
         setLoading(true);
-        const [childrenRes, attendanceRes] = await Promise.all([api.myChildren(), api.attendanceMyChildren()]);
-        if (!active) return;
-        if (childrenRes.success) {
-          setChildren(childrenRes.data);
-          const keepActive = activeChildIdRef.current !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildIdRef.current);
-          const nextActiveId = keepActive ? activeChildIdRef.current : (childrenRes.data[0]?.id ?? null);
-          activeChildIdRef.current = nextActiveId;
-          setActiveChildId(nextActiveId);
-        } else setError(childrenRes.message ?? "Gagal memuat data anak.");
-        if (attendanceRes.success) setAttendance(attendanceRes.data);
-        setLoading(false);
+        const [childrenRes, attendanceRes] = await fetchChildrenData();
+        if (active) applyChildrenData(childrenRes, attendanceRes);
+        if (active) setLoading(false);
       })();
       return () => { active = false; };
-    }, [])
+    }, [fetchChildrenData])
   );
+
+  // Pull-to-refresh Beranda (2026-09-05, W5) - lihat DashboardLayout::onRefresh.
+  const handleRefresh = useCallback(async () => {
+    const [[childrenRes, attendanceRes]] = await Promise.all([fetchChildrenData(), news.refresh()]);
+    applyChildrenData(childrenRes, attendanceRes);
+  }, [fetchChildrenData, news.refresh]);
 
   function handleSelectChild(id: number) {
     activeChildIdRef.current = id;
@@ -114,7 +127,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
-    <DashboardLayout name={session?.fullName ?? "Orang Tua"} roleLabel="Portal Orang Tua" date={todayLabel}>
+    <DashboardLayout name={session?.fullName ?? "Orang Tua"} roleLabel="Portal Orang Tua" date={todayLabel} onRefresh={handleRefresh}>
       <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />
 
       <Card padding="md">

@@ -49,6 +49,14 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
 
+  // fetchAttendanceData murni fetch (TIDAK setState sendiri) - dipakai 2
+  // pemanggil dgn kebutuhan guard beda: useFocusEffect di bawah HARUS
+  // tetap cek `active` (skip setState kalau screen sudah unmount saat
+  // fetch masih jalan, mis. ganti akun paksa remount MainTabs - preseden
+  // lama), sedangkan handleRefresh (W5, pull-to-refresh) tidak perlu guard
+  // itu (RefreshControl cuma aktif selagi layar ini kelihatan).
+  const fetchAttendanceData = useCallback(() => Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]), []);
+
   // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
   // presensi basi krn tab tidak pernah unmount saat pindah tab).
   useFocusEffect(
@@ -56,14 +64,21 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       let active = true;
       (async () => {
         setLoading(true);
-        const [res, statRes] = await Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]);
+        const [res, statRes] = await fetchAttendanceData();
         if (active && res.success) setRecords(res.data);
         if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
         if (active) setLoading(false);
       })();
       return () => { active = false; };
-    }, [])
+    }, [fetchAttendanceData])
   );
+
+  // Pull-to-refresh Beranda (2026-09-05, W5) - lihat DashboardLayout::onRefresh.
+  const handleRefresh = useCallback(async () => {
+    const [[res, statRes]] = await Promise.all([fetchAttendanceData(), news.refresh()]);
+    if (res.success) setRecords(res.data);
+    if (statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
+  }, [fetchAttendanceData, news.refresh]);
 
   const today = getTodayLocal();
   // Sama spt PegawaiDashboard - HANYA Hadir/Terlambat dihitung "hadir",
@@ -130,7 +145,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 
   return (
-    <DashboardLayout name={session?.fullName ?? (isWaliKelas ? "Guru Kelas" : "Guru")} roleLabel={`${isWaliKelas ? "Ruang Guru Kelas" : "Ruang Guru"}${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel}>
+    <DashboardLayout name={session?.fullName ?? (isWaliKelas ? "Guru Kelas" : "Guru")} roleLabel={`${isWaliKelas ? "Ruang Guru Kelas" : "Ruang Guru"}${isKepalaSekolah ? " + Kepala Sekolah" : ""}`} date={todayLabel} onRefresh={handleRefresh}>
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Hari Ini</Text>
         {loading ? (

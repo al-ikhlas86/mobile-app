@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Image, ScrollView, Pressable } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { CalendarDays, CalendarClock, Bell, Sun, Moon } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
@@ -14,6 +14,11 @@ interface DashboardLayoutProps {
   date: string;
   unitLabel?: string;
   children: React.ReactNode;
+  // Pull-to-refresh Beranda (2026-09-05, W5) - OPSIONAL, cuma dashboard yg
+  // py data utk di-refresh (Guru/Pegawai/OrangTua, lihat berita+ringkasan
+  // hari ini) yang kasih fungsi ini - dashboard lain (AdminIT dkk) tidak
+  // terpengaruh sama sekali kalau prop ini tidak diisi.
+  onRefresh?: () => Promise<void> | void;
 }
 
 // Baris ikon (logo+role kiri, toggle tema+avatar+bel notifikasi kanan) DAN
@@ -22,7 +27,7 @@ interface DashboardLayoutProps {
 // ruang nyata utk teks sambutan di bawahnya (ditemukan dari screenshot HP
 // asli user, bukan tebakan). Cuma badge tanggal pojok kanan-bawah yang
 // tetap absolute (aman, tidak ada elemen lain di situ).
-export function DashboardLayout({ name, roleLabel, date, unitLabel, children }: DashboardLayoutProps) {
+export function DashboardLayout({ name, roleLabel, date, unitLabel, children, onRefresh }: DashboardLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const navigation = useNavigation<any>();
   const { open: openSwitcher } = useAccountSwitcher();
@@ -34,9 +39,20 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children }: 
   // langsung dari viewingYearService bukan prop).
   useViewingYearTick();
   const viewingYear = getViewingYear();
+  const [refreshing, setRefreshing] = useState(false);
+  async function handleRefresh() {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+  }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerStyle={{ paddingBottom: 32 }}
+      refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} /> : undefined}
+    >
       <View className="relative" style={{ minHeight: 220 }}>
         <Image source={require("../../assets/hero.webp")} className="absolute inset-0 w-full h-full" resizeMode="cover" />
         <View className="absolute inset-0 bg-black/40" />
