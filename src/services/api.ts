@@ -415,6 +415,9 @@ export const api = {
   aduanMarkRead: (id: number) => authedFetch(`/api/aduan/${id}/read`, { method: "PATCH" }),
   aduanMarkResolved: (id: number) => authedFetch(`/api/aduan/${id}/resolve`, { method: "PATCH" }),
   faceStatus: () => authedFetch("/api/face/status"),
+  // "Siswa Terdaftar" (2026-09-05, W10) - wali kelas lihat status
+  // pengenalan wajah siswa KELASNYA SENDIRI (scoping dijamin backend).
+  faceClassStatus: () => authedFetch("/api/face/class-status"),
   faceAnalyze: (imageBase64: string) => authedFetch("/api/face/analyze", { method: "POST", body: JSON.stringify({ image_base64: imageBase64 }) }),
   faceEnrollSample: (angle: string, sampleIndex: number, imageBase64: string) =>
     authedFetch("/api/face/enroll-sample", { method: "POST", body: JSON.stringify({ angle, sample_index: sampleIndex, image_base64: imageBase64 }) }),

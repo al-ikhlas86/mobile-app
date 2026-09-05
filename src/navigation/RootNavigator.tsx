@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MainTabs } from "./MainTabs";
 import { LoginScreen } from "../components/screens/LoginScreen";
 import { FaceEnrollmentScreen } from "../components/screens/FaceEnrollmentScreen";
+import { PengenalanWajahTabs } from "../components/screens/PengenalanWajahTabs";
 import { UbahPasswordScreen } from "../components/screens/UbahPasswordScreen";
 import { WaBotConnectionScreen } from "../components/screens/WaBotConnectionScreen";
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
@@ -355,10 +356,18 @@ export function RootNavigator() {
             </Stack.Screen>
             <Stack.Screen name="pengenalan-wajah" options={{ headerShown: true, title: "Pengenalan Wajah" }}>
               {({ navigation }) => (
-                <FaceEnrollmentScreen
-                  onNavigate={(screen) => navigateTo(navigation, screen)}
-                  target={session.role === "Orang Tua" ? "child" : "self"}
-                />
+                // Wali kelas (2026-09-05, W10) dapat 2 tab (Daftarkan Wajah +
+                // Siswa Terdaftar kelasnya) - PengenalanWajahTabs.tsx, BARU.
+                // Guru bukan wali kelas/Pegawai/Orang Tua TIDAK BERUBAH sama
+                // sekali (FaceEnrollmentScreen langsung, tanpa tab).
+                session.isWaliKelas ? (
+                  <PengenalanWajahTabs onNavigate={(screen) => navigateTo(navigation, screen)} />
+                ) : (
+                  <FaceEnrollmentScreen
+                    onNavigate={(screen) => navigateTo(navigation, screen)}
+                    target={session.role === "Orang Tua" ? "child" : "self"}
+                  />
+                )
               )}
             </Stack.Screen>
             <Stack.Screen name="ubah-password" options={{ headerShown: true, title: "Ubah Kata Sandi" }}>
