@@ -154,6 +154,13 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       </Pressable>
 
       <View>
+        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
+        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
+      </View>
+
+      {/* Berita dipindah ke BAWAH menu (2026-09-05, W9) - lihat catatan
+          lengkap di GuruDashboard.tsx. */}
+      <View>
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-sm font-semibold text-muted-foreground uppercase">Berita Terbaru</Text>
           <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
@@ -166,11 +173,6 @@ export function PegawaiDashboard({ onNavigate }: Props) {
           <Pressable onPress={() => onNavigate("berita-acara")}><Text className="text-xs font-semibold text-primary">Lihat Semua</Text></Pressable>
         </View>
         <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
-      </View>
-
-      <View>
-        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
-        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
       </View>
     </DashboardLayout>
   );

@@ -154,6 +154,13 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
         </View>
       </View>
 
+      <View>
+        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
+        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
+      </View>
+
+      {/* Berita dipindah ke BAWAH menu (2026-09-05, W9) - lihat catatan
+          lengkap di GuruDashboard.tsx. */}
       {!berandaPrefs.hideBeritaTerbaru && (
         <View>
           <View className="flex-row items-center justify-between mb-3">
@@ -172,11 +179,6 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
           <NewsCarousel items={news.terpopuler} loading={news.loading} onOpenNews={(id) => onNavigate("berita-acara-viewer", { newsId: id })} />
         </View>
       )}
-
-      <View>
-        <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu</Text>
-        <QuickMenuGrid items={menuCategories.flatMap((c) => c.items)} onSeeAll={() => setShowAllMenu(true)} />
-      </View>
     </DashboardLayout>
   );
 }
