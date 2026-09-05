@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, Image, Pressable, ScrollView } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Newspaper } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../services/api";
 import { useThemeColors } from "../context/ThemeContext";
@@ -25,22 +26,34 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 const MAX_ITEMS = 5;
 
+// useFocusEffect (bukan useEffect biasa, 2026-09-05, W5) - SEBELUMNYA
+// fetch sekali saat mount doang. Dashboard (tab Beranda) TIDAK unmount
+// saat pindah tab (lihat preseden identik di PegawaiDashboard.tsx soal
+// data absen), jadi berita baru yang diterbitkan dari akun/perangkat lain
+// tidak pernah muncul sampai app di-force-close+buka ulang (laporan
+// user). `refresh` juga di-expose (bukan cuma dipanggil internal) supaya
+// dashboard bisa mengikutsertakannya ke pull-to-refresh (RefreshControl
+// via DashboardLayout::onRefresh).
 export function useNewsList() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const res = await api.beritaAcaraList();
-      if (res.success) setItems(res.data);
-      setLoading(false);
-    })();
+  const load = useCallback(async () => {
+    const res = await api.beritaAcaraList();
+    if (res.success) setItems(res.data);
+    setLoading(false);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      load();
+    }, [load])
+  );
 
   const terbaru = items.slice(0, MAX_ITEMS);
   const terpopuler = [...items].sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0)).slice(0, MAX_ITEMS);
-  return { loading, terbaru, terpopuler };
+  return { loading, terbaru, terpopuler, refresh: load };
 }
 
 function formatNewsDate(iso: string): string {
