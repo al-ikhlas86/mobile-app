@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, BarChart3 } from "lucide-react-native";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
@@ -43,6 +44,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 interface Props { role?: RoleName; onNavigate?: (screen: string, params?: Record<string, unknown>) => void; }
 
 export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
@@ -124,7 +126,7 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
 
       <FlatList
         className="flex-1 px-4 mt-4"
-        contentContainerStyle={{ paddingBottom: 32, gap: 8 }}
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 8 }}
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-6">{loading ? "Memuat..." : "Belum ada presensi tercatat tanggal ini."}</Text>}

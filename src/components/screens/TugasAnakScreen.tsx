@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
 import { ClipboardList, BookOpen, CheckCircle, Paperclip, Award, AlertCircle, FileText, X, Send, Pencil } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -33,6 +34,7 @@ const MAX_LAMPIRAN_MB = 10;
 // lama - kirim jawaban teks &/atau lampiran SUNGGUHAN lewat
 // tugasKumpulkanJawaban, bukan cuma tandai status.
 export function TugasAnakScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
@@ -151,7 +153,7 @@ export function TugasAnakScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />
 
       <Text className="text-xs text-muted-foreground">

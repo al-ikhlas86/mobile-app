@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, Image } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { User, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react-native";
 import { Button } from "../ui/Button";
@@ -15,6 +16,7 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
+  const insets = useSafeAreaInsets();
   const { isDark, toggleTheme } = useTheme();
   const colors = useThemeColors();
   const [username, setUsername] = useState("");
@@ -72,7 +74,7 @@ export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
         </View>
       </View>
 
-      <KeyboardAwareScrollView className="flex-1 px-6 pt-8" contentContainerStyle={{ paddingBottom: 32 }} bottomOffset={20}>
+      <KeyboardAwareScrollView className="flex-1 px-6 pt-8" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }} bottomOffset={20}>
           <Text className="text-xl font-bold text-foreground mb-1">Masuk</Text>
           <Text className="text-sm text-muted-foreground mb-6">Gunakan akun yang terdaftar di data sekolah.</Text>
 

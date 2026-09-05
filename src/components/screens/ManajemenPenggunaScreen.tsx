@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -26,6 +27,7 @@ const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r]
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
 export function ManajemenPenggunaScreen({ onNavigate }: Props) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
         Halaman ini khusus akun administratif MANDIRI. Akun Guru/Pegawai/Orang Tua tidak tampil di
         sini. Untuk memberi guru/pegawai yang sudah punya akun kapasitas tambahan (mis. guru yang juga Admin

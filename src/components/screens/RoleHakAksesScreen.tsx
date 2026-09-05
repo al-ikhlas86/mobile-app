@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Shield } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
@@ -19,8 +20,9 @@ const ROLES: { name: string; desc: string; auto?: string }[] = [
 ];
 
 export function RoleHakAksesScreen() {
+  const insets = useSafeAreaInsets();
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <Text className="text-xs text-muted-foreground">Referensi peran yang tersedia di aplikasi ini. Untuk mengubah role akun pegawai, gunakan menu Manajemen Pengguna.</Text>
       {ROLES.map((r) => (
         <Card key={r.name} padding="md">

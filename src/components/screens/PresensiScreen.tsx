@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
@@ -96,6 +97,7 @@ function badgeVariantForStatus(status: string): "success" | "error" | "warning" 
 }
 
 export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
   const [records, setRecords] = useState<AttendanceRow[]>([]);
@@ -205,7 +207,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
       </View>
 
       {activeTab === "izin" ? (
-        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
           <Card padding="lg">
             <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit</Text>
             <Text className="text-xs text-muted-foreground mb-4">Pengajuan Anda langsung tercatat begitu dikirim (tanpa persetujuan atasan).</Text>
@@ -241,7 +243,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
       ) : (
         <ScrollView
           className="flex-1 px-4 pt-4"
-          contentContainerStyle={{ paddingBottom: 32, gap: 20 }}
+          contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         >
           <Card padding="md">

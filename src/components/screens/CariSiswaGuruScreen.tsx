@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, FlatList, Pressable, Linking, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, GraduationCap, UserCog, Phone, AlertCircle } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
@@ -13,6 +14,7 @@ const JABATAN_LABEL: Record<string, string> = { guru_kelas: "Guru Kelas", guru_b
 // Direktori pencarian cepat READ-ONLY - lihat catatan lengkap di versi
 // webview (CariSiswaGuruScreen.tsx), port 1:1.
 export function CariSiswaGuruScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,7 +73,7 @@ export function CariSiswaGuruScreen() {
       {tab === "siswa" ? (
         <FlatList
           className="flex-1"
-          contentContainerStyle={{ paddingBottom: 32, gap: 8 }}
+          contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 8 }}
           data={filteredStudents}
           keyExtractor={(s) => String(s.id)}
           ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-8">Tidak ada siswa ditemukan.</Text>}
@@ -90,7 +92,7 @@ export function CariSiswaGuruScreen() {
       ) : (
         <FlatList
           className="flex-1"
-          contentContainerStyle={{ paddingBottom: 32, gap: 8 }}
+          contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 8 }}
           data={filteredEmployees}
           keyExtractor={(e) => String(e.id)}
           ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-8">Tidak ada guru/pegawai ditemukan.</Text>}

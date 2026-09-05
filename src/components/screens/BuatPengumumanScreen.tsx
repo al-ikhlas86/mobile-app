@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TextInput } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Megaphone } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -11,6 +12,7 @@ import { useThemeColors } from "../../context/ThemeContext";
 const TARGET_OPTIONS = [{ value: "ALL", label: "Semua Pengguna" }, ...Object.entries(ROLE_MAP).map(([value, label]) => ({ value, label }))];
 
 export function BuatPengumumanScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -29,7 +31,7 @@ export function BuatPengumumanScreen() {
   };
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">Pengumuman muncul di tab "Pengumuman" pada menu Notifikasi seluruh pengguna yang jadi target - terpisah dari notifikasi aktivitas biasa.</Text>
       {success ? <View className="bg-green-50 border border-green-200 rounded-xl px-4 py-3"><Text className="text-sm text-green-700">Pengumuman berhasil dikirim.</Text></View> : null}
       {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}

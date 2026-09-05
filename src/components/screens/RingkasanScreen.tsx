@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "../ui/Card";
 import { SimplePicker } from "../ui/SimplePicker";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -53,6 +54,7 @@ function SimpleBarRow({ data, color, colors }: { data: { tanggal: string; count:
 // & plan migrasi Absen). Admin IT/Supervisor bebas pilih unit; role lain
 // (Admin TU, Guru Kelas) otomatis dikunci ke unitnya sendiri di server.
 export function RingkasanScreen({ role }: { role: RoleName }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const canPickUnit = role === "Admin IT" || role === "Supervisor";
   const [units, setUnits] = useState<{ id: number; label: string }[]>([]);
@@ -91,7 +93,7 @@ export function RingkasanScreen({ role }: { role: RoleName }) {
   if (loading && !data) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
       <View className="flex-row gap-2.5">
         {canPickUnit && units.length > 0 && (
           <View className="flex-1">

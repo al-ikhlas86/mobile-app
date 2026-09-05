@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft, ChevronRight, AlertTriangle, History } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -15,6 +16,7 @@ interface LogItem { id: number; actor_user_id: number | null; actor_name: string
 function formatTime(ts: string) { return new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
 export function ActivityLogScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [items, setItems] = useState<LogItem[] | null>(null);
   const [page, setPage] = useState(1);
@@ -33,7 +35,7 @@ export function ActivityLogScreen() {
   }, [page]);
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <Text className="text-xs text-muted-foreground">Riwayat aksi administratif sensitif (ganti role, hapus akun, ganti password, putus koneksi WA, dst).</Text>
       {loading ? (
         <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /></View></Card>

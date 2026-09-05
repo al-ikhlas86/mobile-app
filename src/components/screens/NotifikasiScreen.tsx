@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator, Alert } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X, Trash2 } from "lucide-react-native";
 import { api } from "../../services/api";
@@ -38,6 +39,7 @@ function timeAgo(iso: string): string {
 }
 
 export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [items, setItems] = useState<NotifItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +123,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
 
       <FlatList
         className="flex-1 px-4 mt-3"
-        contentContainerStyle={{ paddingBottom: 32, gap: 8 }}
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 8 }}
         data={current}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, Pressable, Linking, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UserPlus, Check, X, FileText, AlertCircle, Phone } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -32,6 +33,7 @@ interface KelasOption {
 // Persetujuan PSB dari HP - port 1:1 dari versi webview
 // (PersetujuanPsbScreen.tsx), lihat catatan arsitektur lengkap di sana.
 export function PersetujuanPsbScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,7 +86,7 @@ export function PersetujuanPsbScreen() {
   const kelasPickerOptions = kelasOptions.map((k) => ({ value: String(k.source_id), label: `${k.tingkat} ${k.nama}` }));
 
   return (
-    <ScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32, gap: 12 }}>
+    <ScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex-row items-start gap-2">
         <AlertCircle size={16} color="#d97706" style={{ marginTop: 2 }} />
         <Text className="flex-1 text-xs text-amber-700">

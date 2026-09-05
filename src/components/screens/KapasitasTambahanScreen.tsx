@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Search, X, Trash2 } from "lucide-react-native";
 import { Card } from "../ui/Card";
@@ -18,6 +19,7 @@ interface Holder { id: number; username: string; full_name: string; role: string
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
 export function KapasitasTambahanScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [capability, setCapability] = useState(CAPABILITY_OPTIONS[0]);
   const [holders, setHolders] = useState<Holder[]>([]);
@@ -80,7 +82,7 @@ export function KapasitasTambahanScreen() {
   const holderIds = new Set(holders.map((h) => h.id));
 
   return (
-    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32, gap: 16 }} bottomOffset={20}>
+    <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
         Pilih 1 sistem di bawah, lalu cari LANGSUNG nama guru/pegawai yang sudah ada di sistem sekolah (tidak
         perlu dibuat dulu di Manajemen Pengguna). Begitu ditambahkan, menu sistem itu otomatis muncul di akun
