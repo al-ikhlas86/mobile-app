@@ -147,9 +147,24 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
     });
     if (result.canceled || result.assets.length === 0) return;
 
-    const id = editingId ?? (await saveOrCreate());
-    if (!id) return;
+    // BUG NYATA ditemukan user (2026-09-05, susulan W4A): flag
+    // uploadingThumb/uploadingActivity SEBELUMNYA baru di-set TRUE
+    // SETELAH `saveOrCreate()` (network round-trip bikin/update artikel
+    // dulu) selesai - ada celah waktu SEBELUM flag itu true dimana tombol
+    // Terbitkan/Simpan Draft SEMPAT enabled lagi (formSaving milik
+    // saveOrCreate sendiri sudah balik false, uploadingThumb belum
+    // sempat true). Diperbaiki: flag di-set TRUE PALING AWAL (sebelum
+    // saveOrCreate dipanggil sama sekali) - tidak ada celah tersisa.
     if (type === "thumbnail") setUploadingThumb(true); else setUploadingActivity(true);
+    const id = editingId ?? (await saveOrCreate());
+    if (!id) {
+      // saveOrCreate gagal (mis. judul masih kosong) - upload dibatalkan,
+      // flag WAJIB dilepas lagi di sini juga (bukan cuma di akhir fungsi)
+      // supaya tombol tidak nyangkut disabled selamanya kalau gagal di titik ini.
+      if (type === "thumbnail") setUploadingThumb(false); else setUploadingActivity(false);
+      setFormMessage((prev) => prev || "Isi judul dulu sebelum upload gambar.");
+      return;
+    }
     for (const asset of result.assets) {
       const { uri, mime } = await resizeForUpload(asset.uri, asset.mimeType ?? "image/jpeg");
       const res = await api.beritaAcaraUploadMedia(id, uri, mime, type);

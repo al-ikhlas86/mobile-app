@@ -51,6 +51,13 @@ export function useNewsList() {
     }, [load])
   );
 
+  // reloadGen (2026-09-05, susulan W4E) - auto-retry begitu TERDETEKSI
+  // online kembali, sama alasan dgn BeritaAcaraScreen.tsx (koneksi
+  // terputus PAS carousel ini sedang/baru fetch, jangan nyangkut nunggu
+  // aksi manual/timeout).
+  const reloadGen = useImageReloadGeneration();
+  React.useEffect(() => { load(); }, [load, reloadGen]);
+
   const terbaru = items.slice(0, MAX_ITEMS);
   const terpopuler = [...items].sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0)).slice(0, MAX_ITEMS);
   return { loading, terbaru, terpopuler, refresh: load };
