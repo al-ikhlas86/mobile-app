@@ -164,6 +164,18 @@ export async function verifyOtp(
   }
 }
 
+// Timeout+try/catch (2026-09-05, susulan W4B) - BUG NYATA ditemukan user:
+// authedUpload() sudah dikasih timeout (W4B), tapi authedFetch() - dipakai
+// HAMPIR SEMUA layar (daftar Berita Acara dkk), jauh lebih sering dipanggil
+// drpd upload - TERNYATA masih fetch() polos TANPA batas waktu. Skenario
+// persis laporan user: koneksi terputus PAS request sedang jalan, lalu
+// koneksi nyambung lagi - promise fetch yang lama itu TIDAK PERNAH
+// resolve/reject (OS bisa nahan socket menggantung bermenit-menit), spinner
+// loading di layar (mis. Berita Acara) muter SELAMANYA krn kode pemanggil
+// (mis. `setLoading(false)` di BeritaAcaraScreen.tsx) tidak pernah
+// terpanggil. 15 detik dianggap wajar utk request JSON biasa (jauh lebih
+// pendek dari upload 30 detik - respons JSON normal harusnya cepat).
+const FETCH_TIMEOUT_MS = 15000;
 async function authedFetch(path: string, options: RequestInit = {}) {
   const token = getActiveToken();
   // X-Viewing-Tahun-Ajaran (2026-09-04, Fase 4) - dipasang di SETIAP request
@@ -172,20 +184,30 @@ async function authedFetch(path: string, options: RequestInit = {}) {
   // aktif spt sebelum Fase 4 ada - lihat middleware/auth.js). Sama persis
   // pola webview api.ts.
   const viewingYear = getViewingYear();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: token ? `Bearer ${token}` : "",
-      "Content-Type": "application/json",
-      ...(viewingYear ? { "X-Viewing-Tahun-Ajaran": String(viewingYear.id) } : {}),
-    },
-  });
-  if (res.status === 401 && token && getActiveToken() === token) {
-    await logout();
-    DeviceEventEmitter.emit(SESSION_EXPIRED_EVENT);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json",
+        ...(viewingYear ? { "X-Viewing-Tahun-Ajaran": String(viewingYear.id) } : {}),
+      },
+      signal: controller.signal,
+    });
+    if (res.status === 401 && token && getActiveToken() === token) {
+      await logout();
+      DeviceEventEmitter.emit(SESSION_EXPIRED_EVENT);
+    }
+    return await res.json();
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === "AbortError";
+    return { success: false, message: timedOut ? "Waktu koneksi habis, coba lagi." : "Tidak dapat menghubungi server. Cek koneksi internet Anda." };
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return res.json();
 }
 
 // Timeout+try/catch (2026-09-05, W4B) - SEBELUMNYA fetch() polos tanpa

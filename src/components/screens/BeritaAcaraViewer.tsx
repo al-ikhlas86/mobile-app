@@ -113,10 +113,14 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
   // catatan lengkap di services/networkService.ts.
   const reloadGen = useImageReloadGeneration();
 
+  // reloadGen ikut dependency (2026-09-05, susulan W4E) - auto-retry
+  // begitu TERDETEKSI online kembali, sama alasan dgn BeritaAcaraScreen.tsx
+  // (koneksi terputus PAS layar ini fetch, jangan nyangkut di pesan error).
   useEffect(() => {
     if (!newsId) { setError("Berita tidak ditemukan."); setLoading(false); return; }
     (async () => {
       setLoading(true);
+      setError("");
       const res = await api.beritaAcaraDetail(Number(newsId));
       if (res.success) {
         setPost(res.data);
@@ -125,7 +129,7 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
       } else setError(res.message ?? "Berita tidak ditemukan.");
       setLoading(false);
     })();
-  }, [newsId]);
+  }, [newsId, reloadGen]);
 
   async function handleToggleLike() {
     if (!post || likeBusy) return;

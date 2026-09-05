@@ -26,7 +26,17 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
     setLoading(false);
     setRefreshing(false);
   }, []);
-  useEffect(() => { load(); }, [load]);
+  // reloadGen ikut jadi dependency (2026-09-05, susulan W4E) - laporan
+  // user: koneksi terputus PAS layar ini sedang load, lalu koneksi
+  // nyambung lagi - layar tetap muter loading selamanya walau app lain
+  // (IG dkk) sudah normal. authedFetch SEKARANG sudah py timeout 15 detik
+  // (jadi TIDAK LAGI muter selamanya), tapi user tetap harus tunggu 15
+  // detik lalu buka manual lagi - reloadGen brubah begitu TERDETEKSI
+  // online kembali, otomatis retry TANPA nunggu/tanpa aksi manual, gaya
+  // Instagram. `load` stabil (useCallback deps kosong) jadi effect ini
+  // TETAP cuma jalan 1x saat mount + tiap reloadGen berubah (bukan dobel
+  // fetch tiap render).
+  useEffect(() => { load(); }, [load, reloadGen]);
 
   const filtered = items.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
 
