@@ -202,6 +202,15 @@ export function RootNavigator() {
     const s = await switchAccount(accountId);
     if (s) applySession(s);
     setShowSwitcher(false);
+    // Bug NYATA ditemukan 2026-09-05 (laporan user): switchAccount() cuma baca
+    // SavedAccount yang di-cache lokal (bisa BASI - capability akun itu bisa
+    // sudah dicabut/berubah sejak terakhir kali akun itu sendiri aktif &
+    // refresh). Refresh SEGERA dari server (bukan tunggu siklus foreground
+    // berikutnya) supaya menu yang sudah tidak berhak langsung hilang, bukan
+    // baru hilang setelah force-close+buka lagi. HARUS setelah applySession
+    // (switchAccount sudah set token akun BARU, refreshSessionFromServer
+    // pakai token itu).
+    await refreshSessionFromServer();
   };
 
   const handleAddAccount = () => {
