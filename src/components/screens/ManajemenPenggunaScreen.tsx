@@ -24,6 +24,11 @@ interface AccountLinkReview { id: number; nama: string; jabatan: string | null; 
 // salinan di webview (src/app/components/screens/ManajemenPenggunaScreen.tsx).
 const ASSIGNABLE_ROLES = ["admin_it", "supervisor", "admin_tu_sd", "admin_media_sd", "admin_tu_tk", "admin_media_tk", "keuangan"];
 const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
+// Tambah Akun BARU dipersempit jadi Admin IT saja (2026-09-07, sama alasan
+// & pola dgn versi webview - lihat catatan lengkap di sana). Picker
+// role-CHANGE utk akun yang sudah ada (baris 178-an) SENGAJA tetap pakai
+// ROLE_OPTIONS penuh, tidak ikut dipersempit.
+const CREATABLE_ROLE_OPTIONS = ROLE_OPTIONS.filter((o) => o.value === "admin_it");
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
 export function ManajemenPenggunaScreen({ onNavigate }: Props) {
@@ -40,7 +45,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newFullName, setNewFullName] = useState("");
-  const [newRole, setNewRole] = useState(ASSIGNABLE_ROLES[0]);
+  const [newRole, setNewRole] = useState(CREATABLE_ROLE_OPTIONS[0].value);
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
   const currentUserId = Number(getActiveSession()?.accountId?.replace(/^USR/, "")) || null;
@@ -78,7 +83,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
     const res = await api.adminDeleteUser(userId);
     if (res.success) setUsers((prev) => prev.filter((u) => u.id !== userId)); else setError(res.message ?? "Gagal menghapus akun.");
   };
-  const resetAddForm = () => { setNewUsername(""); setNewPassword(""); setNewFullName(""); setNewRole(ASSIGNABLE_ROLES[0]); setAddError(""); setShowAddForm(false); };
+  const resetAddForm = () => { setNewUsername(""); setNewPassword(""); setNewFullName(""); setNewRole(CREATABLE_ROLE_OPTIONS[0].value); setAddError(""); setShowAddForm(false); };
   const handleAdd = async () => {
     if (!newUsername.trim() || !newPassword || !newFullName.trim()) { setAddError("Username, password, dan nama wajib diisi."); return; }
     setAddSaving(true); setAddError("");
@@ -94,8 +99,9 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
         Halaman ini khusus akun administratif MANDIRI. Akun Guru/Pegawai/Orang Tua tidak tampil di
-        sini. Untuk memberi guru/pegawai yang sudah punya akun kapasitas tambahan (mis. guru yang juga Admin
-        Media SD), gunakan menu Kapasitas Tambahan, bukan di sini.
+        sini. Akun baru yang bisa dibuat di sini cuma Admin IT - peran lain (Supervisor, Admin TU, Admin
+        Media, Keuangan) ditempelkan ke guru/pegawai yang sudah ada lewat menu Kapasitas Tambahan, bukan
+        dibuat sebagai akun baru di sini.
       </Text>
 
       <Pressable onPress={() => onNavigate("kapasitas-tambahan")} className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
