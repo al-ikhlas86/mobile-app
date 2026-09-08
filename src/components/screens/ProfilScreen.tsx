@@ -37,6 +37,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
   const [email, setEmail] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean> | null>(null);
   const session = getActiveSession();
   const isOrangTua = role === "Orang Tua";
@@ -85,9 +86,18 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
     else setNotifPrefs((prev) => (prev ? { ...prev, [key]: !next } : prev)); // rollback kalau gagal
   }
 
+  // BUG NYATA ditemukan (2026-09-08, dilaporkan user - foto profil "gak
+  // keganti-ganti" di Poco M3 tanpa pesan apapun): sebelumnya TIDAK ADA
+  // cabang else sama sekali kalau upload gagal - spinner hilang, foto lama
+  // tetap ada, user tidak pernah tahu KENAPA. Sekarang pesan error dari
+  // server (atau dari authedUpload kalau network/timeout) ditampilkan.
   async function handleAvatarChange() {
+    setAvatarError(null);
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    if (!perm.granted) {
+      setAvatarError("Izin akses galeri ditolak - aktifkan lewat Pengaturan HP.");
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
     if (result.canceled || !result.assets[0]) return;
     setAvatarUploading(true);
@@ -98,13 +108,21 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
       const url = resolveAvatarUrl(res.data.avatar_url);
       setAvatarUrl(url);
       onAvatarChanged(url);
+    } else {
+      setAvatarError(res.message ?? "Gagal mengunggah foto profil. Coba lagi.");
     }
   }
   async function handleAvatarRemove() {
     setAvatarUploading(true);
+    setAvatarError(null);
     const res = await api.deleteAvatar();
     setAvatarUploading(false);
-    if (res.success) { setAvatarUrl(null); onAvatarChanged(null); }
+    if (res.success) {
+      setAvatarUrl(null);
+      onAvatarChanged(null);
+    } else {
+      setAvatarError(res.message ?? "Gagal menghapus foto profil. Coba lagi.");
+    }
   }
 
   if (!session) return null;
@@ -132,6 +150,9 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Text className="text-xl font-bold text-primary-foreground">{displayName}</Text>
         <Badge variant="primary" className="mt-2 bg-white/15"><Text className="text-primary-foreground">{session.role}</Text></Badge>
         <Text className="text-xs text-primary-foreground mt-2">@{session.username}</Text>
+        {avatarError && (
+          <Text className="text-xs text-red-100 bg-red-900/30 rounded-lg px-3 py-1.5 mt-3">{avatarError}</Text>
+        )}
       </Card>
 
       <Card padding="md">
