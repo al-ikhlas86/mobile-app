@@ -40,7 +40,11 @@ interface Statistik {
 }
 
 const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-const JENIS_OPTIONS = [{ value: "sakit", label: "Sakit" }, { value: "izin", label: "Izin (Ada Keperluan)" }];
+const JENIS_OPTIONS = [
+  { value: "sakit", label: "Sakit" },
+  { value: "izin", label: "Izin (Ada Keperluan)" },
+  { value: "terlambat", label: "Terlambat (kasih tahu lebih dulu)" },
+];
 
 // Ambang akurasi sama dgn default server (checkin_max_accuracy_meters di
 // Absen) - cuma dipakai di sini utk keputusan RETRY sblm kirim ke server,
@@ -108,7 +112,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
   const [checkinMessage, setCheckinMessage] = useState<{ text: string; kind: "ok" | "error" | "progress" } | null>(null);
 
   const [izinTanggal, setIzinTanggal] = useState(getTodayLocal());
-  const [izinJenis, setIzinJenis] = useState<"sakit" | "izin">("sakit");
+  const [izinJenis, setIzinJenis] = useState<"sakit" | "izin" | "terlambat">("sakit");
   const [izinKeterangan, setIzinKeterangan] = useState("");
   const [izinFoto, setIzinFoto] = useState<{ uri: string; mimeType?: string; name: string } | null>(null);
   const [izinBusy, setIzinBusy] = useState(false);
@@ -209,8 +213,8 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
       {activeTab === "izin" ? (
         <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
           <Card padding="lg">
-            <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit</Text>
-            <Text className="text-xs text-muted-foreground mb-4">Pengajuan Anda langsung tercatat begitu dikirim (tanpa persetujuan atasan).</Text>
+            <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit / Terlambat</Text>
+            <Text className="text-xs text-muted-foreground mb-4">Pengajuan Sakit/Izin berstatus Menunggu Persetujuan sampai disetujui Kepala Sekolah - jika ditolak, hari itu dianggap Alfa. Pengajuan Terlambat cuma catatan alasan di muka - Anda tetap wajib presensi Masuk seperti biasa nanti.</Text>
             <View className="gap-3">
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Tanggal</Text>
@@ -218,7 +222,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
               </View>
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Jenis Pengajuan</Text>
-                <SimplePicker value={izinJenis} options={JENIS_OPTIONS} onChange={(v) => setIzinJenis(v as "sakit" | "izin")} />
+                <SimplePicker value={izinJenis} options={JENIS_OPTIONS} onChange={(v) => setIzinJenis(v as "sakit" | "izin" | "terlambat")} />
               </View>
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Alasan / Keterangan</Text>

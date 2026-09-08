@@ -12,7 +12,7 @@ import { useThemeColors } from "../../context/ThemeContext";
 interface PendingRow {
   id: number;
   tanggal: string;
-  jenis: "sakit" | "izin";
+  jenis: "sakit" | "izin" | "terlambat";
   keterangan: string | null;
   bukti_foto_url: string | null;
   guru_nama: string;
@@ -86,7 +86,7 @@ export function PersetujuanIzinGuruScreen() {
                 <Text className="text-sm font-semibold text-foreground">{item.guru_nama}</Text>
                 <Text className="text-xs text-muted-foreground">{formatDateFull(item.tanggal)}</Text>
               </View>
-              <Badge variant="info">{item.jenis === "sakit" ? "Sakit" : "Izin"}</Badge>
+              <Badge variant="info">{item.jenis === "sakit" ? "Sakit" : item.jenis === "terlambat" ? "Terlambat" : "Izin"}</Badge>
             </View>
             {!!item.keterangan && <Text className="text-sm text-foreground mb-2">{item.keterangan}</Text>}
             {!!item.bukti_foto_url && (

@@ -19,7 +19,11 @@ interface AttendanceRow { student_cache_id: number; tanggal: string; check_in_ti
 interface Statistik { total_active_days: number; days_present: number; absent_count: number; late_count: number; late_disabled: boolean; attendance_percentage: number; }
 
 const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-const JENIS_OPTIONS = [{ value: "sakit", label: "Sakit" }, { value: "izin", label: "Izin (Ada Keperluan)" }];
+const JENIS_OPTIONS = [
+  { value: "sakit", label: "Sakit" },
+  { value: "izin", label: "Izin (Ada Keperluan)" },
+  { value: "terlambat", label: "Terlambat (kasih tahu lebih dulu)" },
+];
 
 function initials(name: string): string { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 function formatDateFull(dateStr: string): string { return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
@@ -45,7 +49,7 @@ export function PresensiAnak() {
   const [statistik, setStatistik] = useState<Statistik | null>(null);
 
   const [izinTanggal, setIzinTanggal] = useState(getTodayLocal());
-  const [izinJenis, setIzinJenis] = useState<"sakit" | "izin">("sakit");
+  const [izinJenis, setIzinJenis] = useState<"sakit" | "izin" | "terlambat">("sakit");
   const [izinKeterangan, setIzinKeterangan] = useState("");
   const [izinFoto, setIzinFoto] = useState<{ uri: string; mimeType?: string; name: string } | null>(null);
   const [izinBusy, setIzinBusy] = useState(false);
@@ -161,8 +165,8 @@ export function PresensiAnak() {
       {activeTab === "izin" ? (
         <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
           <Card padding="lg">
-            <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit untuk {child.nama}</Text>
-            <Text className="text-xs text-muted-foreground mb-4">Pengajuan akan berstatus Menunggu Persetujuan sampai disetujui wali kelas. Jika ditolak, hari itu dianggap Alfa.</Text>
+            <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit / Terlambat untuk {child.nama}</Text>
+            <Text className="text-xs text-muted-foreground mb-4">Pengajuan Sakit/Izin akan berstatus Menunggu Persetujuan sampai disetujui wali kelas - jika ditolak, hari itu dianggap Alfa. Pengajuan Terlambat cuma catatan alasan di muka - {child.nama} tetap wajib presensi Masuk seperti biasa nanti.</Text>
             <View className="gap-3">
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Tanggal</Text>
@@ -170,7 +174,7 @@ export function PresensiAnak() {
               </View>
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Jenis Pengajuan</Text>
-                <SimplePicker value={izinJenis} options={JENIS_OPTIONS} onChange={(v) => setIzinJenis(v as "sakit" | "izin")} />
+                <SimplePicker value={izinJenis} options={JENIS_OPTIONS} onChange={(v) => setIzinJenis(v as "sakit" | "izin" | "terlambat")} />
               </View>
               <View>
                 <Text className="text-xs font-medium text-foreground mb-1.5">Alasan / Keterangan</Text>

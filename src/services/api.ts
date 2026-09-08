@@ -331,7 +331,7 @@ export const api = {
     return authedFetch(`/api/attendance/monthly-matrix/download-link?${params.toString()}`);
   },
   // Izin/Sakit - lihat routes/leave.js (Node) & LeaveRequestController (Absen)
-  leaveSubmit: (data: { tanggal: string; jenis: "sakit" | "izin"; keterangan?: string; studentCacheId?: number; buktiFotoUri?: string; buktiFotoMime?: string }) => {
+  leaveSubmit: (data: { tanggal: string; jenis: "sakit" | "izin" | "terlambat"; keterangan?: string; studentCacheId?: number; buktiFotoUri?: string; buktiFotoMime?: string }) => {
     const form = new FormData();
     form.append("tanggal", data.tanggal);
     form.append("jenis", data.jenis);
