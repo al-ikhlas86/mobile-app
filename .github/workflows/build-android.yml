@@ -100,17 +100,29 @@ jobs:
         if: always()
         run: rm -f google-services.json release.keystore
 
+      # retention-days DITAMBAHKAN EKSPLISIT 2026-09-11 (sebelumnya tidak diisi
+      # sama sekali, mengandalkan default akun/repo) - ditemukan run #13/#14/#15
+      # (dibuat 2026-09-04/05) SEMUA sudah 0 artifact lagi per 2026-09-11 (baru
+      # ~6 hari), jauh lebih cepat dari default 90 hari GitHub - kemungkinan
+      # besar ada pengaturan retensi default akun yang lebih pendek dari
+      # perkiraan. Link unduh APK langsung di
+      # https://alikhlas86.duckdns.org/al-ikhlas-86.apk TIDAK terpengaruh (lihat
+      # step "Deploy APK to VPS" di bawah - terpisah total dari GitHub
+      # Artifacts), tapi AAB (utk upload ke Play Store) HANYA ada di sini, jadi
+      # tetap butuh retensi yang jelas & cukup panjang.
       - name: Upload APK artifact
         uses: actions/upload-artifact@v6
         with:
           name: al-ikhlas-86-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v6
         with:
           name: al-ikhlas-86-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
 
       # Supaya link https://alikhlas86.duckdns.org/al-ikhlas-86.apk SELALU
       # unduh APK terbaru tanpa lewat GitHub Artifacts (yg selalu dibungkus
@@ -159,11 +171,13 @@ jobs:
       # if: always() supaya pembersihan tetap jalan walau langkah deploy di
       # atas sempat gagal - justru saat build bermasalah storage paling
       # gampang menumpuk.
-      # CATATAN 2026-09-11: label langkah ini SEBELUMNYA salah tulis "simpan 3
-      # terbaru" - `tail -n +3` (setelah `sort -r`, terbaru duluan) SEBENARNYA
-      # SUDAH DARI DULU cuma menyisakan 2 baris TERATAS - perilaku kodenya
-      # sudah cocok dgn permintaan terbaru user "cukup 2 terbaru", cuma
-      # labelnya yang diperbaiki di sini, TIDAK ada perubahan perilaku.
+      # KOREKSI 2026-09-11 (revisi ke-2, bug NYATA - lihat catatan lengkap di
+      # build.yml DataMaster): run yang SEDANG menjalankan step ini SENDIRI
+      # belum berstatus "completed" di API saat query jalan, jadi tidak pernah
+      # terhitung - `tail -n +3` (skip 2) membuat steady-state-nya jadi 3 run
+      # tersisa, bukan 2. Diperkecil ke `tail -n +2` (skip 1). Dikonfirmasi
+      # nyata 2026-09-11: repo ini masih tampil run #13/#14/#15 (3 run)
+      # sebelum perbaikan ini, persis sesuai analisa.
       - name: Bersihkan run build lama (simpan 2 terbaru)
         if: always()
         env:
@@ -171,7 +185,7 @@ jobs:
         run: |
           gh api "repos/${{ github.repository }}/actions/workflows/build-android.yml/runs?per_page=100" \
             --jq '.workflow_runs[] | select(.status == "completed") | "\(.created_at) \(.id)"' \
-            | sort -r | tail -n +3 | awk '{print $2}' \
+            | sort -r | tail -n +2 | awk '{print $2}' \
             | while read -r id; do
                 echo "hapus run lama id=$id"
                 gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id" || true
