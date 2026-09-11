@@ -10,7 +10,7 @@
 // nyata di HP, lihat catatan panjang di versi webview-nya.
 // ============================================================
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, ScrollView } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { CheckCircle2, Circle, Camera, AlertCircle } from "lucide-react-native";
@@ -46,6 +46,13 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   const [cameraActive, setCameraActive] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [message, setMessage] = useState("");
+  // Toast hijau "Berhasil" di layar atas (2026-09-11, poin #10) - PISAH dari
+  // `message` (teks kecil di dalam kartu kamera, tetap dipertahankan apa
+  // adanya) - ini popup singkat yang lebih menonjol, auto-hilang ~1,8 detik,
+  // MURNI di dalam app (bukan push notification asli ke luar app, sesuai
+  // permintaan eksplisit).
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [autoStatus, setAutoStatus] = useState("");
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
@@ -84,7 +91,10 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
       await loadStatus();
     })();
   }, []);
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Ganti anak aktif - progres pendaftaran wajah TERPISAH per anak, jadi
   // status/langkah lokal harus dimuat ulang dari nol (bukan melanjutkan
@@ -156,6 +166,9 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
     if (res.success) {
       setDoneAngles((prev) => new Set(prev).add(angle));
       setMessage(`"${label}" berhasil disimpan.`);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      setToast(`✓ ${label} berhasil direkam`);
+      toastTimerRef.current = setTimeout(() => setToast(null), 1800);
     } else {
       const reason = res.data?.reason || res.data?.detail || res.data?.message || res.message || "Foto tidak memenuhi syarat, coba lagi.";
       setMessage(`Ditolak: ${reason}`);
@@ -254,7 +267,27 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
   const childLabel = children.find((c) => c.id === activeChildId)?.nama ?? "anak Anda";
 
   return (
-    <View className="flex-1 bg-background px-4 pt-5 gap-5">
+    <View className="flex-1 bg-background">
+      {/* Toast "Berhasil" (poin #10) - overlay tetap di layar atas walau
+          discroll, auto-hilang sendiri, murni in-app (bukan push notif
+          asli keluar app). */}
+      {toast ? (
+        <View
+          pointerEvents="none"
+          className="absolute top-3 left-4 right-4 z-50 bg-green-600 rounded-xl px-4 py-3 flex-row items-center gap-2"
+          style={{ elevation: 6, shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }}
+        >
+          <CheckCircle2 size={18} color="#ffffff" />
+          <Text className="text-sm font-semibold text-white">{toast}</Text>
+        </View>
+      ) : null}
+
+      {/* ScrollView (2026-09-11, poin #10) - SEBELUMNYA View biasa tanpa
+          scroll sama sekali: begitu kamera aktif, kartu Progres Pendaftaran
+          (3 checklist depan/kanan/kiri) bisa terdorong keluar layar di HP
+          layar kecil TANPA CARA melihatnya lagi - dilaporkan user langsung
+          ("gabisa scroll kebawah tadi buat cek berhasil/tidak"). */}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, gap: 20 }}>
       {isChild ? <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} /> : null}
 
       {error ? (
@@ -275,18 +308,6 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
         </Text>
       </Card>
 
-      <Card padding="md">
-        <Text className="text-sm font-semibold text-foreground mb-3">Progres Pendaftaran</Text>
-        <View className="flex flex-col gap-2">
-          {STEPS.map((s) => (
-            <View key={s.angle} className="flex-row items-center gap-2.5">
-              {doneAngles.has(s.angle) ? <CheckCircle2 size={18} color="#22c55e" /> : <Circle size={18} color={colors.mutedForeground} />}
-              <Text className={`text-sm ${doneAngles.has(s.angle) ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-
       {complete && !cameraActive && (
         <Card padding="md">
           <Button fullWidth variant="outline" onPress={handleReenroll}>
@@ -296,6 +317,9 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
         </Card>
       )}
 
+      {/* Kartu kamera DIPINDAH ke atas kartu Progres (poin #10, permintaan
+          eksplisit "tuker posisi kamera di atas") - urutan sekarang: kamera
+          dulu, checklist 3 poin di bawahnya. */}
       {(!complete || cameraActive) && (
         <Card padding="md">
           {!cameraActive ? (
@@ -334,6 +358,19 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
           )}
         </Card>
       )}
+
+      <Card padding="md">
+        <Text className="text-sm font-semibold text-foreground mb-3">Progres Pendaftaran</Text>
+        <View className="flex flex-col gap-2">
+          {STEPS.map((s) => (
+            <View key={s.angle} className="flex-row items-center gap-2.5">
+              {doneAngles.has(s.angle) ? <CheckCircle2 size={18} color="#22c55e" /> : <Circle size={18} color={colors.mutedForeground} />}
+              <Text className={`text-sm ${doneAngles.has(s.angle) ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+      </ScrollView>
     </View>
   );
 }
