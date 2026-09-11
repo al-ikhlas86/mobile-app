@@ -190,3 +190,28 @@ jobs:
                 echo "hapus run lama id=$id"
                 gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id" || true
               done
+
+      # AKAR MASALAH SEBENARNYA dari kuota storage penuh (ditemukan 2026-09-11,
+      # LEWAT langkah di atas yang cuma menghapus RUN/ARTEFAK - keduanya sudah
+      # 0 byte tapi kuota TETAP penuh): Actions CACHE (`actions/cache@v5` di
+      # step "Cache Gradle" + cache npm bawaan setup-node) SAMA SEKALI TIDAK
+      # ikut terhapus oleh langkah run-cleanup di atas (objek terpisah, API
+      # terpisah) - menumpuk diam-diam sampai >2GB (Gradle cache 1 entri
+      # 1,6GB + 2 entri npm ~186MB masing2, semuanya dari 1 minggu lalu),
+      # padahal jatah storage TOTAL akun cuma 0,5GB gabungan artefak+cache.
+      # Auto-eviction bawaan GitHub baru jalan di 10GB/repo atau cache tidak
+      # diakses >7 hari - JAUH di atas jatah 0,5GB kita, jadi tidak pernah
+      # sempat kepakai. Simpan 2 cache terbaru (gradle+npm) sesuai kebijakan
+      # yang sama dgn run/release, sisanya dihapus tiap build selesai.
+      - name: Bersihkan cache Actions lama (simpan 2 terbaru)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/caches?per_page=100" \
+            --jq '.actions_caches[] | "\(.last_accessed_at) \(.key)"' \
+            | sort -r | tail -n +3 | awk '{print $2}' \
+            | while read -r key; do
+                echo "hapus cache lama key=$key"
+                gh api -X DELETE "repos/${{ github.repository }}/actions/caches?key=$key" || true
+              done
