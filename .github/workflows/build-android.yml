@@ -159,7 +159,12 @@ jobs:
       # if: always() supaya pembersihan tetap jalan walau langkah deploy di
       # atas sempat gagal - justru saat build bermasalah storage paling
       # gampang menumpuk.
-      - name: Bersihkan run build lama (simpan 3 terbaru)
+      # CATATAN 2026-09-11: label langkah ini SEBELUMNYA salah tulis "simpan 3
+      # terbaru" - `tail -n +3` (setelah `sort -r`, terbaru duluan) SEBENARNYA
+      # SUDAH DARI DULU cuma menyisakan 2 baris TERATAS - perilaku kodenya
+      # sudah cocok dgn permintaan terbaru user "cukup 2 terbaru", cuma
+      # labelnya yang diperbaiki di sini, TIDAK ada perubahan perilaku.
+      - name: Bersihkan run build lama (simpan 2 terbaru)
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
