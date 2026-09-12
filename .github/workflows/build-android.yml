@@ -171,34 +171,40 @@ jobs:
       # if: always() supaya pembersihan tetap jalan walau langkah deploy di
       # atas sempat gagal - justru saat build bermasalah storage paling
       # gampang menumpuk.
-      # KOREKSI 2026-09-12 (revisi ke-3, permintaan eksplisit user "sisain 1
-      # yang terbaru aja" - lihat catatan lengkap logika self-reference di
-      # build.yml DataMaster). `tail -n +2` (skip 1) diperkecil jadi
-      # `tail -n +1` (skip 0, hapus SEMUA run lain yang terlihat).
-      - name: Bersihkan run build lama (simpan 1 terbaru)
+      # KOREKSI 2026-09-12 (revisi ke-4 - kembali ke simpan-2, permintaan
+      # eksplisit user setelah repo ini jadi PUBLIC: Actions Artifacts/Cache
+      # gratis tak terbatas utk repo public, tidak perlu sehemat mungkin lagi
+      # spt saat masih private/kena limit storage - lihat catatan lengkap
+      # logika self-reference di build.yml DataMaster). `tail -n +2` (skip 1,
+      # hapus sisanya) utk steady-state 2.
+      - name: Bersihkan run build lama (simpan 2 terbaru)
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/${{ github.repository }}/actions/workflows/build-android.yml/runs?per_page=100" \
             --jq '.workflow_runs[] | select(.status == "completed") | "\(.created_at) \(.id)"' \
-            | sort -r | tail -n +1 | awk '{print $2}' \
+            | sort -r | tail -n +2 | awk '{print $2}' \
             | while read -r id; do
                 echo "hapus run lama id=$id"
                 gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id" || true
               done
 
       # AKAR MASALAH SEBENARNYA dari kuota storage penuh (ditemukan 2026-09-11) -
-      # lihat catatan lengkap di revisi sebelumnya (git blame). Diperkecil dari
-      # simpan-2 ke simpan-1 (2026-09-12, permintaan eksplisit user).
-      - name: Bersihkan cache Actions lama (simpan 1 terbaru)
+      # lihat catatan lengkap di revisi sebelumnya (git blame). Dikembalikan ke
+      # simpan-2 (2026-09-12, repo sudah public, tidak perlu sehemat mungkin
+      # lagi) - beda dari step run-cleanup di atas, di sini TIDAK ada logika
+      # self-reference (cache yang baru dibuat run ini sendiri SUDAH kelihatan
+      # di listing saat step ini jalan), jadi formulanya standar `tail -n +3`
+      # (skip 2 utk simpan 2).
+      - name: Bersihkan cache Actions lama (simpan 2 terbaru)
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/${{ github.repository }}/actions/caches?per_page=100" \
             --jq '.actions_caches[] | "\(.last_accessed_at) \(.key)"' \
-            | sort -r | tail -n +2 | awk '{print $2}' \
+            | sort -r | tail -n +3 | awk '{print $2}' \
             | while read -r key; do
                 echo "hapus cache lama key=$key"
                 gh api -X DELETE "repos/${{ github.repository }}/actions/caches?key=$key" || true
