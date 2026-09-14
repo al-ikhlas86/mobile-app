@@ -28,6 +28,12 @@ const TYPE_BG: Record<string, string> = {
   berita_like: "bg-pink-50", berita_comment: "bg-emerald-50", berita_reply: "bg-indigo-50", pengumuman: "bg-orange-50", system: "bg-green-50",
 };
 
+const TIMEAGO_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+// 2026-09-14: BUG NYATA dilaporkan user - dulu "N hari lalu" dipakai
+// SELAMANYA (tidak pernah pindah ke tanggal sama sekali). Sekarang begitu
+// lewat 24 jam, LANGSUNG tampil tanggal pasti - lebih jelas drpd "N hari
+// lalu" yang maknanya cepat ambigu begitu N makin besar.
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -35,7 +41,8 @@ function timeAgo(iso: string): string {
   if (mins < 60) return `${mins} menit lalu`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours} jam lalu`;
-  return `${Math.floor(hours / 24)} hari lalu`;
+  const d = new Date(iso);
+  return `${d.getDate()} ${TIMEAGO_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
