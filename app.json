@@ -21,7 +21,7 @@
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/icon.png"
+        "foregroundImage": "./assets/icon-foreground.jpg"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
