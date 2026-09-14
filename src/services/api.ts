@@ -473,6 +473,10 @@ export const api = {
   adminGetAlertPhone: () => authedFetch("/api/admin/alert-phone"),
   adminSetAlertPhone: (phone: string) => authedFetch("/api/admin/alert-phone", { method: "PUT", body: JSON.stringify({ phone }) }),
   adminSyncStatus: () => authedFetch("/api/admin/sync-status"),
+  adminHubUnits: () => authedFetch("/api/admin/hub-units"),
+  adminApproveHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/approve`, { method: "POST" }),
+  adminRejectHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/reject`, { method: "POST" }),
+  adminDeactivateHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/deactivate`, { method: "POST" }),
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),
   adminCreateAnnouncement: (data: { title: string; message: string; target_role: string }) =>
     authedFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(data) }),
