@@ -15,12 +15,20 @@ interface AduanRow {
   bukti_foto_path: string | null;
   status: string;
   created_at: string;
-  student_nama: string;
-  kelas_nama: string | null;
+  student_nama?: string;
+  kelas_nama?: string | null;
   pengirim_nama: string;
+  // Sumber (2026-09-14) - "ortu" dari aduan.js (soal seorang anak), "pegawai"
+  // dari aduanPegawai.js (pegawai lapor soal dirinya/hal umum) - 2 tabel/
+  // endpoint TERPISAH, digabung MURNI di layar ini (pola sama webview-app).
+  sumber: "ortu" | "pegawai";
+  unit_label?: string | null;
 }
 
-const KATEGORI_LABEL: Record<string, string> = { wali_kelas: "Wali Kelas", admin_it: "Admin IT", keuangan: "Keuangan", tu: "Tata Usaha" };
+const KATEGORI_LABEL: Record<string, string> = {
+  wali_kelas: "Wali Kelas", admin_it: "Admin IT", keuangan: "Keuangan", tu: "Tata Usaha",
+  kepala_sekolah: "Kepala Sekolah",
+};
 
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -41,28 +49,34 @@ export function AduanMasukScreen() {
   const colors = useThemeColors();
   const [rows, setRows] = useState<AduanRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  // Kunci gabungan "sumber-id" (2026-09-14) - `aduan` & `aduan_pegawai`
+  // masing2 punya auto-increment SENDIRI, id mentah saja tidak cukup unik.
+  const [busyKey, setBusyKey] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
-    const res = await api.aduanInbox();
-    if (res.success) {
-      setRows(res.data);
-      // Sama pola dgn webview - isi sudah tampil penuh di daftar ini (bukan
-      // "tap utk buka detail"), jadi begitu daftar dimuat = wajar dianggap
-      // "dibaca". Tandai semua yg masih 'baru'.
-      const unread = res.data.filter((r: AduanRow) => r.status === "baru");
-      for (const r of unread) api.aduanMarkRead(r.id).catch(() => {});
+    const [ortuRes, pegawaiRes] = await Promise.all([api.aduanInbox(), api.aduanPegawaiInbox()]);
+    const ortuRows: AduanRow[] = ortuRes.success ? ortuRes.data.map((r: AduanRow) => ({ ...r, sumber: "ortu" as const })) : [];
+    const pegawaiRows: AduanRow[] = pegawaiRes.success ? pegawaiRes.data.map((r: AduanRow) => ({ ...r, sumber: "pegawai" as const })) : [];
+    const combined = [...ortuRows, ...pegawaiRows].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    setRows(combined);
+    // Sama pola dgn webview - isi sudah tampil penuh di daftar ini (bukan
+    // "tap utk buka detail"), jadi begitu daftar dimuat = wajar dianggap
+    // "dibaca". Tandai semua yg masih 'baru'.
+    for (const r of combined.filter((r) => r.status === "baru")) {
+      const markRead = r.sumber === "pegawai" ? api.aduanPegawaiMarkRead : api.aduanMarkRead;
+      markRead(r.id).catch(() => {});
     }
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
-  async function handleResolve(id: number) {
-    setBusyId(id);
-    await api.aduanMarkResolved(id);
-    setBusyId(null);
+  async function handleResolve(row: AduanRow) {
+    setBusyKey(`${row.sumber}-${row.id}`);
+    const markResolved = row.sumber === "pegawai" ? api.aduanPegawaiMarkResolved : api.aduanMarkResolved;
+    await markResolved(row.id);
+    setBusyKey(null);
     load();
   }
 
@@ -79,7 +93,7 @@ export function AduanMasukScreen() {
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}
         data={rows}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => `${item.sumber}-${item.id}`}
         ListEmptyComponent={<Text className="text-sm text-muted-foreground text-center py-6">{loading ? "Memuat..." : "Belum ada aduan masuk."}</Text>}
         renderItem={({ item }) => (
           <Card padding="md">
@@ -87,7 +101,10 @@ export function AduanMasukScreen() {
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-foreground">{item.pengirim_nama}</Text>
                 <Text className="text-xs text-muted-foreground">
-                  Terkait {item.student_nama}{item.kelas_nama ? ` · Kelas ${item.kelas_nama}` : ""} · {formatDateFull(item.created_at.slice(0, 10))}
+                  {item.sumber === "ortu"
+                    ? `Terkait ${item.student_nama}${item.kelas_nama ? ` · Kelas ${item.kelas_nama}` : ""}`
+                    : `Aduan Pegawai${item.unit_label ? ` · ${item.unit_label}` : ""}`}
+                  {" "}· {formatDateFull(item.created_at.slice(0, 10))}
                 </Text>
               </View>
               <Badge variant={statusBadge(item.status)}>{statusLabel(item.status)}</Badge>
@@ -101,7 +118,7 @@ export function AduanMasukScreen() {
               </Pressable>
             )}
             {item.status !== "selesai" && (
-              <Button size="sm" onPress={() => handleResolve(item.id)} disabled={busyId === item.id} loading={busyId === item.id} className="mt-1">
+              <Button size="sm" onPress={() => handleResolve(item)} disabled={busyKey === `${item.sumber}-${item.id}`} loading={busyKey === `${item.sumber}-${item.id}`} className="mt-1">
                 <CheckCircle size={14} color={colors.primaryForeground} />{"  "}Tandai Selesai
               </Button>
             )}

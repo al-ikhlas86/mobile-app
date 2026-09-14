@@ -436,6 +436,22 @@ export const api = {
   aduanInbox: () => authedFetch("/api/aduan/inbox"),
   aduanMarkRead: (id: number) => authedFetch(`/api/aduan/${id}/read`, { method: "PATCH" }),
   aduanMarkResolved: (id: number) => authedFetch(`/api/aduan/${id}/resolve`, { method: "PATCH" }),
+
+  // Aduan Pegawai - lihat routes/aduanPegawai.js (Node), TERPISAH dari Aduan
+  // Orang Tua di atas (tabel & alur beda, lihat catatan di file itu).
+  aduanPegawaiSubmit: (data: { kategori: "kepala_sekolah" | "tu" | "admin_it"; isi: string; buktiFotoUri?: string; buktiFotoMime?: string }) => {
+    const form = new FormData();
+    form.append("kategori", data.kategori);
+    form.append("isi", data.isi);
+    if (data.buktiFotoUri) {
+      form.append("bukti_foto", fileFromUri(data.buktiFotoUri, `bukti.${(data.buktiFotoMime ?? "image/jpeg").split("/")[1] ?? "jpg"}`, data.buktiFotoMime ?? "image/jpeg"));
+    }
+    return authedUpload("/api/aduan-pegawai/submit", form);
+  },
+  aduanPegawaiMine: () => authedFetch("/api/aduan-pegawai/mine"),
+  aduanPegawaiInbox: () => authedFetch("/api/aduan-pegawai/inbox"),
+  aduanPegawaiMarkRead: (id: number) => authedFetch(`/api/aduan-pegawai/${id}/read`, { method: "PATCH" }),
+  aduanPegawaiMarkResolved: (id: number) => authedFetch(`/api/aduan-pegawai/${id}/resolve`, { method: "PATCH" }),
   faceStatus: () => authedFetch("/api/face/status"),
   // "Siswa Terdaftar" (2026-09-05, W10) - wali kelas lihat status
   // pengenalan wajah siswa KELASNYA SENDIRI (scoping dijamin backend).
