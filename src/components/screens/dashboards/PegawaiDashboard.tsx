@@ -94,6 +94,13 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
       ] : []),
+      // Kepsek TANPA capability TU juga butuh lihat Aduan Masuk (sejak Aduan
+      // Pegawai ada, 2026-09-14) - blok isTuLike di bawah SUDAH menyertakan
+      // "Aduan Masuk" utk kepsek yg KEBETULAN juga TU, di sini KHUSUS kepsek
+      // murni supaya tidak dobel.
+      ...(isKepalaSekolah && !isTuLike ? [
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
       ...(isTuLike || isKepalaSekolah ? [
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
@@ -123,6 +130,10 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },
       { label: "Jadwal Kerja", icon: <Calendar size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-kerja") },
+      // Aduan Pegawai (2026-09-14) - beda dari "Aduan Masuk" di atas (itu
+      // utk MENERIMA, khusus TU/Kepsek) - ini utk SEMUA pegawai MENGIRIM
+      // aduan soal dirinya/hal umum ke Kepsek/TU/Admin IT unit sendiri.
+      { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan-pegawai") },
     ] },
     { title: "Akun", items: [
       { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },

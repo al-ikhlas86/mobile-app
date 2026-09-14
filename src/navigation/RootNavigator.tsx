@@ -18,6 +18,7 @@ import { RingkasanScreen } from "../components/screens/RingkasanScreen";
 import { PerformaCariScreen } from "../components/screens/PerformaCariScreen";
 import { RekapitulasiKehadiranScreen } from "../components/screens/RekapitulasiKehadiranScreen";
 import { KirimAduanScreen } from "../components/screens/KirimAduanScreen";
+import { KirimAduanPegawaiScreen } from "../components/screens/KirimAduanPegawaiScreen";
 import { AduanMasukScreen } from "../components/screens/AduanMasukScreen";
 import { ManajemenPenggunaScreen } from "../components/screens/ManajemenPenggunaScreen";
 import { KapasitasTambahanScreen } from "../components/screens/KapasitasTambahanScreen";
@@ -401,6 +402,7 @@ export function RootNavigator() {
             </Stack.Screen>
             <Stack.Screen name="performa-cari" options={{ headerShown: true, title: "Performa Individu" }} component={PerformaCariScreen} />
             <Stack.Screen name="kirim-aduan" options={{ headerShown: true, title: "Kirim Aduan" }} component={KirimAduanScreen} />
+            <Stack.Screen name="kirim-aduan-pegawai" options={{ headerShown: true, title: "Kirim Aduan" }} component={KirimAduanPegawaiScreen} />
             <Stack.Screen name="aduan-masuk" options={{ headerShown: true, title: "Aduan Masuk" }} component={AduanMasukScreen} />
             <Stack.Screen name="manajemen-pengguna" options={{ headerShown: true, title: "Manajemen Pengguna" }}>
               {({ navigation }) => <ManajemenPenggunaScreen onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}

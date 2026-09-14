@@ -103,6 +103,13 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
       ] : []),
+      // Kepsek TANPA wali-kelas/TU juga butuh lihat Aduan Masuk (sejak Aduan
+      // Pegawai ada, 2026-09-14) - blok isWaliKelas/isTuLike SUDAH
+      // menyertakan "Aduan Masuk" utk kombinasi itu, di sini KHUSUS kepsek
+      // murni supaya tidak dobel.
+      ...(isKepalaSekolah && !isWaliKelas && !isTuLike ? [
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04, capability jamak) -
       // lihat catatan lengkap di webview GuruDashboard.tsx.
       ...(isTuLike && !isWaliKelas && !isKepalaSekolah ? [
