@@ -13,8 +13,23 @@ import { Plus, Edit2, Trash2, Eye, Upload, CheckCircle, ImageIcon, Send, Save, A
 import { api, resolveAvatarUrl } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { SimplePicker } from "../ui/SimplePicker";
-import type { RoleName } from "../../services/authService";
+import { getActiveSession, type RoleName } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
+
+// Sistem Katalog (2026-09-14) - katalog data dari api.adminCatalogs().
+// Server (routes/beritaAcara.js) TETAP jadi gerbang asli (menolak 403 kalau
+// catalog_id di luar user_capabilities-nya, DAN menolak "Semua Katalog"
+// utk siapa pun selain admin_it/supervisor) - picker di bawah SEKARANG jg
+// dibatasi CLIENT-SIDE sesuai gerbang yang sama (2026-09-15, diminta user:
+// "media katalog SD cuma bisa kirim SD, TK cuma TK").
+function myAdminMediaCatalogIds(): number[] {
+  const session = getActiveSession();
+  return (session?.catalogRoles ?? []).filter((r) => r.roleType === "admin_media").map((r) => r.catalogId);
+}
+function isGlobalBeritaAdmin(): boolean {
+  const role = getActiveSession()?.role;
+  return role === "Admin IT" || role === "Supervisor";
+}
 
 type AdminView = "list" | "form";
 type Status = "draft" | "terkirim" | "disetujui";
@@ -78,7 +93,13 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
   function resetForm() {
     setEditingId(null); setEditingMedia([]); setEditingLinks([]); setNewLinkUrl("");
     setFormTitle(""); setFormDescription(""); setFormAuthorName("");
-    setFormCategory(CATEGORIES[0]); setFormCatalogId(null);
+    // Default katalog: "Semua Katalog" (null) HANYA masuk akal utk admin_it/
+    // supervisor - admin_media TIDAK BOLEH pilih itu (server menolak 403),
+    // jadi default-nya katalog SENDIRI supaya form baru tidak langsung
+    // berisi pilihan yang pasti gagal disimpan.
+    const myIds = myAdminMediaCatalogIds();
+    setFormCategory(CATEGORIES[0]);
+    setFormCatalogId(isGlobalBeritaAdmin() ? null : (myIds[0] ?? null));
     setFormActivityDate(getTodayLocal()); setFormMessage("");
   }
   function openCreate() { resetForm(); setView("form"); }
@@ -251,7 +272,13 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
             <Text className="text-sm font-medium text-foreground">Katalog</Text>
             <SimplePicker
               value={formCatalogId == null ? "ALL" : String(formCatalogId)}
-              options={[{ value: "ALL", label: "Semua Katalog" }, ...catalogs.map((c) => ({ value: String(c.id), label: c.nama }))]}
+              options={
+                isGlobalBeritaAdmin()
+                  ? [{ value: "ALL", label: "Semua Katalog (seluruh yayasan)" }, ...catalogs.map((c) => ({ value: String(c.id), label: c.nama }))]
+                  // admin_media - HANYA katalog yang dipegang sendiri, TIDAK
+                  // ADA "Semua Katalog" (server menolak 403 kalau dicoba).
+                  : catalogs.filter((c) => myAdminMediaCatalogIds().includes(c.id)).map((c) => ({ value: String(c.id), label: c.nama }))
+              }
               onChange={(v) => setFormCatalogId(v === "ALL" ? null : Number(v))}
             />
           </View>

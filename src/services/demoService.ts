@@ -27,6 +27,8 @@ export interface DemoAccountShape {
   isKepalaSekolah?: boolean;
   capabilities?: string[];
   isWaliKelas?: boolean;
+  // Role Definitions (2026-09-15) - lihat catatan lengkap di authService.ts.
+  catalogRoles?: { roleType: string; catalogId: number }[];
 }
 
 export interface DemoRoleOption {
@@ -138,6 +140,7 @@ export async function startDemoSession(
       isKepalaSekolah: Number(body.user.is_kepala_sekolah) === 1,
       capabilities: Array.isArray(body.user.capabilities) ? body.user.capabilities : [],
       isWaliKelas: Number(body.user.is_wali_kelas) === 1,
+      catalogRoles: Array.isArray(body.user.catalog_roles) ? body.user.catalog_roles : [],
     };
     const session: StoredDemoSession = {
       account,

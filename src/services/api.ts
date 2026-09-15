@@ -73,6 +73,7 @@ interface ServerUser {
   avatar_filename?: string | null;
   is_kepala_sekolah?: boolean | number;
   capabilities?: string[];
+  catalog_roles?: { roleType: string; catalogId: number }[];
   is_wali_kelas?: boolean | number;
 }
 
@@ -88,6 +89,7 @@ function toSavedAccount(user: ServerUser, token: string): SavedAccount {
     token,
     isKepalaSekolah: Number(user.is_kepala_sekolah) === 1,
     capabilities: user.capabilities ?? [],
+    catalogRoles: user.catalog_roles ?? [],
     isWaliKelas: Number(user.is_wali_kelas) === 1,
   };
 }
@@ -268,6 +270,7 @@ export async function refreshSessionFromServer() {
     avatarUrl: res.user.avatar_url ?? null,
     isKepalaSekolah: Number(res.user.is_kepala_sekolah) === 1,
     capabilities: res.user.capabilities ?? [],
+    catalogRoles: res.user.catalog_roles ?? [],
     isWaliKelas: Number(res.user.is_wali_kelas) === 1,
   });
 }
@@ -510,6 +513,10 @@ export const api = {
   adminRoleDefinitions: () => authedFetch("/api/admin/role-definitions"),
   adminCreateRoleDefinition: (data: { roleType: string; catalogIds: number[]; label?: string }) =>
     authedFetch("/api/admin/role-definitions", { method: "POST", body: JSON.stringify(data) }),
+  // Cuma label - lihat catatan lengkap di routes/admin.js kenapa
+  // roleType/katalog TIDAK bisa diubah lewat sini.
+  adminUpdateRoleDefinition: (id: number, data: { label: string }) =>
+    authedFetch(`/api/admin/role-definitions/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   adminDeleteRoleDefinition: (id: number) => authedFetch(`/api/admin/role-definitions/${id}`, { method: "DELETE" }),
   adminRoleDefinitionHolders: (id: number) => authedFetch(`/api/admin/role-definitions/${id}/holders`),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
