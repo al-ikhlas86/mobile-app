@@ -483,12 +483,15 @@ export const api = {
     authedFetch(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   adminDeleteUser: (id: number) => authedFetch(`/api/admin/users/${id}`, { method: "DELETE" }),
   // Manajemen Pengguna multi-flag (2026-09-04) - lihat routes/admin.js.
-  // catalogId (2026-09-14, Sistem Katalog) - opsional, filter kandidat
-  // pencarian ke unit yg termasuk katalog itu saja.
-  adminCariPegawai: (q: string, catalogId?: number) =>
-    authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}${catalogId ? `&catalogId=${catalogId}` : ""}`),
+  // catalogIds (2026-09-14 Sistem Katalog, jadi jamak 2026-09-15 Role
+  // Definitions) - opsional, filter kandidat pencarian ke unit yg termasuk
+  // katalog-katalog itu (gabungan/OR, bukan irisan) - dipakai saat definisi
+  // role-nya mengapit >1 katalog sekaligus.
+  adminCariPegawai: (q: string, catalogIds?: number[]) =>
+    authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}${catalogIds?.length ? `&catalogIds=${catalogIds.join(",")}` : ""}`),
   // capabilities SEKARANG array {roleType, catalogId} (Sistem Katalog) -
-  // bukan flat string lagi. catalogId null/undefined utk keuangan/supervisor.
+  // bukan flat string lagi. catalogId WAJIB utk SEMUA role_type (2026-09-15,
+  // Role Definitions - SEBELUMNYA null/undefined utk keuangan/supervisor).
   adminUpdateCapabilities: (id: number, capabilities: { roleType: string; catalogId: number | null }[]) =>
     authedFetch(`/api/admin/users/${id}/capabilities`, { method: "PATCH", body: JSON.stringify({ capabilities }) }),
   adminCapabilityHolders: (roleType: string, catalogId?: number) =>
@@ -501,6 +504,14 @@ export const api = {
   adminUpdateCatalog: (id: number, data: { kode?: string; nama?: string }) =>
     authedFetch(`/api/admin/catalogs/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   adminDeleteCatalog: (id: number) => authedFetch(`/api/admin/catalogs/${id}`, { method: "DELETE" }),
+  // Role Definitions (2026-09-15) - pendaftaran eksplisit kombinasi
+  // Role+Katalog SEBELUM bisa dipakai di Kapasitas Tambahan, pola sama
+  // Katalog itu sendiri. Lihat tab "Tambah Role" di ManajemenPenggunaScreen.tsx.
+  adminRoleDefinitions: () => authedFetch("/api/admin/role-definitions"),
+  adminCreateRoleDefinition: (data: { roleType: string; catalogIds: number[]; label?: string }) =>
+    authedFetch("/api/admin/role-definitions", { method: "POST", body: JSON.stringify(data) }),
+  adminDeleteRoleDefinition: (id: number) => authedFetch(`/api/admin/role-definitions/${id}`, { method: "DELETE" }),
+  adminRoleDefinitionHolders: (id: number) => authedFetch(`/api/admin/role-definitions/${id}/holders`),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
   adminLinkAccountReview: (id: number) => authedFetch(`/api/admin/account-link-reviews/${id}/link`, { method: "POST" }),
   adminRejectAccountReview: (id: number, note?: string) =>
