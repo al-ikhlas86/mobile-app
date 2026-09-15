@@ -87,10 +87,11 @@ export async function exitDemoMode(): Promise<void> {
 const DEMO_ROLE_MAP: Record<string, string> = {
   admin_it: "Admin IT",
   supervisor: "Supervisor",
-  admin_tu_sd: "Admin TU (SD)",
-  admin_media_sd: "Admin Media (SD)",
-  admin_tu_tk: "Admin TU (TK & Playground)",
-  admin_media_tk: "Admin Media (TK & Playground)",
+  // admin_tu_sd/tk & admin_media_sd/tk DIGABUNG jadi generik (2026-09-14,
+  // Sistem Katalog) - demo TIDAK perlu menunjukkan katalog spesifik, lihat
+  // scripts/setupDemoAccounts.js (backend) no:13/14.
+  admin_tu: "Admin TU",
+  admin_media: "Admin Media",
   // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, lihat
   // authService.ts RoleName. guru_kelas JUGA DIHAPUS (Fase 3, 2026-09-04) -
   // sama alasannya, sekarang FLAG (DemoAccountShape.isWaliKelas di atas)

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight } from "lucide-react-native";
+import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight, BookOpen } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -14,21 +14,28 @@ import { useThemeColors } from "../../context/ThemeContext";
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 interface AdminUser { id: number; username: string; phone: string | null; full_name: string; role: string; is_active: 0 | 1; employee_cache_id: number | null; }
 interface AccountLinkReview { id: number; nama: string; jabatan: string | null; role: string; phone: string; existing_full_name: string; existing_phone: string | null; status: string; }
+interface Catalog { id: number; kode: string; nama: string; }
 
-// Kapasitas Tambahan (Admin TU/Media/Keuangan/Supervisor ditempel ke guru/
-// pegawai yang sudah ada) PINDAH ke layar terpisah KapasitasTambahanScreen.tsx
-// (2026-09-04) - diminta user, 1 halaman gabungan role-dasar + capability
-// bikin bingung. SUMBER KEBENARAN: backend/src/utils/roles.js
-// (ASSIGNABLE_ROLES) di repo mobile-app. Native tidak bisa import langsung
-// dari situ (repo/bundler terpisah) - kalau daftar ini berubah, update JUGA
-// salinan di webview (src/app/components/screens/ManajemenPenggunaScreen.tsx).
-const ASSIGNABLE_ROLES = ["admin_it", "supervisor", "admin_tu_sd", "admin_media_sd", "admin_tu_tk", "admin_media_tk", "keuangan"];
-const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
-// Tambah Akun BARU dipersempit jadi Admin IT saja (2026-09-07, sama alasan
-// & pola dgn versi webview - lihat catatan lengkap di sana). Picker
-// role-CHANGE utk akun yang sudah ada (baris 178-an) SENGAJA tetap pakai
-// ROLE_OPTIONS penuh, tidak ikut dipersempit.
-const CREATABLE_ROLE_OPTIONS = ROLE_OPTIONS.filter((o) => o.value === "admin_it");
+// CREATABLE_ROLES - satu2nya role yang bisa dibuat BARU (POST) atau di-SET
+// ke akun yang sudah ada (PATCH .../role) lewat layar ini - cuma admin_it.
+// Sistem Katalog (2026-09-14) - DIPERKETAT dari versi 2026-09-07: dulu
+// picker "ganti role" akun yg SUDAH ADA masih pakai ASSIGNABLE_ROLES penuh
+// (7 nilai) sengaja TIDAK dipersempit "biar tidak merusak akun yg sudah
+// ada". SEKARANG backend (routes/admin.js) MENOLAK keras (400) percobaan
+// set role manapun selain admin_it lewat endpoint ini - keputusan EKSPLISIT
+// user: supervisor/keuangan/admin_tu/admin_media TIDAK BOLEH LAGI jadi akun
+// standalone BARU dengan cara apa pun, keempatnya MURNI capability yang
+// ditempel ke akun yang sudah ada lewat Kapasitas Tambahan. Picker "ganti
+// role" di bawah ikut dipersempit ke CREATABLE_ROLES supaya tidak
+// menampilkan opsi yang PASTI ditolak server - akun standalone LAMA yang
+// masih py salah satu dari 4 role itu (grandfathered) tetap jalan normal
+// tanpa disentuh, cuma tidak bisa lagi "dipindah role" ke situ dari sini.
+// SUMBER KEBENARAN: backend/src/utils/roles.js. Webview & native tidak bisa
+// import langsung dari backend (repo/bundler terpisah) - kalau daftar ini
+// berubah, update JUGA salinan di webview
+// (src/app/components/screens/ManajemenPenggunaScreen.tsx).
+const CREATABLE_ROLES = ["admin_it"];
+const CREATABLE_ROLE_OPTIONS = CREATABLE_ROLES.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
 export function ManajemenPenggunaScreen({ onNavigate }: Props) {
@@ -45,10 +52,42 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newFullName, setNewFullName] = useState("");
-  const [newRole, setNewRole] = useState(CREATABLE_ROLE_OPTIONS[0].value);
+  const [newRole, setNewRole] = useState(CREATABLE_ROLES[0]);
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
   const currentUserId = Number(getActiveSession()?.accountId?.replace(/^USR/, "")) || null;
+
+  // Kelola Katalog (2026-09-14, Sistem Katalog) - satu2nya tempat Admin IT
+  // mendaftarkan unit sekolah baru (SD/TK/dst) - PENGGANTI env var
+  // UNIT_SCOPE_MAP lama (diisi manual lewat SSH developer). Ditaruh di
+  // layar INI (bukan layar terpisah) sesuai permintaan eksplisit user.
+  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
+  const [showAddCatalog, setShowAddCatalog] = useState(false);
+  const [newCatalogKode, setNewCatalogKode] = useState("");
+  const [newCatalogNama, setNewCatalogNama] = useState("");
+  const [catalogSaving, setCatalogSaving] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
+
+  const loadCatalogs = async () => {
+    const res = await api.adminCatalogs();
+    if (res.success) setCatalogs(res.data);
+  };
+
+  const handleAddCatalog = async () => {
+    if (!newCatalogKode.trim() || !newCatalogNama.trim()) {
+      setCatalogError("Kode dan nama katalog wajib diisi.");
+      return;
+    }
+    setCatalogSaving(true); setCatalogError("");
+    const res = await api.adminCreateCatalog({ kode: newCatalogKode.trim(), nama: newCatalogNama.trim() });
+    setCatalogSaving(false);
+    if (res.success) {
+      setCatalogs((prev) => [...prev, res.data].sort((a, b) => a.nama.localeCompare(b.nama)));
+      setNewCatalogKode(""); setNewCatalogNama(""); setShowAddCatalog(false);
+    } else {
+      setCatalogError(res.message ?? "Gagal membuat katalog.");
+    }
+  };
 
   const load = async () => {
     setLoading(true); setError("");
@@ -57,7 +96,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
     if (res.success) setUsers(res.data); else setError(res.message ?? "Gagal memuat daftar pengguna.");
   };
   const loadReviews = async () => { const res = await api.adminAccountLinkReviews(); if (res.success) setReviews(res.data.pending); };
-  useEffect(() => { load(); loadReviews(); }, []);
+  useEffect(() => { load(); loadReviews(); loadCatalogs(); }, []);
 
   const handleLinkReview = async (id: number) => {
     setReviewBusyId(id);
@@ -83,7 +122,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
     const res = await api.adminDeleteUser(userId);
     if (res.success) setUsers((prev) => prev.filter((u) => u.id !== userId)); else setError(res.message ?? "Gagal menghapus akun.");
   };
-  const resetAddForm = () => { setNewUsername(""); setNewPassword(""); setNewFullName(""); setNewRole(CREATABLE_ROLE_OPTIONS[0].value); setAddError(""); setShowAddForm(false); };
+  const resetAddForm = () => { setNewUsername(""); setNewPassword(""); setNewFullName(""); setNewRole(CREATABLE_ROLES[0]); setAddError(""); setShowAddForm(false); };
   const handleAdd = async () => {
     if (!newUsername.trim() || !newPassword || !newFullName.trim()) { setAddError("Username, password, dan nama wajib diisi."); return; }
     setAddSaving(true); setAddError("");
@@ -112,6 +151,57 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
         </View>
         <ChevronRight size={16} color={colors.mutedForeground} />
       </Pressable>
+
+      <Card padding="md">
+        <View className="flex-row items-center gap-2 mb-1">
+          <BookOpen size={16} color={colors.primary} />
+          <Text className="text-sm font-semibold text-foreground">Kelola Katalog ({catalogs.length})</Text>
+        </View>
+        <Text className="text-xs text-muted-foreground mb-3">
+          Daftar unit sekolah (SD/TK/dst). Tambah katalog baru di sini kalau ada jenjang baru (mis. SMP) -
+          setelahnya baru bisa dipilih saat menyetujui sinkronisasi unit baru & saat menempelkan Admin TU/Media
+          lewat Kapasitas Tambahan.
+        </Text>
+        {catalogs.length > 0 && (
+          <View className="flex-row flex-wrap gap-1.5 mb-3">
+            {catalogs.map((c) => (
+              <View key={c.id} className="bg-muted px-2.5 py-1 rounded-full">
+                <Text className="text-xs font-medium text-foreground">{c.nama}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        {!showAddCatalog ? (
+          <Button variant="outline" size="sm" onPress={() => setShowAddCatalog(true)}>
+            <Plus size={14} color={colors.primary} />{"  "}Tambah Katalog
+          </Button>
+        ) : (
+          <View className="gap-2">
+            <View className="flex-row gap-2">
+              <TextInput
+                value={newCatalogKode}
+                onChangeText={setNewCatalogKode}
+                placeholder="Kode (mis. SMP)"
+                autoCapitalize="characters"
+                maxLength={20}
+                className="w-28 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+              />
+              <TextInput
+                value={newCatalogNama}
+                onChangeText={setNewCatalogNama}
+                placeholder="Nama tampilan (mis. SMP Al-Ikhlas 86)"
+                maxLength={100}
+                className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+              />
+            </View>
+            {catalogError ? <Text className="text-xs text-red-500">{catalogError}</Text> : null}
+            <View className="flex-row gap-2">
+              <Button size="sm" onPress={handleAddCatalog} loading={catalogSaving}>Simpan</Button>
+              <Button size="sm" variant="outline" onPress={() => { setShowAddCatalog(false); setNewCatalogKode(""); setNewCatalogNama(""); setCatalogError(""); }}>Batal</Button>
+            </View>
+          </View>
+        )}
+      </Card>
 
       {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
 
@@ -146,7 +236,14 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
             <TextInput value={newFullName} onChangeText={setNewFullName} placeholder="Nama lengkap" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
             <TextInput value={newUsername} onChangeText={setNewUsername} placeholder="Username (bebas, mis. yai86)" autoCapitalize="none" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
             <TextInput value={newPassword} onChangeText={setNewPassword} placeholder="Password (minimal 6 karakter)" secureTextEntry autoCapitalize="none" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
-            <SimplePicker value={newRole} options={ROLE_OPTIONS} onChange={setNewRole} />
+            {CREATABLE_ROLE_OPTIONS.length > 1 ? (
+              <SimplePicker value={newRole} options={CREATABLE_ROLE_OPTIONS} onChange={setNewRole} />
+            ) : (
+              <Text className="text-xs text-muted-foreground px-1">
+                Peran: <Text className="font-medium text-foreground">{ROLE_MAP[CREATABLE_ROLES[0]] ?? CREATABLE_ROLES[0]}</Text>.
+                Peran lain (Admin TU/Media/Keuangan/Supervisor) ditempelkan lewat menu Kapasitas Tambahan ke guru/pegawai yang sudah ada, bukan dibuat baru di sini.
+              </Text>
+            )}
             {addError ? <Text className="text-xs text-red-500">{addError}</Text> : null}
             <Button onPress={handleAdd} loading={addSaving} fullWidth>{addSaving ? "Menyimpan..." : "Simpan Akun"}</Button>
           </View>
@@ -181,7 +278,18 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
             {savingId === u.id ? (
               <View className="px-3 py-2.5 rounded-xl bg-muted"><Text className="text-sm text-muted-foreground">Menyimpan...</Text></View>
             ) : (
-              <SimplePicker value={u.role} options={ROLE_OPTIONS} onChange={(role) => handleChangeRole(u.id, role)} />
+              <SimplePicker
+                value={u.role}
+                // Akun grandfathered (role LAMA di luar CREATABLE_ROLES, mis.
+                // "keuangan" standalone) - sertakan role-nya SENDIRI di
+                // options cuma supaya trigger picker menampilkan label yang
+                // benar (bukan placeholder "Pilih..."), TIDAK berarti bisa
+                // "dipilih ulang" jadi role baru (backend tetap menolak PATCH
+                // .../role ke luar CREATABLE_ROLES - lihat onChange di bawah,
+                // no-op kalau value tidak berubah).
+                options={CREATABLE_ROLE_OPTIONS.some((o) => o.value === u.role) ? CREATABLE_ROLE_OPTIONS : [{ value: u.role, label: ROLE_MAP[u.role] ?? u.role }, ...CREATABLE_ROLE_OPTIONS]}
+                onChange={(role) => { if (role !== u.role) handleChangeRole(u.id, role); }}
+              />
             )}
           </View>
         </Card>

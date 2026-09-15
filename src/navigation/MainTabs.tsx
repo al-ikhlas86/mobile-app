@@ -15,8 +15,10 @@ import { ProfilScreen } from "../components/screens/ProfilScreen";
 import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
 import { getActiveSession, type RoleName } from "../services/authService";
 
-const ADMIN_MEDIA_ROLES: RoleName[] = ["Admin Media (SD)", "Admin Media (TK & Playground)"];
-const ADMIN_TU_ROLES: RoleName[] = ["Admin TU (SD)", "Admin TU (TK & Playground)"];
+// admin_tu_sd/tk & admin_media_sd/tk DIGABUNG jadi generik (2026-09-14,
+// Sistem Katalog) - varian SD/TK dibiarkan (legacy) jaga2 sesi lama.
+const ADMIN_MEDIA_ROLES: RoleName[] = ["Admin Media", "Admin Media (SD)", "Admin Media (TK & Playground)"];
+const ADMIN_TU_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)"];
 
 function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
   if (role === "Orang Tua") return <PresensiAnak />;

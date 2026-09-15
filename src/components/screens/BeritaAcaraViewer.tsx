@@ -28,7 +28,9 @@ interface CommentItem {
   likes_count: number; liked_by_me: boolean; is_edited: boolean;
 }
 
-const CAN_MODERATE_ROLES = ["Admin IT", "Supervisor", "Admin Media (SD)", "Admin Media (TK & Playground)"];
+// admin_media_sd/tk DIGABUNG jadi generik (2026-09-14, Sistem Katalog) -
+// nama lama TETAP dicek (pola "legacy names") jaga2 sesi lama.
+const CAN_MODERATE_ROLES = ["Admin IT", "Supervisor", "Admin Media", "Admin Media (SD)", "Admin Media (TK & Playground)"];
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 

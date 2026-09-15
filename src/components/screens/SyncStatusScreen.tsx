@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
+import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -33,6 +34,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 // Unit Data Master (2026-09-14) - lihat catatan panjang di versi webview
 // (src/app/components/screens/SyncStatusScreen.tsx), fungsinya sama persis.
 interface HubUnit { id: number; name: string; unit_id: number | null; status: "pending" | "active" | "deactivated"; created_at: string; }
+interface Catalog { id: number; kode: string; nama: string; }
 function formatTanggal(ts: string) { return new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
 function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: () => void }) {
@@ -40,18 +42,86 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
   const pending = units.filter((u) => u.status === "pending");
   const aktif = units.filter((u) => u.status === "active");
 
-  const jalankan = async (aksi: "approve" | "reject" | "deactivate", unit: HubUnit, judul: string, pesan: string) => {
+  // Sistem Katalog (2026-09-14) - approve SEKARANG WAJIB sekalian tentukan
+  // katalog mana yg dipetakan ke unit ini (menutup celah lama: unit baru
+  // yang di-approve TIDAK PERNAH "didaftarkan" katalognya di mana pun,
+  // env var terpisah diisi manual lewat SSH). approvingId = unit yg SEDANG
+  // menampilkan panel pilih-katalog (bukan langsung Alert.alert spt reject/
+  // deactivate, krn butuh 1 keputusan tambahan sebelum bisa lanjut).
+  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [pickCatalogId, setPickCatalogId] = useState<string>("");
+  const [makingNewCatalog, setMakingNewCatalog] = useState(false);
+  const [newCatalogKode, setNewCatalogKode] = useState("");
+  const [newCatalogNama, setNewCatalogNama] = useState("");
+
+  useEffect(() => {
+    api.adminCatalogs().then((res) => { if (res.success) setCatalogs(res.data); });
+  }, []);
+
+  const jalankan = async (aksi: "reject" | "deactivate", unit: HubUnit, judul: string, pesan: string) => {
     Alert.alert(judul, pesan, [
       { text: "Batal", style: "cancel" },
       {
-        text: aksi === "approve" ? "Setujui" : aksi === "reject" ? "Tolak" : "Nonaktifkan",
-        style: aksi === "approve" ? "default" : "destructive",
+        text: aksi === "reject" ? "Tolak" : "Nonaktifkan",
+        style: "destructive",
         onPress: async () => {
           setBusyId(unit.id);
           try {
-            const fn = aksi === "approve" ? api.adminApproveHubUnit : aksi === "reject" ? api.adminRejectHubUnit : api.adminDeactivateHubUnit;
+            const fn = aksi === "reject" ? api.adminRejectHubUnit : api.adminDeactivateHubUnit;
             const res = await fn(unit.id);
             if (!res.success) Alert.alert("Gagal", res.message || "Gagal memproses.");
+            onChanged();
+          } catch {
+            Alert.alert("Gagal", "Gagal menghubungi server - cek koneksi internet.");
+          } finally {
+            setBusyId(null);
+          }
+        },
+      },
+    ]);
+  };
+
+  const bukaPanelApprove = (unit: HubUnit) => {
+    setApprovingId(unit.id);
+    setPickCatalogId(catalogs[0] ? String(catalogs[0].id) : "");
+    setMakingNewCatalog(catalogs.length === 0);
+    setNewCatalogKode("");
+    setNewCatalogNama("");
+  };
+
+  const konfirmasiApprove = (unit: HubUnit) => {
+    if (!unit.unit_id) {
+      Alert.alert("Gagal", "Unit ini belum punya unit_id dari Hub API - hubungi developer.");
+      return;
+    }
+    if (makingNewCatalog && (!newCatalogKode.trim() || !newCatalogNama.trim())) {
+      Alert.alert("Gagal", "Kode dan nama katalog baru wajib diisi.");
+      return;
+    }
+    if (!makingNewCatalog && !pickCatalogId) {
+      Alert.alert("Gagal", "Pilih katalog dulu.");
+      return;
+    }
+    const pesan = makingNewCatalog
+      ? `Setujui unit "${unit.name}" sbg katalog baru "${newCatalogNama.trim()}"? Sinkronisasi akan mulai jalan otomatis.`
+      : `Setujui unit "${unit.name}" masuk katalog "${catalogs.find((c) => String(c.id) === pickCatalogId)?.nama}"? Sinkronisasi akan mulai jalan otomatis.`;
+    Alert.alert("Setujui Unit", pesan, [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Setujui",
+        onPress: async () => {
+          setBusyId(unit.id);
+          try {
+            const res = await api.adminApproveHubUnit(unit.id, {
+              unitId: unit.unit_id!,
+              unitName: unit.name,
+              ...(makingNewCatalog
+                ? { newCatalogKode: newCatalogKode.trim(), newCatalogNama: newCatalogNama.trim() }
+                : { catalogId: Number(pickCatalogId) }),
+            });
+            if (!res.success) Alert.alert("Gagal", res.message || "Gagal memproses.");
+            else setApprovingId(null);
             onChanged();
           } catch {
             Alert.alert("Gagal", "Gagal menghubungi server - cek koneksi internet.");
@@ -76,14 +146,66 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
               <View key={u.id} className="border border-amber-200 bg-amber-50 rounded-xl p-3">
                 <Text className="text-sm font-medium text-foreground">{u.name}</Text>
                 <Text className="text-xs text-muted-foreground mb-2">Mendaftar: {formatTanggal(u.created_at)}</Text>
-                <View className="flex-row gap-2">
-                  <Button size="sm" variant="primary" disabled={busyId === u.id} onPress={() => jalankan("approve", u, "Setujui Unit", `Setujui unit "${u.name}"? Sinkronisasi akan mulai jalan otomatis.`)}>
-                    <Check size={14} color="#fff" /><Text className="text-primary-foreground text-sm font-semibold ml-1">Setujui</Text>
-                  </Button>
-                  <Button size="sm" variant="destructive" disabled={busyId === u.id} onPress={() => jalankan("reject", u, "Tolak Pendaftaran", `Tolak & hapus pendaftaran "${u.name}"? Tidak bisa dibatalkan.`)}>
-                    <X size={14} color="#fff" /><Text className="text-destructive-foreground text-sm font-semibold ml-1">Tolak</Text>
-                  </Button>
-                </View>
+
+                {approvingId !== u.id ? (
+                  <View className="flex-row gap-2">
+                    <Button size="sm" variant="primary" disabled={busyId === u.id} onPress={() => bukaPanelApprove(u)}>
+                      <Check size={14} color="#fff" /><Text className="text-primary-foreground text-sm font-semibold ml-1">Setujui</Text>
+                    </Button>
+                    <Button size="sm" variant="destructive" disabled={busyId === u.id} onPress={() => jalankan("reject", u, "Tolak Pendaftaran", `Tolak & hapus pendaftaran "${u.name}"? Tidak bisa dibatalkan.`)}>
+                      <X size={14} color="#fff" /><Text className="text-destructive-foreground text-sm font-semibold ml-1">Tolak</Text>
+                    </Button>
+                  </View>
+                ) : (
+                  <View className="gap-2 bg-card rounded-lg p-2.5 border border-amber-300">
+                    <Text className="text-xs font-medium text-foreground">Masuk katalog mana?</Text>
+                    {!makingNewCatalog ? (
+                      <>
+                        <SimplePicker
+                          value={pickCatalogId}
+                          options={catalogs.map((c) => ({ value: String(c.id), label: c.nama }))}
+                          onChange={setPickCatalogId}
+                          placeholder="Pilih katalog..."
+                        />
+                        <Pressable onPress={() => setMakingNewCatalog(true)}>
+                          <Text className="text-xs text-primary font-medium">+ Buat katalog baru</Text>
+                        </Pressable>
+                      </>
+                    ) : (
+                      <>
+                        <View className="flex-row gap-2">
+                          <TextInput
+                            value={newCatalogKode}
+                            onChangeText={setNewCatalogKode}
+                            placeholder="Kode (mis. SMP)"
+                            maxLength={20}
+                            className="w-24 bg-input-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground"
+                          />
+                          <TextInput
+                            value={newCatalogNama}
+                            onChangeText={setNewCatalogNama}
+                            placeholder="Nama (mis. SMP Al-Ikhlas 86)"
+                            maxLength={100}
+                            className="flex-1 bg-input-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground"
+                          />
+                        </View>
+                        {catalogs.length > 0 && (
+                          <Pressable onPress={() => setMakingNewCatalog(false)}>
+                            <Text className="text-xs text-primary font-medium">Pilih katalog yang sudah ada saja</Text>
+                          </Pressable>
+                        )}
+                      </>
+                    )}
+                    <View className="flex-row gap-2 mt-1">
+                      <Button size="sm" variant="primary" disabled={busyId === u.id} loading={busyId === u.id} onPress={() => konfirmasiApprove(u)}>
+                        Konfirmasi Setujui
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={busyId === u.id} onPress={() => setApprovingId(null)}>
+                        Batal
+                      </Button>
+                    </View>
+                  </View>
+                )}
               </View>
             ))}
           </View>
