@@ -7,15 +7,18 @@ import { Badge } from "../ui/Badge";
 
 const ROLES: { name: string; desc: string; auto?: string }[] = [
   { name: "Admin IT", desc: "Akses penuh - kelola pengguna & role, pantau status sistem." },
-  { name: "Supervisor", desc: "Memantau seluruh data lintas unit (SD & TK/Playground)." },
   // Sistem Katalog (2026-09-14) - Admin TU/Media DIGABUNG jadi generik
-  // (dulu 4 varian SD/TK terpisah) - katalog mana yg dipegang SEKARANG
-  // ditentukan lewat Kapasitas Tambahan (bisa >1 katalog per orang), bukan
-  // lagi bagian dari nama role - lihat menu "Kelola Katalog" di Manajemen
-  // Pengguna utk daftar katalog yang ada.
-  { name: "Admin TU", desc: "Kelola administrasi & presensi katalog (unit) yang ditentukan lewat Kapasitas Tambahan." },
-  { name: "Admin Media", desc: "Kelola Berita Acara & media katalog (unit) yang ditentukan lewat Kapasitas Tambahan." },
-  { name: "Keuangan", desc: "Akses data pembayaran & tagihan." },
+  // (dulu 4 varian SD/TK terpisah). Role Definitions (2026-09-15) - katalog
+  // mana yg dipegang SEKARANG ditentukan lewat Role Definitions (Manajemen
+  // Pengguna > Tambah Role, bisa >1 katalog per role), bukan lagi bagian
+  // dari nama role. Supervisor/Keuangan JUGA DIPINDAH ke sini (SEBELUMNYA
+  // otomatis lihat semua katalog termasuk yang baru dibuat nanti - SEKARANG
+  // jg wajib didaftarkan eksplisit spt Admin TU/Media, katalog baru TIDAK
+  // otomatis ke-cover sampai ditambahkan manual ke definisinya).
+  { name: "Admin TU", desc: "Kelola administrasi & presensi katalog (unit) yang ditentukan lewat Tambah Role." },
+  { name: "Admin Media", desc: "Kelola Berita Acara & media katalog (unit) yang ditentukan lewat Tambah Role." },
+  { name: "Keuangan", desc: "Akses data pembayaran & tagihan katalog (unit) yang ditentukan lewat Tambah Role - bisa mengapit >1 katalog sekaligus dalam 1 role." },
+  { name: "Supervisor", desc: "Memantau data katalog (unit) yang ditentukan lewat Tambah Role - bisa mengapit >1 katalog sekaligus dalam 1 role." },
   { name: "Guru", desc: "Akses presensi & data mengajar sendiri. Guru yang berstatus wali kelas otomatis mendapat menu tambahan (data siswa kelasnya, persetujuan izin, dst).", auto: "Otomatis dari jabatan pegawai (guru_kelas/guru_bidang) di Hub API - status wali kelas sendiri BUKAN role terpisah, tambahan otomatis dari penetapan Wali Kelas di Data Master" },
   { name: "Kepala Sekolah", desc: "BUKAN role tersendiri - tambahan di atas role apa pun (Guru/Pegawai): menyetujui/menolak izin guru unitnya, pantau rekap presensi unitnya. Role dasar TIDAK berubah.", auto: "Otomatis dari penanda di Data Master (tabel kepala_sekolah, pola sama Wali Kelas) - TIDAK bisa di-assign manual lewat Manajemen Pengguna" },
   { name: "Pegawai", desc: "Akses presensi pribadi.", auto: "Otomatis dari jabatan pegawai (karyawan) di Hub API" },
