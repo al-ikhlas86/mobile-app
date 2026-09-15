@@ -13,8 +13,11 @@ interface Catalog { id: number; kode: string; nama: string; }
 
 const TARGET_OPTIONS = [{ value: "ALL", label: "Semua Pengguna" }, ...Object.entries(ROLE_MAP).map(([value, label]) => ({ value, label }))];
 
+// keuangan/supervisor DITAMBAH 2026-09-15 (Role Definitions) - SEBELUMNYA
+// global tanpa katalog, SEKARANG jg wajib didaftarkan eksplisit per
+// katalog spt admin_tu/admin_media (lihat backend routes/admin.js).
 function needsCatalog(targetRole: string) {
-  return targetRole === "admin_tu" || targetRole === "admin_media";
+  return targetRole === "admin_tu" || targetRole === "admin_media" || targetRole === "keuangan" || targetRole === "supervisor";
 }
 
 export function BuatPengumumanScreen() {
