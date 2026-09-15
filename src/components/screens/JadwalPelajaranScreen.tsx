@@ -116,7 +116,18 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
               key={idx}
               onPress={() => cell.iso && onSelectDate(cell.iso)}
               style={{ width: "14.28%" }}
-              className={`aspect-square items-center justify-center rounded-lg ${cell.isToday ? "border border-primary" : ""} ${selected === cell.iso ? "bg-primary/20" : ""} ${libur ? "bg-red-100" : adaJadwal ? "bg-primary/10" : ""}`}
+              // Indikator "tanggal yang di-tap" (2026-09-15) - SEBELUMNYA
+              // "bg-primary/20" (warna latar), BENTROK dgn backgroundColor
+              // yang SAMA dipakai libur ("bg-red-100")/adaJadwal
+              // ("bg-primary/10") di bawah - keduanya sama2 nge-set
+              // backgroundColor, jadi kelas yg belakangan (libur/adaJadwal)
+              // SELALU menang & menutupi tanda seleksi (dilaporkan user:
+              // "klik tanggal tidak ada tandanya"). Ganti ke BORDER (property
+              // RN yg beda dari backgroundColor - borderWidth/borderColor
+              // vs backgroundColor - tidak akan pernah saling menimpa),
+              // pola sama persis versi webview (pakai "ring", constraint yg
+              // sama: harus di layer terpisah dari background).
+              className={`aspect-square items-center justify-center rounded-lg ${selected === cell.iso ? "border-2 border-primary" : cell.isToday ? "border border-primary" : ""} ${libur ? "bg-red-100" : adaJadwal ? "bg-primary/10" : ""}`}
             >
               {/* text-muted-foreground TANPA modifier opacity (2026-08-29) -
                   sebelumnya "/60" (mis. text-muted-foreground/60), yang
