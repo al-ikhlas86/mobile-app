@@ -310,6 +310,16 @@ export const api = {
     authedFetch(`/api/schedule/anak/${studentCacheId}${semester ? `?semester=${semester}` : ""}`),
   scheduleKalender: (from?: string, to?: string) =>
     authedFetch(`/api/schedule/kalender${from && to ? `?from=${from}&to=${to}` : ""}`),
+  // Catatan/Pengingat pribadi Jadwal Kerja (2026-09-15) - BEDA dari
+  // scheduleKalender di atas (kalender BERSAMA 1 unit): ini catatan MILIK
+  // SENDIRI, tidak pernah kelihatan orang lain.
+  catatanList: (from?: string, to?: string) =>
+    authedFetch(`/api/schedule/catatan${from && to ? `?from=${from}&to=${to}` : ""}`),
+  catatanCreate: (data: { tanggal: string; jam?: string | null; deskripsi: string; notifikasi_aktif: boolean }) =>
+    authedFetch("/api/schedule/catatan", { method: "POST", body: JSON.stringify(data) }),
+  catatanUpdate: (id: number, data: { tanggal?: string; jam?: string | null; deskripsi?: string; notifikasi_aktif?: boolean }) =>
+    authedFetch(`/api/schedule/catatan/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  catatanDelete: (id: number) => authedFetch(`/api/schedule/catatan/${id}`, { method: "DELETE" }),
   attendanceCheckin: (type: "masuk" | "pulang", lat: number, lng: number, accuracy?: number, isMocked?: boolean, locationTimestamp?: number) =>
     authedFetch("/api/attendance/checkin", {
       method: "POST",
