@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -9,7 +9,13 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { api, ROLE_MAP } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
+interface Catalog { id: number; kode: string; nama: string; }
+
 const TARGET_OPTIONS = [{ value: "ALL", label: "Semua Pengguna" }, ...Object.entries(ROLE_MAP).map(([value, label]) => ({ value, label }))];
+
+function needsCatalog(targetRole: string) {
+  return targetRole === "admin_tu" || targetRole === "admin_media";
+}
 
 export function BuatPengumumanScreen() {
   const insets = useSafeAreaInsets();
@@ -17,14 +23,37 @@ export function BuatPengumumanScreen() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [targetRole, setTargetRole] = useState("ALL");
+  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
+  const [catalogId, setCatalogId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    api.adminCatalogs().then((res) => {
+      if (res.success) {
+        setCatalogs(res.data);
+        if (res.data.length > 0) setCatalogId((prev) => prev ?? res.data[0].id);
+      }
+    });
+  }, []);
+
   const handleSend = async () => {
     if (!title.trim() || !message.trim()) { setError("Judul dan isi pengumuman wajib diisi."); return; }
+    // admin_tu/admin_media (2026-09-14, Sistem Katalog) - WAJIB sertakan
+    // katalog, keputusan eksplisit user: pengumuman ke role ini TIDAK BOLEH
+    // melebar lintas katalog.
+    if (needsCatalog(targetRole) && !catalogId) {
+      setError("Pilih katalog dulu - pengumuman ke Admin TU/Media harus jelas ditujukan ke katalog yang mana.");
+      return;
+    }
     setSaving(true); setError("");
-    const res = await api.adminCreateAnnouncement({ title: title.trim(), message: message.trim(), target_role: targetRole });
+    const res = await api.adminCreateAnnouncement({
+      title: title.trim(),
+      message: message.trim(),
+      target_role: targetRole,
+      ...(needsCatalog(targetRole) && catalogId ? { catalog_id: catalogId } : {}),
+    });
     setSaving(false);
     if (res.success) { setSuccess(true); setTitle(""); setMessage(""); setTargetRole("ALL"); }
     else setError(res.message ?? "Gagal mengirim pengumuman.");
@@ -42,6 +71,17 @@ export function BuatPengumumanScreen() {
             <Text className="text-xs font-medium text-muted-foreground mb-1">Kirim ke</Text>
             <SimplePicker value={targetRole} options={TARGET_OPTIONS} onChange={setTargetRole} />
           </View>
+          {needsCatalog(targetRole) && (
+            <View>
+              <Text className="text-xs font-medium text-muted-foreground mb-1">Katalog</Text>
+              <SimplePicker
+                value={catalogId != null ? String(catalogId) : ""}
+                options={catalogs.map((c) => ({ value: String(c.id), label: c.nama }))}
+                onChange={(v) => setCatalogId(Number(v))}
+                placeholder="Pilih katalog..."
+              />
+            </View>
+          )}
           <View>
             <Text className="text-xs font-medium text-muted-foreground mb-1">Judul</Text>
             <TextInput value={title} onChangeText={setTitle} placeholder="Mis. Pemeliharaan Sistem Malam Ini" maxLength={200} className="w-full bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />

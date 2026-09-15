@@ -38,8 +38,10 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   // webview GuruDashboard.tsx.
   const capabilities = session?.capabilities ?? [];
   const hasCap = (cap: string) => capabilities.includes(cap);
-  const isTuLike = hasCap("admin_tu_sd") || hasCap("admin_tu_tk") || hasCap("supervisor");
-  const isMediaLike = hasCap("admin_media_sd") || hasCap("admin_media_tk");
+  // admin_tu_sd/tk & admin_media_sd/tk DIGABUNG jadi generik (2026-09-14,
+  // Sistem Katalog) - lihat catatan sama di GuruDashboard.tsx.
+  const isTuLike = hasCap("admin_tu") || hasCap("supervisor");
+  const isMediaLike = hasCap("admin_media");
   const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
 

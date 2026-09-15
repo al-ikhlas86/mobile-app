@@ -44,10 +44,13 @@ export interface BerandaPreferensi {
 export const ROLE_MAP: Record<string, RoleName> = {
   admin_it: "Admin IT",
   supervisor: "Supervisor",
-  admin_tu_sd: "Admin TU (SD)",
-  admin_media_sd: "Admin Media (SD)",
-  admin_tu_tk: "Admin TU (TK & Playground)",
-  admin_media_tk: "Admin Media (TK & Playground)",
+  // admin_tu_sd/admin_media_sd/admin_tu_tk/admin_media_tk DIGABUNG jadi
+  // admin_tu/admin_media generik (2026-09-14, Sistem Katalog) - katalog
+  // mana yg dipegang sekarang dari user_capabilities.catalog_id (lihat
+  // Holder.capabilities di KapasitasTambahanScreen.tsx), bukan lagi bagian
+  // nama role.
+  admin_tu: "Admin TU",
+  admin_media: "Admin Media",
   // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, Kepala
   // Sekolah sekarang FLAG (isKepalaSekolah) - lihat authService.ts.
   // guru_kelas JUGA DIHAPUS (Fase 3, 2026-09-04) - sama alasannya, sekarang
@@ -470,10 +473,21 @@ export const api = {
     authedFetch(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   adminDeleteUser: (id: number) => authedFetch(`/api/admin/users/${id}`, { method: "DELETE" }),
   // Manajemen Pengguna multi-flag (2026-09-04) - lihat routes/admin.js.
-  adminCariPegawai: (q: string) => authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}`),
-  adminUpdateCapabilities: (id: number, capabilities: string[]) =>
+  // catalogId (2026-09-14, Sistem Katalog) - opsional, filter kandidat
+  // pencarian ke unit yg termasuk katalog itu saja.
+  adminCariPegawai: (q: string, catalogId?: number) =>
+    authedFetch(`/api/admin/users/cari-pegawai?q=${encodeURIComponent(q)}${catalogId ? `&catalogId=${catalogId}` : ""}`),
+  // capabilities SEKARANG array {roleType, catalogId} (Sistem Katalog) -
+  // bukan flat string lagi. catalogId null/undefined utk keuangan/supervisor.
+  adminUpdateCapabilities: (id: number, capabilities: { roleType: string; catalogId: number | null }[]) =>
     authedFetch(`/api/admin/users/${id}/capabilities`, { method: "PATCH", body: JSON.stringify({ capabilities }) }),
-  adminCapabilityHolders: (capability: string) => authedFetch(`/api/admin/capabilities/${capability}/holders`),
+  adminCapabilityHolders: (roleType: string, catalogId?: number) =>
+    authedFetch(`/api/admin/capabilities/${roleType}/holders${catalogId ? `?catalogId=${catalogId}` : ""}`),
+  // Katalog (2026-09-14, Sistem Katalog) - kelola daftar unit sekolah
+  // (SD/TK/dst), PENGGANTI env var UNIT_SCOPE_MAP lama.
+  adminCatalogs: () => authedFetch("/api/admin/catalogs"),
+  adminCreateCatalog: (data: { kode: string; nama: string }) =>
+    authedFetch("/api/admin/catalogs", { method: "POST", body: JSON.stringify(data) }),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
   adminLinkAccountReview: (id: number) => authedFetch(`/api/admin/account-link-reviews/${id}/link`, { method: "POST" }),
   adminRejectAccountReview: (id: number, note?: string) =>
@@ -490,19 +504,25 @@ export const api = {
   adminSetAlertPhone: (phone: string) => authedFetch("/api/admin/alert-phone", { method: "PUT", body: JSON.stringify({ phone }) }),
   adminSyncStatus: () => authedFetch("/api/admin/sync-status"),
   adminHubUnits: () => authedFetch("/api/admin/hub-units"),
-  adminApproveHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/approve`, { method: "POST" }),
+  // approve SEKARANG WAJIB sertakan unitId + katalog (2026-09-14, Sistem
+  // Katalog) - pilih catalogId yang sudah ada ATAU bikin baru inline lewat
+  // newCatalogKode+newCatalogNama.
+  adminApproveHubUnit: (id: number, data: { unitId: number; unitName?: string; catalogId?: number; newCatalogKode?: string; newCatalogNama?: string }) =>
+    authedFetch(`/api/admin/hub-units/${id}/approve`, { method: "POST", body: JSON.stringify(data) }),
   adminRejectHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/reject`, { method: "POST" }),
   adminDeactivateHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/deactivate`, { method: "POST" }),
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),
-  adminCreateAnnouncement: (data: { title: string; message: string; target_role: string }) =>
+  adminCreateAnnouncement: (data: { title: string; message: string; target_role: string; catalog_id?: number }) =>
     authedFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(data) }),
   backupStatus: () => authedFetch("/api/admin/backup/status"),
 
   beritaAcaraList: () => authedFetch("/api/berita-acara"),
   beritaAcaraDetail: (id: number) => authedFetch(`/api/berita-acara/${id}`),
-  beritaAcaraCreate: (data: { title: string; category?: string; description?: string; author_name?: string; activity_date?: string; unit_scope?: string }) =>
+  // catalog_id (2026-09-14, Sistem Katalog) - PENGGANTI unit_scope (string
+  // SD/TK_PLAYGROUND/ALL lama) - null = ALL (semua katalog).
+  beritaAcaraCreate: (data: { title: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null }) =>
     authedFetch("/api/berita-acara", { method: "POST", body: JSON.stringify(data) }),
-  beritaAcaraUpdate: (id: number, data: { title?: string; category?: string; description?: string; author_name?: string; activity_date?: string; unit_scope?: string }) =>
+  beritaAcaraUpdate: (id: number, data: { title?: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null }) =>
     authedFetch(`/api/berita-acara/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   beritaAcaraPublish: (id: number) => authedFetch(`/api/berita-acara/${id}/publish`, { method: "POST" }),
   beritaAcaraDelete: (id: number) => authedFetch(`/api/berita-acara/${id}`, { method: "DELETE" }),

@@ -14,10 +14,13 @@ import { useThemeColors } from "../../../context/ThemeContext";
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role: RoleName; }
 interface StatsSummary { total_published: number; total_likes: number; total_comments: number; }
 
-export function AdminMediaDashboard({ onNavigate, role }: Props) {
+export function AdminMediaDashboard({ onNavigate }: Props) {
   const colors = useThemeColors();
-  const isSD = role === "Admin Media (SD)";
-  const unitLabel = isSD ? "SD" : "TK & Playground";
+  // unitLabel (label katalog di header) DIHAPUS (2026-09-14, Sistem
+  // Katalog) - role tidak lagi menyiratkan SD/TK (generik "Admin Media"),
+  // katalog yang dipegang sekarang data (user_capabilities.catalog_id) yang
+  // BELUM di-thread ke sesi frontend - lihat KapasitasTambahanScreen.tsx
+  // utk lihat/kelola katalog yang sebenarnya dipegang tiap orang.
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const [showAllMenu, setShowAllMenu] = useState(false);
   // isFocused - lihat catatan lengkap di AdminITDashboard.tsx (pola sama
@@ -52,7 +55,7 @@ export function AdminMediaDashboard({ onNavigate, role }: Props) {
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
 
   return (
-    <DashboardLayout name="Admin Media" roleLabel="Ruang Redaksi Sekolah" date={today} unitLabel={unitLabel}>
+    <DashboardLayout name="Admin Media" roleLabel="Ruang Redaksi Sekolah" date={today}>
       <Pressable onPress={() => onNavigate("berita-acara-admin")} className="w-full bg-primary rounded-2xl p-4 flex-row items-center gap-4">
         <View className="w-12 h-12 rounded-xl bg-white/20 items-center justify-center"><Plus size={24} color={colors.primaryForeground} /></View>
         <View className="flex-1">

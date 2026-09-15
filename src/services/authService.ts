@@ -28,10 +28,6 @@ export function useSessionRefreshTick(): number {
 export type RoleName =
   | "Admin IT"
   | "Supervisor"
-  | "Admin TU (SD)"
-  | "Admin Media (SD)"
-  | "Admin TU (TK & Playground)"
-  | "Admin Media (TK & Playground)"
   // Kepala Sekolah (2026-09-04) SENGAJA TIDAK ADA lagi - bukan role,
   // sekarang FLAG (isKepalaSekolah) di atas role dasar apa pun - lihat
   // SavedAccount/ActiveSession di bawah.
@@ -40,7 +36,19 @@ export type RoleName =
   | "Guru"
   // Guru Kelas (2026-09-04, Fase 3) JUGA SENGAJA TIDAK ADA lagi - sama
   // seperti Kepala Sekolah, sekarang FLAG (isWaliKelas) di bawah.
-  | "Pegawai";
+  | "Pegawai"
+  // legacy names (backward compat) - admin_tu_sd/tk & admin_media_sd/tk
+  // DIGABUNG jadi generik (2026-09-14, Sistem Katalog), katalog dari data
+  // (user_capabilities.catalog_id), bukan lagi bagian nama role. Nilai di
+  // bawah DIBIARKAN aman utk perbandingan lama yg mungkin masih nyangkut,
+  // tapi TIDAK PERNAH lagi dikirim backend - nilai baru selalu "Admin
+  // TU"/"Admin Media" polos.
+  | "Admin TU (SD)"
+  | "Admin Media (SD)"
+  | "Admin TU (TK & Playground)"
+  | "Admin Media (TK & Playground)"
+  | "Admin TU"
+  | "Admin Media";
 
 export interface SavedAccount {
   id: string;

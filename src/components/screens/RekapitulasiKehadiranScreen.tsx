@@ -21,7 +21,9 @@ const STATUS_TEXT: Record<string, string> = {
 const CELL_W = 28;
 const NAME_W = 130;
 
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
+// admin_tu_sd/tk DIGABUNG jadi generik (2026-09-14, Sistem Katalog) - nama
+// lama TETAP dicek (pola "legacy names") jaga2 sesi lama.
+const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
 
 // isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
 // "Kepala Sekolah (SD/TK)" terpisah.

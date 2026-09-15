@@ -22,19 +22,23 @@ interface Media { id: number; media_type: "thumbnail" | "activity"; filename: st
 interface LinkItem { id: number; url: string; }
 interface BeritaItem {
   id: number; title: string; category: string | null; description: string | null; author_name: string | null;
-  activity_date: string | null; unit_scope: string; status: Status; created_by_name: string; created_at: string;
+  activity_date: string | null; catalog_id: number | null; status: Status; created_by_name: string; created_at: string;
   approved_at: string | null; media: Media[]; links: LinkItem[];
 }
+interface Catalog { id: number; kode: string; nama: string; }
 
 const CATEGORIES = ["Kegiatan Sekolah", "Prestasi", "Pengumuman", "Pendidikan", "Olahraga", "Seni & Budaya", "Lainnya"];
 const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
-const ALL_UNIT_SCOPES = [{ value: "SD", label: "SD Al-Ikhlas 86" }, { value: "TK_PLAYGROUND", label: "TK & Playground" }, { value: "ALL", label: "Semua Unit" }];
 
-function unitScopesFor(role?: RoleName) {
-  if (role === "Admin Media (SD)") return ALL_UNIT_SCOPES.filter((u) => u.value !== "TK_PLAYGROUND");
-  if (role === "Admin Media (TK & Playground)") return ALL_UNIT_SCOPES.filter((u) => u.value !== "SD");
-  return ALL_UNIT_SCOPES;
-}
+// Sistem Katalog (2026-09-14) - PENGGANTI ALL_UNIT_SCOPES hardcoded (SD/
+// TK_PLAYGROUND/ALL) - katalog SEKARANG data, diambil dari
+// api.adminCatalogs(), bukan lagi daftar tetap di kode. Pembatasan "Admin
+// Media SD cuma boleh pilih SD" yang DULU dicek di sini (client-side,
+// berdasar suffix nama role) SEKARANG murni ditegakkan SERVER-side
+// (routes/beritaAcara.js - menolak 403 kalau catalog_id di luar
+// user_capabilities-nya) - picker di sini menampilkan SEMUA katalog apa
+// adanya, submit yang di luar hak akan ditolak jelas oleh server drpd
+// disembunyikan diam2 di client.
 function StatusBadge({ status }: { status: Status }) {
   const cfg = { disetujui: { label: "Terbit", bg: "bg-green-100", text: "text-green-700" }, draft: { label: "Draft", bg: "bg-amber-100", text: "text-amber-700" }, terkirim: { label: "Terkirim", bg: "bg-emerald-100", text: "text-emerald-800" } }[status];
   return <View className={`px-2 py-0.5 rounded-full ${cfg.bg}`}><Text className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</Text></View>;
@@ -42,10 +46,10 @@ function StatusBadge({ status }: { status: Status }) {
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
 function mediaUrl(m: Media) { return resolveAvatarUrl(m.url) ?? undefined; }
 
-export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role?: RoleName }) {
+export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role?: RoleName }) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const unitScopes = unitScopesFor(role);
+  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [view, setView] = useState<AdminView>("list");
   const [items, setItems] = useState<BeritaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +65,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   const [formDescription, setFormDescription] = useState("");
   const [formAuthorName, setFormAuthorName] = useState("");
   const [formCategory, setFormCategory] = useState(CATEGORIES[0]);
-  const [formUnitScope, setFormUnitScope] = useState("ALL");
+  const [formCatalogId, setFormCatalogId] = useState<number | null>(null);
   const [formActivityDate, setFormActivityDate] = useState(getTodayLocal());
   const [formSaving, setFormSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
@@ -69,19 +73,19 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   const [uploadingActivity, setUploadingActivity] = useState(false);
 
   const load = async () => { setLoading(true); const res = await api.beritaAcaraList(); if (res.success) setItems(res.data); setLoading(false); };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); api.adminCatalogs().then((res) => { if (res.success) setCatalogs(res.data); }); }, []);
 
   function resetForm() {
     setEditingId(null); setEditingMedia([]); setEditingLinks([]); setNewLinkUrl("");
     setFormTitle(""); setFormDescription(""); setFormAuthorName("");
-    setFormCategory(CATEGORIES[0]); setFormUnitScope("ALL");
+    setFormCategory(CATEGORIES[0]); setFormCatalogId(null);
     setFormActivityDate(getTodayLocal()); setFormMessage("");
   }
   function openCreate() { resetForm(); setView("form"); }
   function openEdit(item: BeritaItem) {
     setEditingId(item.id); setEditingMedia(item.media); setEditingLinks(item.links); setNewLinkUrl("");
     setFormTitle(item.title); setFormDescription(item.description ?? ""); setFormAuthorName(item.author_name ?? "");
-    setFormCategory(item.category ?? CATEGORIES[0]); setFormUnitScope(item.unit_scope);
+    setFormCategory(item.category ?? CATEGORIES[0]); setFormCatalogId(item.catalog_id);
     setFormActivityDate(item.activity_date ?? getTodayLocal());
     setFormMessage(""); setView("form");
   }
@@ -89,7 +93,7 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
   async function saveOrCreate(): Promise<number | null> {
     if (!formTitle.trim()) { setFormMessage("Isi judul dulu."); return null; }
     setFormSaving(true); setFormMessage("");
-    const payload = { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, unit_scope: formUnitScope };
+    const payload = { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, catalog_id: formCatalogId };
     const res = editingId ? await api.beritaAcaraUpdate(editingId, payload) : await api.beritaAcaraCreate(payload);
     setFormSaving(false);
     if (!res.success) { setFormMessage(res.message ?? "Gagal menyimpan."); return null; }
@@ -243,7 +247,14 @@ export function BeritaAcaraAdmin({ onNavigate, role }: { onNavigate: (screen: st
         </View>
         <View className="flex-row gap-3">
           <View className="flex-1 gap-1.5"><Text className="text-sm font-medium text-foreground">Kategori</Text><SimplePicker value={formCategory} options={CATEGORY_OPTIONS} onChange={setFormCategory} /></View>
-          <View className="flex-1 gap-1.5"><Text className="text-sm font-medium text-foreground">Unit</Text><SimplePicker value={formUnitScope} options={unitScopes} onChange={setFormUnitScope} /></View>
+          <View className="flex-1 gap-1.5">
+            <Text className="text-sm font-medium text-foreground">Katalog</Text>
+            <SimplePicker
+              value={formCatalogId == null ? "ALL" : String(formCatalogId)}
+              options={[{ value: "ALL", label: "Semua Katalog" }, ...catalogs.map((c) => ({ value: String(c.id), label: c.nama }))]}
+              onChange={(v) => setFormCatalogId(v === "ALL" ? null : Number(v))}
+            />
+          </View>
         </View>
         <View className="gap-1.5">
           <Text className="text-sm font-medium text-foreground">Tanggal Kegiatan (YYYY-MM-DD)</Text>
