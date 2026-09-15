@@ -33,7 +33,11 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 
 // Unit Data Master (2026-09-14) - lihat catatan panjang di versi webview
 // (src/app/components/screens/SyncStatusScreen.tsx), fungsinya sama persis.
-interface HubUnit { id: number; name: string; unit_id: number | null; status: "pending" | "active" | "deactivated"; created_at: string; }
+// catalog (2026-09-15, diminta user - "unit ID nya lebih jelas, dari
+// Katalog mana, dan namanya apa") - null kalau unit_id belum/tidak
+// terpetakan ke katalog manapun (GET /hub-units sekarang JOIN
+// unit_catalog_map, lihat routes/admin.js).
+interface HubUnit { id: number; name: string; unit_id: number | null; status: "pending" | "active" | "deactivated"; created_at: string; catalog: { id: number; kode: string; nama: string } | null; }
 interface Catalog { id: number; kode: string; nama: string; }
 function formatTanggal(ts: string) { return new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
@@ -220,9 +224,13 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
           <View className="gap-2">
             {aktif.map((u) => (
               <View key={u.id} className="flex-row items-center justify-between gap-2 border-b border-border pb-2">
-                <View>
+                <View className="flex-1">
                   <Text className="text-sm font-medium text-foreground">{u.name}</Text>
-                  <Text className="text-xs text-muted-foreground">Unit ID {u.unit_id}</Text>
+                  <Text className="text-xs text-muted-foreground">
+                    Unit ID {u.unit_id}
+                    {u.catalog ? ` · Katalog ${u.catalog.kode} (${u.catalog.nama})` : ""}
+                  </Text>
+                  {!u.catalog && <Text className="text-xs text-amber-600">Belum terpetakan ke katalog manapun</Text>}
                 </View>
                 <Button size="sm" variant="outline" disabled={busyId === u.id} onPress={() => jalankan("deactivate", u, "Nonaktifkan Unit", `Nonaktifkan unit "${u.name}"? Token lamanya tidak akan diterima lagi.`)}>
                   <Ban size={14} /><Text className="text-primary text-sm font-semibold ml-1">Nonaktifkan</Text>

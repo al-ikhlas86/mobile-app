@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight, BookOpen } from "lucide-react-native";
@@ -67,6 +67,13 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   const [newCatalogNama, setNewCatalogNama] = useState("");
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [catalogError, setCatalogError] = useState("");
+  // Edit/Hapus katalog (2026-09-15, diminta user - pil katalog sebelumnya
+  // MURNI tampilan, tidak bisa di-tap sama sekali).
+  const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
+  const [editCatalogKode, setEditCatalogKode] = useState("");
+  const [editCatalogNama, setEditCatalogNama] = useState("");
+  const [editCatalogError, setEditCatalogError] = useState("");
+  const [catalogBusyId, setCatalogBusyId] = useState<number | null>(null);
 
   const loadCatalogs = async () => {
     const res = await api.adminCatalogs();
@@ -87,6 +94,50 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
     } else {
       setCatalogError(res.message ?? "Gagal membuat katalog.");
     }
+  };
+
+  const openEditCatalog = (c: Catalog) => {
+    setEditingCatalogId(c.id);
+    setEditCatalogKode(c.kode);
+    setEditCatalogNama(c.nama);
+    setEditCatalogError("");
+  };
+
+  const handleUpdateCatalog = async (id: number) => {
+    if (!editCatalogKode.trim() || !editCatalogNama.trim()) {
+      setEditCatalogError("Kode dan nama katalog wajib diisi.");
+      return;
+    }
+    setCatalogBusyId(id); setEditCatalogError("");
+    const res = await api.adminUpdateCatalog(id, { kode: editCatalogKode.trim(), nama: editCatalogNama.trim() });
+    setCatalogBusyId(null);
+    if (res.success) {
+      setCatalogs((prev) => prev.map((c) => (c.id === id ? { ...c, kode: editCatalogKode.trim(), nama: editCatalogNama.trim() } : c)).sort((a, b) => a.nama.localeCompare(b.nama)));
+      setEditingCatalogId(null);
+    } else {
+      setEditCatalogError(res.message ?? "Gagal menyimpan perubahan.");
+    }
+  };
+
+  const handleDeleteCatalog = (c: Catalog) => {
+    Alert.alert("Hapus Katalog", `Hapus katalog "${c.nama}"? Cuma bisa dihapus kalau tidak ada unit/orang yang masih terhubung ke sini.`, [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Hapus",
+        style: "destructive",
+        onPress: async () => {
+          setCatalogBusyId(c.id);
+          const res = await api.adminDeleteCatalog(c.id);
+          setCatalogBusyId(null);
+          if (res.success) {
+            setCatalogs((prev) => prev.filter((x) => x.id !== c.id));
+            setEditingCatalogId(null);
+          } else {
+            Alert.alert("Gagal", res.message ?? "Gagal menghapus katalog.");
+          }
+        },
+      },
+    ]);
   };
 
   const load = async () => {
@@ -160,15 +211,47 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
         <Text className="text-xs text-muted-foreground mb-3">
           Daftar unit sekolah (SD/TK/dst). Tambah katalog baru di sini kalau ada jenjang baru (mis. SMP) -
           setelahnya baru bisa dipilih saat menyetujui sinkronisasi unit baru & saat menempelkan Admin TU/Media
-          lewat Kapasitas Tambahan.
+          lewat Kapasitas Tambahan. Ketuk salah satu utk ubah nama/kode atau hapus.
         </Text>
         {catalogs.length > 0 && (
           <View className="flex-row flex-wrap gap-1.5 mb-3">
             {catalogs.map((c) => (
-              <View key={c.id} className="bg-muted px-2.5 py-1 rounded-full">
-                <Text className="text-xs font-medium text-foreground">{c.nama}</Text>
-              </View>
+              <Pressable
+                key={c.id}
+                onPress={() => (editingCatalogId === c.id ? setEditingCatalogId(null) : openEditCatalog(c))}
+                className={`px-2.5 py-1 rounded-full ${editingCatalogId === c.id ? "bg-primary" : "bg-muted"}`}
+              >
+                <Text className={`text-xs font-medium ${editingCatalogId === c.id ? "text-white" : "text-foreground"}`}>{c.nama}</Text>
+              </Pressable>
             ))}
+          </View>
+        )}
+        {editingCatalogId !== null && (
+          <View className="gap-2 mb-3 bg-muted/50 rounded-xl p-3 border border-border">
+            <View className="flex-row gap-2">
+              <TextInput
+                value={editCatalogKode}
+                onChangeText={setEditCatalogKode}
+                placeholder="Kode"
+                maxLength={20}
+                className="w-28 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+              />
+              <TextInput
+                value={editCatalogNama}
+                onChangeText={setEditCatalogNama}
+                placeholder="Nama tampilan"
+                maxLength={100}
+                className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+              />
+            </View>
+            {editCatalogError ? <Text className="text-xs text-red-500">{editCatalogError}</Text> : null}
+            <View className="flex-row gap-2">
+              <Button size="sm" onPress={() => handleUpdateCatalog(editingCatalogId)} loading={catalogBusyId === editingCatalogId}>Simpan</Button>
+              <Button size="sm" variant="destructive" onPress={() => handleDeleteCatalog(catalogs.find((c) => c.id === editingCatalogId)!)} disabled={catalogBusyId === editingCatalogId}>
+                <Trash2 size={14} color="#fff" />{"  "}Hapus
+              </Button>
+              <Button size="sm" variant="outline" onPress={() => setEditingCatalogId(null)}>Batal</Button>
+            </View>
           </View>
         )}
         {!showAddCatalog ? (
