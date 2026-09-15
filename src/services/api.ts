@@ -498,6 +498,9 @@ export const api = {
   adminCatalogs: () => authedFetch("/api/admin/catalogs"),
   adminCreateCatalog: (data: { kode: string; nama: string }) =>
     authedFetch("/api/admin/catalogs", { method: "POST", body: JSON.stringify(data) }),
+  adminUpdateCatalog: (id: number, data: { kode?: string; nama?: string }) =>
+    authedFetch(`/api/admin/catalogs/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  adminDeleteCatalog: (id: number) => authedFetch(`/api/admin/catalogs/${id}`, { method: "DELETE" }),
   adminAccountLinkReviews: () => authedFetch("/api/admin/account-link-reviews"),
   adminLinkAccountReview: (id: number) => authedFetch(`/api/admin/account-link-reviews/${id}/link`, { method: "POST" }),
   adminRejectAccountReview: (id: number, note?: string) =>
