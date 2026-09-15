@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight, BookOpen, Shield, Check } from "lucide-react-native";
+import { Phone, Plus, Trash2, X, Link2, UserX, AlertTriangle, Users2, ChevronRight, BookOpen, Shield, Check, Pencil } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -97,6 +97,11 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
   const [roleDefSaving, setRoleDefSaving] = useState(false);
   const [roleDefError, setRoleDefError] = useState("");
   const [roleDefBusyId, setRoleDefBusyId] = useState<number | null>(null);
+  // Edit label role definition (2026-09-15, diminta user - "ada label
+  // nama yang mau saya rubah").
+  const [editingRoleDefId, setEditingRoleDefId] = useState<number | null>(null);
+  const [editRoleLabel, setEditRoleLabel] = useState("");
+  const [editRoleLabelError, setEditRoleLabelError] = useState("");
 
   const loadCatalogs = async () => {
     const res = await api.adminCatalogs();
@@ -190,6 +195,28 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
       setNewRoleLabel("");
     } else {
       setRoleDefError(res.message ?? "Gagal membuat role.");
+    }
+  };
+
+  const openEditRoleDefinition = (def: RoleDefinition) => {
+    setEditingRoleDefId(def.id);
+    setEditRoleLabel(def.label);
+    setEditRoleLabelError("");
+  };
+
+  const handleUpdateRoleDefinitionLabel = async (id: number) => {
+    if (!editRoleLabel.trim()) {
+      setEditRoleLabelError("Label wajib diisi.");
+      return;
+    }
+    setRoleDefBusyId(id); setEditRoleLabelError("");
+    const res = await api.adminUpdateRoleDefinition(id, { label: editRoleLabel.trim() });
+    setRoleDefBusyId(null);
+    if (res.success) {
+      setRoleDefinitions((prev) => prev.map((d) => (d.id === id ? { ...d, label: editRoleLabel.trim() } : d)));
+      setEditingRoleDefId(null);
+    } else {
+      setEditRoleLabelError(res.message ?? "Gagal menyimpan perubahan.");
     }
   };
 
@@ -473,19 +500,40 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
           {roleDefinitions.length > 0 && (
             <View className="gap-2 mb-4">
               {roleDefinitions.map((def) => (
-                <View key={def.id} className="flex-row items-center gap-3 border border-border rounded-xl p-3">
-                  <View className="flex-1">
-                    <Text className="text-sm font-semibold text-foreground">{def.label}</Text>
-                    <View className="flex-row flex-wrap gap-1 mt-1">
-                      <View className="bg-primary/10 px-2 py-0.5 rounded-full"><Text className="text-[10px] font-medium text-primary">{ROLE_MAP[def.role_type] ?? def.role_type}</Text></View>
-                      {def.catalogs.map((c) => (
-                        <View key={c.id} className="bg-muted px-2 py-0.5 rounded-full"><Text className="text-[10px] font-medium text-foreground">{c.kode}</Text></View>
-                      ))}
+                <View key={def.id} className="border border-border rounded-xl p-3">
+                  <View className="flex-row items-center gap-3">
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-foreground">{def.label}</Text>
+                      <View className="flex-row flex-wrap gap-1 mt-1">
+                        <View className="bg-primary/10 px-2 py-0.5 rounded-full"><Text className="text-[10px] font-medium text-primary">{ROLE_MAP[def.role_type] ?? def.role_type}</Text></View>
+                        {def.catalogs.map((c) => (
+                          <View key={c.id} className="bg-muted px-2 py-0.5 rounded-full"><Text className="text-[10px] font-medium text-foreground">{c.kode}</Text></View>
+                        ))}
+                      </View>
                     </View>
+                    <Pressable onPress={() => (editingRoleDefId === def.id ? setEditingRoleDefId(null) : openEditRoleDefinition(def))} className="p-1.5 rounded-full">
+                      <Pencil size={15} color={colors.mutedForeground} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDeleteRoleDefinition(def)} disabled={roleDefBusyId === def.id} className="p-1.5 rounded-full">
+                      <Trash2 size={15} color={colors.mutedForeground} />
+                    </Pressable>
                   </View>
-                  <Pressable onPress={() => handleDeleteRoleDefinition(def)} disabled={roleDefBusyId === def.id} className="p-1.5 rounded-full">
-                    <Trash2 size={15} color={colors.mutedForeground} />
-                  </Pressable>
+                  {editingRoleDefId === def.id && (
+                    <View className="gap-2 mt-3 pt-3 border-t border-border">
+                      <TextInput
+                        value={editRoleLabel}
+                        onChangeText={setEditRoleLabel}
+                        placeholder="Label"
+                        maxLength={150}
+                        className="bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground"
+                      />
+                      {editRoleLabelError ? <Text className="text-xs text-red-500">{editRoleLabelError}</Text> : null}
+                      <View className="flex-row gap-2">
+                        <Button size="sm" onPress={() => handleUpdateRoleDefinitionLabel(def.id)} loading={roleDefBusyId === def.id}>Simpan</Button>
+                        <Button size="sm" variant="outline" onPress={() => setEditingRoleDefId(null)}>Batal</Button>
+                      </View>
+                    </View>
+                  )}
                 </View>
               ))}
             </View>
