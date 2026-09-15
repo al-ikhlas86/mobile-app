@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 // ScrollView dari react-native-gesture-handler (BUKAN dari "react-native")
 // sengaja dipakai di sini - FlatList/ScrollView bawaan RN kalah rebutan
@@ -18,6 +18,24 @@ interface Option { value: string; label: string; }
 const ROW_HEIGHT = 44;
 const MAX_VISIBLE_ROWS = 5;
 
+// "Dropdown macet" (dilaporkan user, 2026-09-15, contoh: Buat Pengumuman -
+// yang SEKARANG bisa punya 2 picker sekaligus di 1 layar sejak field
+// katalog Sistem Katalog) - root cause: tiap SimplePicker cuma kelola state
+// `open` MILIKNYA SENDIRI, tidak tahu-menahu soal instance lain. Kalau user
+// buka dropdown A lalu (tanpa pilih opsi/tutup dulu) tap dropdown B, KEDUA
+// list dropdown itu jadi render bersamaan (masing2 absolute-positioned,
+// zIndex sama) - saling menutupi & rebutan sentuhan, kelihatan/kerasa
+// "macet" (tap tidak seperti diharapkan, kadang harus tap 2-3x). Fix:
+// pub-sub module-scope MINIMAL (bukan Context - tidak perlu ubah provider
+// tree apa pun) - begitu 1 picker dibuka, semua picker LAIN yg sedang
+// terbuka otomatis dipaksa nutup duluan. Ini di level komponen BERSAMA
+// (dipakai di SEMUA layar/role), jadi otomatis menutup celah "macet" ini
+// di mana pun SimplePicker dipakai, bukan cuma di 1 halaman contoh.
+const openListeners = new Set<() => void>();
+function closeOtherPickers(except: () => void) {
+  openListeners.forEach((closeFn) => { if (closeFn !== except) closeFn(); });
+}
+
 // Pengganti <select> HTML (tidak ada padanan native langsung) - dropdown
 // nempel LANGSUNG DI BAWAH kolomnya sendiri (spt <select> web/native
 // biasa), BUKAN lagi bottom-sheet dari dasar layar. SEBELUMNYA pakai
@@ -34,9 +52,23 @@ export function SimplePicker({ value, options, onChange, placeholder = "Pilih...
   const selected = options.find((o) => o.value === value);
   const maxHeight = Math.min(options.length, MAX_VISIBLE_ROWS) * ROW_HEIGHT;
 
+  const closeThis = useCallback(() => setOpen(false), []);
+  useEffect(() => {
+    openListeners.add(closeThis);
+    return () => { openListeners.delete(closeThis); };
+  }, [closeThis]);
+
+  const toggle = () => {
+    setOpen((wasOpen) => {
+      const next = !wasOpen;
+      if (next) closeOtherPickers(closeThis);
+      return next;
+    });
+  };
+
   return (
     <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
-      <Pressable onPress={() => setOpen((v) => !v)} className="flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-muted">
+      <Pressable onPress={toggle} className="flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-muted">
         <Text numberOfLines={1} className="flex-1 text-sm font-medium text-foreground">{selected?.label ?? placeholder}</Text>
         {open ? <ChevronUp size={16} color={colors.mutedForeground} /> : <ChevronDown size={16} color={colors.mutedForeground} />}
       </Pressable>
