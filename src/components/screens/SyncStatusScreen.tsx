@@ -19,7 +19,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
         {status.healthy ? <CheckCircle2 size={22} color="#22c55e" /> : <AlertTriangle size={22} color="#ef4444" />}
         <View>
           <Text className="font-semibold text-sm text-foreground">{title}</Text>
-          <Text className={`text-xs ${status.healthy ? "text-green-600" : "text-red-500"}`}>{status.healthy ? "Sehat" : `Gagal ${status.failStreak}x berturut-turut`}</Text>
+          <Text className={`text-xs ${status.healthy ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{status.healthy ? "Sehat" : `Gagal ${status.failStreak}x berturut-turut`}</Text>
         </View>
       </View>
       <View className="gap-1">
@@ -161,7 +161,7 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
                     </Button>
                   </View>
                 ) : (
-                  <View className="gap-2 bg-card rounded-lg p-2.5 border border-amber-300">
+                  <View className="gap-2 bg-card rounded-lg p-2.5 border border-amber-300 dark:border-amber-700">
                     <Text className="text-xs font-medium text-foreground">Masuk katalog mana?</Text>
                     {!makingNewCatalog ? (
                       <>
@@ -230,7 +230,7 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
                     Unit ID {u.unit_id}
                     {u.catalog ? ` · Katalog ${u.catalog.kode} (${u.catalog.nama})` : ""}
                   </Text>
-                  {!u.catalog && <Text className="text-xs text-amber-600">Belum terpetakan ke katalog manapun</Text>}
+                  {!u.catalog && <Text className="text-xs text-amber-600 dark:text-amber-400">Belum terpetakan ke katalog manapun</Text>}
                 </View>
                 <Button size="sm" variant="outline" disabled={busyId === u.id} onPress={() => jalankan("deactivate", u, "Nonaktifkan Unit", `Nonaktifkan unit "${u.name}"? Token lamanya tidak akan diterima lagi.`)}>
                   <Ban size={14} /><Text className="text-primary text-sm font-semibold ml-1">Nonaktifkan</Text>

@@ -71,8 +71,8 @@ export function PengaturanJamKeterlambatanScreen() {
         SETELAH jam ini akan tercatat Terlambat, sebelum/sama dengan jam ini tercatat Hadir.
       </Text>
 
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
-      {saved ? <View className="bg-green-50 border border-green-200 rounded-xl px-4 py-3"><Text className="text-sm text-green-700">Tersimpan.</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
+      {saved ? <View className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3"><Text className="text-sm text-green-700 dark:text-green-400">Tersimpan.</Text></View> : null}
 
       <Card padding="md">
         <View className="gap-3">

@@ -115,7 +115,7 @@ export function KirimAduanScreen() {
         <Text className="text-xs text-muted-foreground mb-4">Maksimal 1 aduan per hari untuk SELURUH akun (bukan per anak). Pilih tujuan yang paling sesuai.</Text>
 
         {alreadySentToday ? (
-          <Text className="text-sm text-amber-600 text-center py-4">Anda sudah mengirim aduan hari ini. Coba lagi besok.</Text>
+          <Text className="text-sm text-amber-600 dark:text-amber-400 text-center py-4">Anda sudah mengirim aduan hari ini. Coba lagi besok.</Text>
         ) : (
           <View className="gap-3">
             <View>
@@ -136,7 +136,7 @@ export function KirimAduanScreen() {
             <Button onPress={handleSubmit} disabled={busy} loading={busy} className="mt-1">
               <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Aduan
             </Button>
-            {message && <Text className={`text-xs text-center ${message.ok ? "text-green-600" : "text-red-500"}`}>{message.text}</Text>}
+            {message && <Text className={`text-xs text-center ${message.ok ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{message.text}</Text>}
           </View>
         )}
       </Card>

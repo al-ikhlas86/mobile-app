@@ -51,14 +51,14 @@ export interface MenuCategory {
 }
 
 export const MENU_BG_COLORS: Record<string, string> = {
-  blue: "bg-emerald-50",
-  green: "bg-emerald-50",
-  orange: "bg-amber-50",
+  blue: "bg-emerald-50 dark:bg-emerald-900/10",
+  green: "bg-emerald-50 dark:bg-emerald-900/10",
+  orange: "bg-amber-50 dark:bg-amber-900/10",
   red: "bg-rose-50",
   purple: "bg-violet-50",
-  teal: "bg-teal-50",
+  teal: "bg-teal-50 dark:bg-teal-900/10",
   indigo: "bg-lime-50",
-  pink: "bg-pink-50",
+  pink: "bg-pink-50 dark:bg-pink-900/10",
 };
 
 export function QuickMenuButton({ item }: { item: QuickMenuItem }) {

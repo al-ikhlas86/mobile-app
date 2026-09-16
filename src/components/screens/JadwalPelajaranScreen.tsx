@@ -127,7 +127,7 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
               // vs backgroundColor - tidak akan pernah saling menimpa),
               // pola sama persis versi webview (pakai "ring", constraint yg
               // sama: harus di layer terpisah dari background).
-              className={`aspect-square items-center justify-center rounded-lg ${selected === cell.iso ? "border-2 border-primary" : cell.isToday ? "border border-primary" : ""} ${libur ? "bg-red-100" : adaJadwal ? "bg-primary/10" : ""}`}
+              className={`aspect-square items-center justify-center rounded-lg ${selected === cell.iso ? "border-2 border-primary" : cell.isToday ? "border border-primary" : ""} ${libur ? "bg-red-100 dark:bg-red-900/20" : adaJadwal ? "bg-primary/10" : ""}`}
             >
               {/* text-muted-foreground TANPA modifier opacity (2026-08-29) -
                   sebelumnya "/60" (mis. text-muted-foreground/60), yang
@@ -136,7 +136,7 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
                   hitam" yang dilaporkan user). --muted-foreground SUDAH
                   dikalibrasi terpisah per tema (abu gelap utk terang,
                   abu terang utk gelap) - tidak perlu opacity tambahan. */}
-              <Text className={`text-xs ${libur ? "text-red-700 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{cell.date}</Text>
+              <Text className={`text-xs ${libur ? "text-red-700 dark:text-red-400 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{cell.date}</Text>
               {/* Titik penanda (2026-09-02): SEBELUMNYA native cuma menandai
                   hari lewat WARNA LATAR - libur dapat latar merah, hari ber-
                   jadwal dapat latar primary, tapi tanggal yang cuma berisi
@@ -337,13 +337,13 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
           </Card>
 
           {isLibur ? (
-            <Card padding="md" className="bg-red-50 border-red-200">
+            <Card padding="md" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
               <View className="flex-row items-start gap-3">
-                <View className="w-9 h-9 rounded-xl bg-red-100 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
+                <View className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/20 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
                 <View className="flex-1">
-                  <Text className="text-sm font-bold text-red-700">Libur - tidak ada KBM</Text>
+                  <Text className="text-sm font-bold text-red-700 dark:text-red-400">Libur - tidak ada KBM</Text>
                   {selectedLiburItems.map((a, i) => (
-                    <Text key={i} className="text-xs text-red-600 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
+                    <Text key={i} className="text-xs text-red-600 dark:text-red-400 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
                   ))}
                 </View>
               </View>
@@ -369,7 +369,7 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
                 const warnaBadge =
                   status === "berlangsung" ? { bg: "bg-primary", fg: colors.primaryForeground }
                   : status === "selesai" ? { bg: "bg-muted", fg: colors.mutedForeground }
-                  : { bg: "bg-amber-100", fg: "#92400e" };
+                  : { bg: "bg-amber-100 dark:bg-amber-900/20", fg: "#92400e" };
 
                 return (
                   <Card key={idx} padding="md" className={gayaKartu}>
@@ -429,13 +429,13 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
             <Text className="text-sm font-semibold text-foreground mb-2 capitalize">{selectedDateLabel}</Text>
 
             {isLibur ? (
-              <Card padding="md" className="bg-red-50 border-red-200">
+              <Card padding="md" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
                 <View className="flex-row items-start gap-3">
-                  <View className="w-9 h-9 rounded-xl bg-red-100 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
+                  <View className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/20 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
                   <View className="flex-1">
-                    <Text className="text-sm font-bold text-red-700">Libur</Text>
+                    <Text className="text-sm font-bold text-red-700 dark:text-red-400">Libur</Text>
                     {selectedLiburItems.map((a, i) => (
-                      <Text key={i} className="text-xs text-red-600 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
+                      <Text key={i} className="text-xs text-red-600 dark:text-red-400 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
                     ))}
                   </View>
                 </View>

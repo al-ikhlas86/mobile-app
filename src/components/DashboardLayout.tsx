@@ -89,9 +89,9 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children, on
       </View>
       <View className="-mt-4 bg-background rounded-t-3xl px-4 pt-5" style={{ gap: 20 }}>
         {viewingYear && (
-          <View className="flex-row items-center gap-2 rounded-xl bg-amber-50 border border-amber-300 px-3 py-2.5">
+          <View className="flex-row items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-700 px-3 py-2.5">
             <CalendarClock size={14} color="#B45309" />
-            <Text className="flex-1 text-xs text-amber-700">
+            <Text className="flex-1 text-xs text-amber-700 dark:text-amber-400">
               Sedang melihat tahun ajaran <Text className="font-bold">{viewingYear.nama}</Text> - buka Profil untuk kembali ke tahun aktif.
             </Text>
           </View>

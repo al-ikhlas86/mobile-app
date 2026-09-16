@@ -55,7 +55,7 @@ const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
 // adanya, submit yang di luar hak akan ditolak jelas oleh server drpd
 // disembunyikan diam2 di client.
 function StatusBadge({ status }: { status: Status }) {
-  const cfg = { disetujui: { label: "Terbit", bg: "bg-green-100", text: "text-green-700" }, draft: { label: "Draft", bg: "bg-amber-100", text: "text-amber-700" }, terkirim: { label: "Terkirim", bg: "bg-emerald-100", text: "text-emerald-800" } }[status];
+  const cfg = { disetujui: { label: "Terbit", bg: "bg-green-100 dark:bg-green-900/20", text: "text-green-700 dark:text-green-400" }, draft: { label: "Draft", bg: "bg-amber-100 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-400" }, terkirim: { label: "Terkirim", bg: "bg-emerald-100 dark:bg-emerald-900/20", text: "text-emerald-800 dark:text-emerald-400" } }[status];
   return <View className={`px-2 py-0.5 rounded-full ${cfg.bg}`}><Text className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</Text></View>;
 }
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
@@ -236,7 +236,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
         <Text className="text-lg font-bold text-foreground">{editingId ? "Edit Berita" : "Buat Berita Baru"}</Text>
 
         {formMessage ? (
-          <View className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex-row items-center gap-2">
+          <View className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-4 py-3 flex-row items-center gap-2">
             <CheckCircle size={16} color="#059669" /><Text className="text-sm text-emerald-800 flex-1">{formMessage}</Text>
           </View>
         ) : null}
@@ -378,12 +378,12 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
               <View className="flex-row gap-3 flex-wrap items-center">
                 <Pressable onPress={() => openEdit(item)} className="flex-row items-center gap-1"><Edit2 size={12} color={colors.primary} /><Text className="text-xs text-primary font-medium">Edit</Text></Pressable>
                 {item.status !== "disetujui" ? (
-                  <Pressable onPress={() => handlePublishFromList(item.id)} className="flex-row items-center gap-1"><Send size={12} color="#16a34a" /><Text className="text-xs text-green-600 font-medium">Terbitkan</Text></Pressable>
+                  <Pressable onPress={() => handlePublishFromList(item.id)} className="flex-row items-center gap-1"><Send size={12} color="#16a34a" /><Text className="text-xs text-green-600 dark:text-green-400 font-medium">Terbitkan</Text></Pressable>
                 ) : null}
                 <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="flex-row items-center gap-1"><Eye size={12} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">Preview</Text></Pressable>
                 <Pressable onPress={() => handleDelete(item.id)} className="flex-row items-center gap-1 ml-auto">
                   <Trash2 size={12} color={confirmDeleteId === item.id ? "#dc2626" : colors.mutedForeground} />
-                  <Text className={`text-xs font-medium ${confirmDeleteId === item.id ? "text-red-600" : "text-muted-foreground"}`}>{confirmDeleteId === item.id ? "Konfirmasi Hapus?" : "Hapus"}</Text>
+                  <Text className={`text-xs font-medium ${confirmDeleteId === item.id ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>{confirmDeleteId === item.id ? "Konfirmasi Hapus?" : "Hapus"}</Text>
                 </Pressable>
               </View>
             </View>

@@ -103,10 +103,10 @@ export function PengaturanLokasiScreen() {
       </Text>
 
       {activeCount === 0 && (
-        <Card padding="md" className="border border-red-300 bg-red-50">
+        <Card padding="md" className="border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10">
           <View className="flex-row items-start gap-2">
             <MapPin size={16} color="#dc2626" style={{ marginTop: 2 }} />
-            <Text className="text-sm text-red-700 flex-1">
+            <Text className="text-sm text-red-700 dark:text-red-400 flex-1">
               <Text className="font-semibold">Tidak ada lokasi aktif.</Text> Semua presensi GPS di seluruh sekolah
               akan DITOLAK sampai minimal 1 lokasi diaktifkan.
             </Text>
@@ -114,7 +114,7 @@ export function PengaturanLokasiScreen() {
         </Card>
       )}
 
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
 
       {!showAddForm ? (
         <Button variant="outline" onPress={() => setShowAddForm(true)}><Plus size={16} color={colors.primary} />{"  "}Tambah Lokasi</Button>

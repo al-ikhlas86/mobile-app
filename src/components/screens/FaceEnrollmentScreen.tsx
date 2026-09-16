@@ -291,8 +291,8 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
       {isChild ? <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} /> : null}
 
       {error ? (
-        <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <Text className="text-sm text-red-600">{error}</Text>
+        <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+          <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text>
         </View>
       ) : null}
 
@@ -343,7 +343,7 @@ export function FaceEnrollmentScreen({ onNavigate, target = "self" }: Props) {
               )}
               {autoStatus && !message ? <Text className="text-xs text-primary text-center">{autoStatus}</Text> : null}
               {message ? (
-                <Text className={`text-xs text-center ${message.startsWith("Ditolak") ? "text-red-500" : "text-green-600"}`}>{message}</Text>
+                <Text className={`text-xs text-center ${message.startsWith("Ditolak") ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>{message}</Text>
               ) : null}
               <Text className="text-xs text-muted-foreground text-center">
                 Foto diambil otomatis begitu wajah menghadap arah yang benar. Kalau sulit terdeteksi, gunakan tombol manual di bawah.

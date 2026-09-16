@@ -39,8 +39,8 @@ export function GantiTahunAjaranSwitcher({ visible, options, viewingYear, loadin
           </View>
 
           {errorMessage && (
-            <View className="mx-4 mt-3 p-3 rounded-xl bg-red-50">
-              <Text className="text-xs text-red-600">{errorMessage}</Text>
+            <View className="mx-4 mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/10">
+              <Text className="text-xs text-red-600 dark:text-red-400">{errorMessage}</Text>
             </View>
           )}
 
@@ -48,13 +48,13 @@ export function GantiTahunAjaranSwitcher({ visible, options, viewingYear, loadin
             <Pressable
               onPress={() => onPick(null)}
               disabled={loading}
-              className="flex-row items-center gap-3 mx-4 mt-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-300"
+              className="flex-row items-center gap-3 mx-4 mt-3 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-700"
               style={{ opacity: loading ? 0.5 : 1 }}
             >
               <RotateCcw size={18} color="#B45309" />
               <View className="flex-1">
-                <Text className="font-semibold text-sm text-amber-700">Kembali ke Tahun Aktif</Text>
-                <Text className="text-xs text-amber-600">Sedang melihat {viewingYear.nama}</Text>
+                <Text className="font-semibold text-sm text-amber-700 dark:text-amber-400">Kembali ke Tahun Aktif</Text>
+                <Text className="text-xs text-amber-600 dark:text-amber-400">Sedang melihat {viewingYear.nama}</Text>
               </View>
             </Pressable>
           )}

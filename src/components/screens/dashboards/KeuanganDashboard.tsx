@@ -41,9 +41,9 @@ export function KeuanganDashboard({ onNavigate }: Props) {
 
   return (
     <DashboardLayout name="Tim Keuangan" roleLabel="Administrasi Keuangan" date={today}>
-      <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex-row gap-2">
+      <View className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex-row gap-2">
         <Info size={16} color="#b45309" />
-        <Text className="text-xs text-amber-700 flex-1">Ringkasan Keuangan belum tersedia - modul ini belum tersambung ke sistem Akuntansi sekolah.</Text>
+        <Text className="text-xs text-amber-700 dark:text-amber-400 flex-1">Ringkasan Keuangan belum tersedia - modul ini belum tersambung ke sistem Akuntansi sekolah.</Text>
       </View>
       <View>
         <Text className="text-sm font-semibold text-muted-foreground mb-3 uppercase">Menu Utama</Text>

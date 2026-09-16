@@ -38,17 +38,17 @@ export function DemoModeSwitcher({ visible, roles, activeDemoLabel, loading, err
           </View>
 
           {errorMessage && (
-            <View className="mx-4 mt-3 p-3 rounded-xl bg-red-50">
-              <Text className="text-xs text-red-600">{errorMessage}</Text>
+            <View className="mx-4 mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/10">
+              <Text className="text-xs text-red-600 dark:text-red-400">{errorMessage}</Text>
             </View>
           )}
 
           {activeDemoLabel && (
-            <Pressable onPress={onExitDemo} className="flex-row items-center gap-3 mx-4 mt-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-300">
+            <Pressable onPress={onExitDemo} className="flex-row items-center gap-3 mx-4 mt-3 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-700">
               <LogOut size={18} color="#B45309" />
               <View className="flex-1">
-                <Text className="font-semibold text-sm text-amber-700">Keluar dari Mode Demo</Text>
-                <Text className="text-xs text-amber-600">Kembali ke akun Admin IT asli Anda</Text>
+                <Text className="font-semibold text-sm text-amber-700 dark:text-amber-400">Keluar dari Mode Demo</Text>
+                <Text className="text-xs text-amber-600 dark:text-amber-400">Kembali ke akun Admin IT asli Anda</Text>
               </View>
             </Pressable>
           )}

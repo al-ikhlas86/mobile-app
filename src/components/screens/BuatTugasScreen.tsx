@@ -279,7 +279,7 @@ export function BuatTugasScreen() {
             <Button onPress={handleSubmit} disabled={saving} loading={saving} className="mt-1">
               <Plus size={14} color={colors.primaryForeground} />{"  "}{saving ? "Menyimpan..." : `Buat ${jenis === "tugas" ? "Tugas" : "Materi"}`}
             </Button>
-            {message && <Text className={`text-xs text-center ${message.ok ? "text-green-600" : "text-red-500"}`}>{message.text}</Text>}
+            {message && <Text className={`text-xs text-center ${message.ok ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{message.text}</Text>}
           </View>
         )}
       </Card>
@@ -332,7 +332,7 @@ export function BuatTugasScreen() {
                             className="self-start mt-1.5 flex-row items-center gap-1.5 px-2 py-1 rounded-full bg-muted"
                           >
                             {t.terkunci ? <Lock size={11} color="#dc2626" /> : <Unlock size={11} color={colors.primary} />}
-                            <Text className={`text-[10px] font-medium ${t.terkunci ? "text-red-600" : "text-primary"}`}>
+                            <Text className={`text-[10px] font-medium ${t.terkunci ? "text-red-600 dark:text-red-400" : "text-primary"}`}>
                               {t.terkunci ? "Terkunci - ketuk untuk buka" : Number(t.dibuka_manual) ? "Dibuka kembali - ketuk untuk tutup" : Number(t.kunci_otomatis) ? "Akan terkunci setelah batas" : "Tidak dikunci"}
                             </Text>
                           </Pressable>

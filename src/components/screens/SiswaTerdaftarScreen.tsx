@@ -26,7 +26,7 @@ function StatusBadge({ enrolled, complete }: { enrolled: boolean; complete: bool
     return (
       <View className="flex-row items-center gap-1.5">
         <CheckCircle2 size={16} color="#16a34a" />
-        <Text className="text-xs font-medium text-green-600">Lengkap</Text>
+        <Text className="text-xs font-medium text-green-600 dark:text-green-400">Lengkap</Text>
       </View>
     );
   }
@@ -34,7 +34,7 @@ function StatusBadge({ enrolled, complete }: { enrolled: boolean; complete: bool
     return (
       <View className="flex-row items-center gap-1.5">
         <CircleDashed size={16} color="#d97706" />
-        <Text className="text-xs font-medium text-amber-600">Sebagian</Text>
+        <Text className="text-xs font-medium text-amber-600 dark:text-amber-400">Sebagian</Text>
       </View>
     );
   }

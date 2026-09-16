@@ -295,7 +295,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
         ))}
       </View>
 
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
 
       {tab === "Akun Admin" && (
         <>
@@ -376,7 +376,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
                 {u.id === currentUserId ? (
                   <Text className="text-[10px] text-muted-foreground px-1.5">Ini kamu</Text>
                 ) : (
-                  <Pressable onPress={() => handleDelete(u.id)} className={`p-1.5 rounded-full ${confirmDeleteId === u.id ? "bg-red-100" : ""}`}>
+                  <Pressable onPress={() => handleDelete(u.id)} className={`p-1.5 rounded-full ${confirmDeleteId === u.id ? "bg-red-100 dark:bg-red-900/20" : ""}`}>
                     <Trash2 size={15} color={confirmDeleteId === u.id ? "#ef4444" : colors.mutedForeground} />
                   </Pressable>
                 )}
@@ -546,7 +546,7 @@ export function ManajemenPenggunaScreen({ onNavigate }: Props) {
             <View>
               <Text className="text-xs font-medium text-muted-foreground mb-1.5">Katalog (pilih 1 atau lebih)</Text>
               {catalogs.length === 0 ? (
-                <Text className="text-xs text-amber-600">Belum ada katalog terdaftar - buat dulu lewat tab "Kelola Katalog".</Text>
+                <Text className="text-xs text-amber-600 dark:text-amber-400">Belum ada katalog terdaftar - buat dulu lewat tab "Kelola Katalog".</Text>
               ) : (
                 <View className="flex-row flex-wrap gap-1.5">
                   {catalogs.map((c) => {

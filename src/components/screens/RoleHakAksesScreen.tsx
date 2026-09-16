@@ -33,7 +33,7 @@ export function RoleHakAksesScreen() {
       {ROLES.map((r) => (
         <Card key={r.name} padding="md">
           <View className="flex-row items-start gap-3">
-            <View className="w-9 h-9 rounded-lg bg-purple-50 items-center justify-center"><Shield size={16} color="#7c3aed" /></View>
+            <View className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-900/10 items-center justify-center"><Shield size={16} color="#7c3aed" /></View>
             <View className="flex-1">
               <View className="flex-row items-center gap-2 flex-wrap">
                 <Text className="text-sm font-semibold text-foreground">{r.name}</Text>

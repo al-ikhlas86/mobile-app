@@ -191,7 +191,7 @@ export function PresensiAnak() {
                 <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Form Izin/Sakit
               </Button>
               {izinMessage && (
-                <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600" : "text-red-500"}`}>{izinMessage.text}</Text>
+                <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{izinMessage.text}</Text>
               )}
             </View>
           </Card>
@@ -204,12 +204,12 @@ export function PresensiAnak() {
               <Text className="text-sm font-semibold text-foreground">{formatDateFull(today)}</Text>
             </View>
             {todayRecord ? (
-              <View className="flex-row items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
+              <View className="flex-row items-center justify-between p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800">
                 <View className="flex-row items-center gap-3">
                   <CheckCircle size={24} color="#16a34a" />
                   <View>
-                    <Text className="text-sm font-bold text-green-700">{todayRecord.status}</Text>
-                    <Text className="text-xs text-green-600/70">Anak masuk sekolah hari ini</Text>
+                    <Text className="text-sm font-bold text-green-700 dark:text-green-400">{todayRecord.status}</Text>
+                    <Text className="text-xs text-green-600 dark:text-green-400/70">Anak masuk sekolah hari ini</Text>
                   </View>
                 </View>
                 {todayRecord.check_in_time && (
