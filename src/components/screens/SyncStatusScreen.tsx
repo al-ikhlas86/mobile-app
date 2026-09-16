@@ -147,7 +147,7 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
           </View>
           <View className="gap-3">
             {pending.map((u) => (
-              <View key={u.id} className="border border-amber-200 bg-amber-50 rounded-xl p-3">
+              <View key={u.id} className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 rounded-xl p-3">
                 <Text className="text-sm font-medium text-foreground">{u.name}</Text>
                 <Text className="text-xs text-muted-foreground mb-2">Mendaftar: {formatTanggal(u.created_at)}</Text>
 
