@@ -257,9 +257,9 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
             </View>
           )}
           {post.blocked_from_commenting ? (
-            <View className="flex-row items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center gap-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
               <Ban size={16} color="#ef4444" />
-              <Text className="text-xs text-red-600 flex-1">Admin memblokir Anda untuk berkomentar.</Text>
+              <Text className="text-xs text-red-600 dark:text-red-400 flex-1">Admin memblokir Anda untuk berkomentar.</Text>
             </View>
           ) : (
             <View className="flex-row gap-2">

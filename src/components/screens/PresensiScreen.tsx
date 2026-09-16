@@ -239,7 +239,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
                 <Send size={14} color={colors.primaryForeground} />{"  "}Kirim Form Izin/Sakit
               </Button>
               {izinMessage && (
-                <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600" : "text-red-500"}`}>{izinMessage.text}</Text>
+                <Text className={`text-xs text-center ${izinMessage.ok ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{izinMessage.text}</Text>
               )}
             </View>
           </Card>
@@ -269,7 +269,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
             {checkinMessage && (
               <Text
                 className={`text-xs mt-2 text-center ${
-                  checkinMessage.kind === "ok" ? "text-green-600" : checkinMessage.kind === "error" ? "text-red-500" : "text-muted-foreground"
+                  checkinMessage.kind === "ok" ? "text-green-600 dark:text-green-400" : checkinMessage.kind === "error" ? "text-red-500" : "text-muted-foreground"
                 }`}
               >
                 {checkinMessage.text}

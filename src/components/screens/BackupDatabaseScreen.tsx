@@ -65,7 +65,7 @@ export function BackupDatabaseScreen() {
           </View>
         </View>
       </Card>
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
       <Card padding="lg">
         <View className="items-center py-4">
           <DatabaseBackup size={40} color={colors.mutedForeground} />

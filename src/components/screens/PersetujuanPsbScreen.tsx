@@ -87,9 +87,9 @@ export function PersetujuanPsbScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
-      <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex-row items-start gap-2">
+      <View className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex-row items-start gap-2">
         <AlertCircle size={16} color="#d97706" style={{ marginTop: 2 }} />
-        <Text className="flex-1 text-xs text-amber-700">
+        <Text className="flex-1 text-xs text-amber-700 dark:text-amber-400">
           Keputusan diterapkan ke data master di PC sekolah pada sinkronisasi berikutnya (maks ~1 menit, PC harus menyala & online) - bukan seketika.
         </Text>
       </View>
@@ -105,7 +105,7 @@ export function PersetujuanPsbScreen() {
         items.map((c) => (
           <Card key={c.hub_id} padding="md">
             <View className="flex-row items-start gap-3">
-              <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center">
+              <View className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/10 items-center justify-center">
                 <UserPlus size={18} color="#2563eb" />
               </View>
               <View className="flex-1">
@@ -127,7 +127,7 @@ export function PersetujuanPsbScreen() {
                   )}
                   <View className="flex-row items-center gap-1">
                     <FileText size={12} color={c.dokumen_lengkap ? "#059669" : "#d97706"} />
-                    <Text className={`text-xs ${c.dokumen_lengkap ? "text-emerald-600" : "text-amber-600"}`}>
+                    <Text className={`text-xs ${c.dokumen_lengkap ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                       Dokumen {c.dokumen_lengkap ? "lengkap" : "belum lengkap"}
                     </Text>
                   </View>
@@ -173,11 +173,11 @@ export function PersetujuanPsbScreen() {
                   </View>
                 ) : (
                   <View className="flex-row gap-2 mt-2">
-                    <Pressable onPress={() => openTerima(c.hub_id)} className="flex-1 flex-row items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-50">
-                      <Check size={14} color="#047857" /><Text className="text-emerald-700 text-xs font-semibold">Terima</Text>
+                    <Pressable onPress={() => openTerima(c.hub_id)} className="flex-1 flex-row items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
+                      <Check size={14} color="#047857" /><Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">Terima</Text>
                     </Pressable>
-                    <Pressable onPress={() => openTolak(c.hub_id)} className="flex-1 flex-row items-center justify-center gap-1.5 py-2 rounded-lg bg-red-50">
-                      <X size={14} color="#dc2626" /><Text className="text-red-600 text-xs font-semibold">Tolak</Text>
+                    <Pressable onPress={() => openTolak(c.hub_id)} className="flex-1 flex-row items-center justify-center gap-1.5 py-2 rounded-lg bg-red-50 dark:bg-red-900/10">
+                      <X size={14} color="#dc2626" /><Text className="text-red-600 dark:text-red-400 text-xs font-semibold">Tolak</Text>
                     </Pressable>
                   </View>
                 )}

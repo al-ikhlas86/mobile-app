@@ -31,7 +31,7 @@ export function StatistikKontenScreen({ onNavigate }: { onNavigate: (screen: str
 
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (error || !data) {
-    return <View className="p-4 bg-background flex-1"><View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error || "Gagal memuat statistik."}</Text></View></View>;
+    return <View className="p-4 bg-background flex-1"><View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error || "Gagal memuat statistik."}</Text></View></View>;
   }
 
   return (

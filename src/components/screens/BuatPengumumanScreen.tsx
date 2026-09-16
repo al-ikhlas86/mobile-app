@@ -65,8 +65,8 @@ export function BuatPengumumanScreen() {
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">Pengumuman muncul di tab "Pengumuman" pada menu Notifikasi seluruh pengguna yang jadi target - terpisah dari notifikasi aktivitas biasa.</Text>
-      {success ? <View className="bg-green-50 border border-green-200 rounded-xl px-4 py-3"><Text className="text-sm text-green-700">Pengumuman berhasil dikirim.</Text></View> : null}
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
+      {success ? <View className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3"><Text className="text-sm text-green-700 dark:text-green-400">Pengumuman berhasil dikirim.</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
 
       <Card padding="md">
         <View className="gap-3">

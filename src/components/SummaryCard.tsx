@@ -11,11 +11,11 @@ interface SummaryCardProps {
 }
 
 const schemes = {
-  blue: { iconBg: "bg-emerald-100", iconWrap: "" },
-  green: { iconBg: "bg-green-100", iconWrap: "" },
-  orange: { iconBg: "bg-amber-100", iconWrap: "" },
-  red: { iconBg: "bg-red-100", iconWrap: "" },
-  purple: { iconBg: "bg-purple-100", iconWrap: "" },
+  blue: { iconBg: "bg-emerald-100 dark:bg-emerald-900/20", iconWrap: "" },
+  green: { iconBg: "bg-green-100 dark:bg-green-900/20", iconWrap: "" },
+  orange: { iconBg: "bg-amber-100 dark:bg-amber-900/20", iconWrap: "" },
+  red: { iconBg: "bg-red-100 dark:bg-red-900/20", iconWrap: "" },
+  purple: { iconBg: "bg-purple-100 dark:bg-purple-900/20", iconWrap: "" },
   default: { iconBg: "bg-muted", iconWrap: "" },
 };
 

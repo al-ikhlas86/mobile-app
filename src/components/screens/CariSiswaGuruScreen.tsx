@@ -80,7 +80,7 @@ export function CariSiswaGuruScreen() {
           renderItem={({ item: s }) => (
             <Card padding="md">
               <View className="flex-row items-center gap-3">
-                <View className="w-9 h-9 rounded-xl bg-blue-50 items-center justify-center"><GraduationCap size={16} color="#2563eb" /></View>
+                <View className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/10 items-center justify-center"><GraduationCap size={16} color="#2563eb" /></View>
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{s.nama}</Text>
                   <Text className="text-xs text-muted-foreground">NIS {s.nis}{s.kelas_nama ? ` · ${s.tingkat ? s.tingkat + " " : ""}${s.kelas_nama}` : ""}</Text>
@@ -99,7 +99,7 @@ export function CariSiswaGuruScreen() {
           renderItem={({ item: e }) => (
             <Card padding="md">
               <View className="flex-row items-center gap-3">
-                <View className="w-9 h-9 rounded-xl bg-purple-50 items-center justify-center"><UserCog size={16} color="#7c3aed" /></View>
+                <View className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/10 items-center justify-center"><UserCog size={16} color="#7c3aed" /></View>
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>{e.nama}</Text>
                   <Text className="text-xs text-muted-foreground">{JABATAN_LABEL[e.jabatan] ?? e.jabatan}</Text>

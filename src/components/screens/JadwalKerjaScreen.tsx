@@ -154,22 +154,22 @@ export function JadwalKerjaScreen() {
           <Text className="text-sm font-semibold text-foreground mb-2 capitalize">{selectedDateLabel}</Text>
 
           {isLibur ? (
-            <Card padding="md" className="bg-red-50 border-red-200">
+            <Card padding="md" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
               <View className="flex-row items-start gap-3">
-                <View className="w-9 h-9 rounded-xl bg-red-100 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
+                <View className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/20 items-center justify-center"><PartyPopper size={18} color="#dc2626" /></View>
                 <View className="flex-1">
-                  <Text className="text-sm font-bold text-red-700">Libur</Text>
+                  <Text className="text-sm font-bold text-red-700 dark:text-red-400">Libur</Text>
                   {selectedLiburItems.map((a, i) => (
-                    <Text key={i} className="text-xs text-red-600 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
+                    <Text key={i} className="text-xs text-red-600 dark:text-red-400 mt-0.5">{a.judul}{a.keterangan ? ` - ${a.keterangan}` : ""}</Text>
                   ))}
                 </View>
               </View>
             </Card>
           ) : (
-            <Card padding="md" className="bg-emerald-50 border-emerald-200">
+            <Card padding="md" className="bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800">
               <View className="flex-row items-start gap-3">
-                <View className="w-9 h-9 rounded-xl bg-emerald-100 items-center justify-center"><Briefcase size={18} color="#16a34a" /></View>
-                <Text className="text-sm font-bold text-emerald-700">Hari Kerja Biasa</Text>
+                <View className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/20 items-center justify-center"><Briefcase size={18} color="#16a34a" /></View>
+                <Text className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Hari Kerja Biasa</Text>
               </View>
             </Card>
           )}

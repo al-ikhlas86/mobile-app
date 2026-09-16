@@ -24,8 +24,8 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   system: <CheckCircle size={20} color="#22c55e" />,
 };
 const TYPE_BG: Record<string, string> = {
-  payment: "bg-red-50", attendance: "bg-amber-50", announcement: "bg-purple-50", berita_acara: "bg-emerald-50",
-  berita_like: "bg-pink-50", berita_comment: "bg-emerald-50", berita_reply: "bg-indigo-50", pengumuman: "bg-orange-50", system: "bg-green-50",
+  payment: "bg-red-50 dark:bg-red-900/10", attendance: "bg-amber-50 dark:bg-amber-900/10", announcement: "bg-purple-50 dark:bg-purple-900/10", berita_acara: "bg-emerald-50 dark:bg-emerald-900/10",
+  berita_like: "bg-pink-50 dark:bg-pink-900/10", berita_comment: "bg-emerald-50 dark:bg-emerald-900/10", berita_reply: "bg-indigo-50 dark:bg-indigo-900/10", pengumuman: "bg-orange-50 dark:bg-orange-900/10", system: "bg-green-50 dark:bg-green-900/10",
 };
 
 const TIMEAGO_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -170,7 +170,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
           <Pressable className="bg-card rounded-2xl p-5 w-full" onPress={(e) => e.stopPropagation()}>
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center gap-2 flex-1">
-                <View className="w-9 h-9 rounded-xl bg-orange-50 items-center justify-center"><Megaphone size={18} color="#f97316" /></View>
+                <View className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-900/10 items-center justify-center"><Megaphone size={18} color="#f97316" /></View>
                 <Text className="text-base font-bold text-foreground flex-1">{openLetter?.title}</Text>
               </View>
               <Pressable onPress={() => setOpenLetter(null)}><X size={18} color={colors.mutedForeground} /></Pressable>

@@ -201,7 +201,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
       <Card padding="md">
         <Text className="text-sm font-semibold text-foreground mb-3">Tampilan</Text>
         <Pressable onPress={toggleTheme} className="flex-row items-center gap-3 py-1">
-          <View className="w-8 h-8 rounded-lg bg-emerald-50 items-center justify-center">
+          <View className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 items-center justify-center">
             {isDark ? <Moon size={16} color={colors.primary} /> : <Sun size={16} color={colors.primary} />}
           </View>
           <View className="flex-1">
@@ -219,11 +219,11 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Text className="text-xs text-muted-foreground mb-3">Pilih jenis pemberitahuan yang ingin Anda terima.</Text>
         {notifPrefs ? (
           [
-            { key: "notif_komentar", label: "Komentar", icon: <MessageCircle size={15} color="#0f766e" />, bg: "bg-teal-50" },
-            { key: "notif_like", label: "Suka (Like)", icon: <Heart size={15} color="#ec4899" />, bg: "bg-pink-50" },
-            { key: "notif_presensi", label: "Presensi", icon: <Clock size={15} color="#b45309" />, bg: "bg-amber-50" },
-            { key: "notif_bayaran", label: "Bayaran", icon: <Wallet size={15} color="#16a34a" />, bg: "bg-green-50" },
-            { key: "notif_tagihan", label: "Tagihan", icon: <Receipt size={15} color="#7c3aed" />, bg: "bg-purple-50" },
+            { key: "notif_komentar", label: "Komentar", icon: <MessageCircle size={15} color="#0f766e" />, bg: "bg-teal-50 dark:bg-teal-900/10" },
+            { key: "notif_like", label: "Suka (Like)", icon: <Heart size={15} color="#ec4899" />, bg: "bg-pink-50 dark:bg-pink-900/10" },
+            { key: "notif_presensi", label: "Presensi", icon: <Clock size={15} color="#b45309" />, bg: "bg-amber-50 dark:bg-amber-900/10" },
+            { key: "notif_bayaran", label: "Bayaran", icon: <Wallet size={15} color="#16a34a" />, bg: "bg-green-50 dark:bg-green-900/10" },
+            { key: "notif_tagihan", label: "Tagihan", icon: <Receipt size={15} color="#7c3aed" />, bg: "bg-purple-50 dark:bg-purple-900/10" },
           ].map((item, idx, arr) => {
             const enabled = !!notifPrefs[item.key];
             return (
@@ -249,7 +249,7 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
         <Card padding="md">
           <Text className="text-sm font-semibold text-foreground mb-3">Presensi</Text>
           <Pressable onPress={() => onNavigate("pengenalan-wajah")} className="flex-row items-center gap-3 py-1">
-            <View className="w-8 h-8 rounded-lg bg-green-50 items-center justify-center"><ScanFace size={16} color="#16a34a" /></View>
+            <View className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/10 items-center justify-center"><ScanFace size={16} color="#16a34a" /></View>
             <Text className="text-sm font-medium text-foreground flex-1">Pengenalan Wajah</Text>
             <ChevronRight size={16} color={colors.mutedForeground} />
           </Pressable>
@@ -261,20 +261,20 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
       <Card padding="md">
         <Text className="text-sm font-semibold text-foreground mb-3">Akun</Text>
         <Pressable onPress={onOpenSwitcher} className="flex-row items-center gap-3 py-1">
-          <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center"><Users size={16} color="#D0AF68" /></View>
+          <View className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/10 items-center justify-center"><Users size={16} color="#D0AF68" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ganti Akun</Text>
           <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
         {/* Ganti Tahun Ajaran (2026-09-04, Fase 4) - lihat catatan lengkap di
             versi webview soal desain popup + refresh sesi otomatis. */}
         <Pressable onPress={onOpenTahunAjaranSwitcher} className="flex-row items-center gap-3 py-1 mt-2">
-          <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center"><CalendarClock size={16} color="#D0AF68" /></View>
+          <View className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/10 items-center justify-center"><CalendarClock size={16} color="#D0AF68" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ganti Tahun Ajaran</Text>
           <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
         {canUseDemoMode && (
           <Pressable onPress={onOpenDemoSwitcher} className="flex-row items-center gap-3 py-1 mt-2">
-            <View className={`w-8 h-8 rounded-lg items-center justify-center ${demoActive ? "bg-amber-500" : "bg-amber-50"}`}>
+            <View className={`w-8 h-8 rounded-lg items-center justify-center ${demoActive ? "bg-amber-500" : "bg-amber-50 dark:bg-amber-900/10"}`}>
               <FlaskConical size={16} color={demoActive ? "#fff" : "#D0AF68"} />
             </View>
             <Text className="text-sm font-medium text-foreground flex-1">Mode Demo</Text>
@@ -286,19 +286,19 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
       <Card padding="md">
         <Text className="text-sm font-semibold text-foreground mb-3">Keamanan</Text>
         <Pressable onPress={() => onNavigate("ubah-password")} className="flex-row items-center gap-3 py-1">
-          <View className="w-8 h-8 rounded-lg bg-purple-50 items-center justify-center"><Lock size={16} color="#7c3aed" /></View>
+          <View className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/10 items-center justify-center"><Lock size={16} color="#7c3aed" /></View>
           <Text className="text-sm font-medium text-foreground flex-1">Ubah Kata Sandi</Text>
           <ChevronRight size={16} color={colors.mutedForeground} />
         </Pressable>
       </Card>
 
       {!showLogoutConfirm ? (
-        <Button variant="outline" size="lg" onPress={() => setShowLogoutConfirm(true)} className="border-red-200">
+        <Button variant="outline" size="lg" onPress={() => setShowLogoutConfirm(true)} className="border-red-200 dark:border-red-800">
           <LogOut size={18} color={colors.destructive} />{"  "}<Text className="text-destructive font-semibold">Keluar</Text>
         </Button>
       ) : (
-        <Card padding="md" className="border border-red-200 bg-red-50">
-          <Text className="text-sm font-semibold text-red-700 text-center mb-3">Yakin ingin keluar?</Text>
+        <Card padding="md" className="border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
+          <Text className="text-sm font-semibold text-red-700 dark:text-red-400 text-center mb-3">Yakin ingin keluar?</Text>
           <View className="flex-row gap-2">
             <Button variant="outline" className="flex-1" onPress={() => setShowLogoutConfirm(false)}>Batal</Button>
             <Button className="flex-1 bg-red-600" onPress={onLogout}>Keluar</Button>

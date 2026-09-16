@@ -80,7 +80,7 @@ export function PerformaCariScreen() {
         </Button>
       </View>
 
-      {error ? <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3"><Text className="text-sm text-red-600">{error}</Text></View> : null}
+      {error ? <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3"><Text className="text-sm text-red-600 dark:text-red-400">{error}</Text></View> : null}
 
       {data ? (
         <>
@@ -111,8 +111,8 @@ export function PerformaCariScreen() {
               <Text className="text-sm font-semibold text-foreground mb-2">Tanggal Terlambat ({data.tanggalTerlambat.length}x)</Text>
               <View className="flex-row flex-wrap gap-1.5">
                 {data.tanggalTerlambat.map((t) => (
-                  <View key={t} className="px-2 py-1 rounded-lg bg-orange-50 border border-orange-200">
-                    <Text className="text-xs text-orange-700">{t}</Text>
+                  <View key={t} className="px-2 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800">
+                    <Text className="text-xs text-orange-700 dark:text-orange-400">{t}</Text>
                   </View>
                 ))}
               </View>
@@ -124,8 +124,8 @@ export function PerformaCariScreen() {
               <Text className="text-sm font-semibold text-foreground mb-2">Tanggal Tidak Hadir/Alfa ({data.tanggalTidakHadir.length}x)</Text>
               <View className="flex-row flex-wrap gap-1.5">
                 {data.tanggalTidakHadir.map((t) => (
-                  <View key={t} className="px-2 py-1 rounded-lg bg-red-50 border border-red-200">
-                    <Text className="text-xs text-red-700">{t}</Text>
+                  <View key={t} className="px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
+                    <Text className="text-xs text-red-700 dark:text-red-400">{t}</Text>
                   </View>
                 ))}
               </View>

@@ -154,7 +154,7 @@ export function OtpPasswordScreen({ initialPhone = "", lockPhone = false, title 
                 icon={<Lock size={18} color={colors.mutedForeground} />}
               />
 
-              {info && !error ? <Text className="text-sm text-green-600">{info}</Text> : null}
+              {info && !error ? <Text className="text-sm text-green-600 dark:text-green-400">{info}</Text> : null}
               {error ? <Text className="text-sm text-red-500">{error}</Text> : null}
 
               <Button onPress={handleVerify} loading={loading} fullWidth size="lg">
