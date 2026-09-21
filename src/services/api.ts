@@ -285,6 +285,7 @@ export const api = {
   chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
   chatbotGetSettings: () => authedFetch("/api/chatbot/settings"),
   chatbotSaveSettings: (data: { baseUrl: string; apiKey?: string; model: string }) => authedFetch("/api/chatbot/settings", { method: "PUT", body: JSON.stringify(data) }),
+  chatbotListModels: (data: { baseUrl?: string; apiKey?: string }) => authedFetch("/api/chatbot/settings/models", { method: "POST", body: JSON.stringify(data) }),
   tahunAjaranPilihan: () => authedFetch("/api/tahun-ajaran/pilihan"),
   uploadAvatar: (uri: string, mimeType: string) => {
     const form = new FormData();

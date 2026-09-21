@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from "react-native";
+// ScrollView gesture-handler KHUSUS dropdown saran model - dropdown ini
+// dipasang di dalam ScrollView RN biasa milik SinkronisasiPane sendiri,
+// nested scroll RN vs RN macet (sama root cause dgn catatan SimplePicker.tsx
+// - scroll dalam kalah rebutan gesture ke scroll luar).
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -212,6 +217,9 @@ function SinkronisasiPane() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelFocused, setModelFocused] = useState(false);
 
   useEffect(() => {
     api.chatbotGetSettings().then((res: any) => {
@@ -219,6 +227,22 @@ function SinkronisasiPane() {
       setLoading(false);
     });
   }, []);
+
+  // Muat pilihan model dari provider (9Router /models) - port 1:1 dari
+  // webview (ChatbotScreen.tsx), debounce 600ms. RN tidak punya <datalist>
+  // jadi daftar sarannya dirender manual di bawah kolom (lihat JSX Model).
+  useEffect(() => {
+    if (!baseUrl.trim()) { setModelOptions([]); return; }
+    const timer = setTimeout(() => {
+      setLoadingModels(true);
+      api.chatbotListModels({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim() || undefined })
+        .then((res: any) => { if (res.success) setModelOptions(res.data); })
+        .finally(() => setLoadingModels(false));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [baseUrl, apiKey]);
+
+  const filteredModelOptions = modelOptions.filter((m) => m.toLowerCase().includes(model.trim().toLowerCase()));
 
   async function handleSave() {
     if (!baseUrl.trim() || !model.trim()) { setMessage({ text: "Base URL dan Model wajib diisi.", ok: false }); return; }
@@ -252,7 +276,31 @@ function SinkronisasiPane() {
             placeholder={apiKeySet ? "••••••••••••" : "sk-..."}
             secureTextEntry
           />
-          <Input label="Model / Nama Combo" value={model} onChangeText={setModel} placeholder="chatbot" autoCapitalize="none" />
+          <View style={{ position: "relative", zIndex: modelFocused ? 50 : 1 }}>
+            <Input
+              label={`Model / Nama Combo${loadingModels ? " (memuat pilihan...)" : ""}`}
+              value={model}
+              onChangeText={setModel}
+              onFocus={() => setModelFocused(true)}
+              onBlur={() => setTimeout(() => setModelFocused(false), 150)}
+              placeholder="chatbot"
+              autoCapitalize="none"
+            />
+            {modelFocused && filteredModelOptions.length > 0 && (
+              <View
+                className="absolute left-0 right-0 bg-card border border-border rounded-xl overflow-hidden"
+                style={{ top: "100%", marginTop: 4, zIndex: 50, elevation: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
+              >
+                <GestureScrollView style={{ maxHeight: Math.min(filteredModelOptions.length, 5) * 40 }} nestedScrollEnabled showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
+                  {filteredModelOptions.map((m) => (
+                    <Pressable key={m} onPress={() => { setModel(m); setModelFocused(false); }} className="px-4 justify-center border-b border-border/50" style={{ height: 40 }}>
+                      <Text numberOfLines={1} className="text-sm text-foreground">{m}</Text>
+                    </Pressable>
+                  ))}
+                </GestureScrollView>
+              </View>
+            )}
+          </View>
         </View>
         {message && <Text className={`text-xs mt-3 text-center ${message.ok ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>{message.text}</Text>}
         <Button onPress={handleSave} disabled={saving} loading={saving} fullWidth className="mt-3">Simpan</Button>
