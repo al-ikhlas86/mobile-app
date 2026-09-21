@@ -17,30 +17,33 @@ interface AttendanceRow { id: number; entity_name: string; kelas_nama?: string |
 interface ClassOption { tingkat: string; kelas: string; label: string; }
 const TAB_TO_ENTITY: Record<TabType, "siswa" | "guru" | "karyawan"> = { Siswa: "siswa", Guru: "guru", Pegawai: "karyawan" };
 
-// admin_tu_sd/tk DIGABUNG jadi generik (2026-09-14, Sistem Katalog) - nama
-// lama TETAP dicek (pola "legacy names") jaga2 sesi lama.
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
+// Cakupan per-role (spesifikasi eksplisit user, 2026-09-21) - Admin IT/
+// Supervisor/Kepala Sekolah -> Siswa+Guru+Pegawai; Admin TU/Keuangan ->
+// Guru+Pegawai SAJA (bukan urusan mereka lihat siswa). admin_tu_sd/tk
+// DIGABUNG jadi generik (2026-09-14, Sistem Katalog) - nama lama TETAP
+// dicek (pola "legacy names") jaga2 sesi lama.
+const FULL_ACCESS_ROLES: RoleName[] = ["Admin IT", "Supervisor"];
+const STAFF_ONLY_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)"];
 
 // isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
 // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah. isWaliKelas (2026-09-04,
 // Fase 3) - Guru Kelas JUGA FLAG sekarang, sama pola - dulu `role === "Guru
 // Kelas"`.
-// isKeuanganCap (2026-09-21) - "Keuangan" di UNRESTRICTED_ROLES di atas cuma
-// cocok kalau role DASAR akun itu literal "Keuangan" (akun standalone lama).
-// Sejak Keuangan jadi MURNI capability yang ditempel ke akun guru/pegawai
-// yang sudah ada (Kapasitas Tambahan), akun begitu role dasarnya tetap
-// "Guru"/"Pegawai" - jatuh ke cabang paling bawah (cuma lihat dirinya
-// sendiri/1 tab). Ditemukan dari laporan user (screenshot nyata: akun
-// Keuangan cuma dapat 1 tab "Pegawai", tanpa Guru/Siswa) - port 1:1 dari
-// perbaikan webview.
+// isKeuanganCap (2026-09-21) - Keuangan SEKARANG murni capability yang
+// ditempel ke akun guru/pegawai yang sudah ada (Kapasitas Tambahan), role
+// dasarnya tetap "Guru"/"Pegawai" - literal role check tidak akan pernah
+// cocok. Ditemukan dari laporan user (screenshot nyata: akun Keuangan cuma
+// dapat 1 tab "Pegawai") - port 1:1 dari perbaikan webview. Disamakan dgn
+// Admin TU (Guru+Pegawai, tanpa Siswa).
 function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean): TabType[] {
-  if (!role || isKepalaSekolah || isKeuanganCap || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
+  if (!role || isKepalaSekolah || (!!role && FULL_ACCESS_ROLES.includes(role))) return ["Siswa", "Guru", "Pegawai"];
+  if (isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role))) return ["Guru", "Pegawai"];
   if (role === "Guru" && isWaliKelas) return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
 function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean): boolean {
-  return !role || !!isKepalaSekolah || !!isKeuanganCap || UNRESTRICTED_ROLES.includes(role);
+  return !role || !!isKepalaSekolah || !!isKeuanganCap || FULL_ACCESS_ROLES.includes(role) || STAFF_ONLY_ROLES.includes(role);
 }
 function badgeVariantForStatus(status: string): "success" | "error" | "warning" | "info" | "muted" {
   if (status === "Hadir") return "success";

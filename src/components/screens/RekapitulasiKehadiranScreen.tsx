@@ -21,9 +21,14 @@ const STATUS_TEXT: Record<string, string> = {
 const CELL_W = 28;
 const NAME_W = 130;
 
-// admin_tu_sd/tk DIGABUNG jadi generik (2026-09-14, Sistem Katalog) - nama
-// lama TETAP dicek (pola "legacy names") jaga2 sesi lama.
-const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)", "Keuangan"];
+// Cakupan per-role (spesifikasi eksplisit user, 2026-09-21) - Admin IT/
+// Supervisor/Kepala Sekolah -> Siswa+Guru+Pegawai; Admin TU/Keuangan ->
+// Guru+Pegawai SAJA (bukan urusan mereka lihat siswa) - port 1:1 dari
+// perbaikan webview. admin_tu_sd/tk DIGABUNG jadi generik (2026-09-14,
+// Sistem Katalog) - nama lama TETAP dicek (pola "legacy names") jaga2
+// sesi lama.
+const FULL_ACCESS_ROLES: RoleName[] = ["Admin IT", "Supervisor"];
+const STAFF_ONLY_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)"];
 
 // isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
 // "Kepala Sekolah (SD/TK)" terpisah.
@@ -31,10 +36,13 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const colors = useThemeColors();
   // isKeuanganCap (2026-09-21) - port 1:1 dari perbaikan webview - Keuangan
   // via capability (role dasar tetap Guru/Pegawai) luput dari cek literal
-  // role di bawah, jadi terjebak scope=kelas tanpa picker (403).
+  // role di bawah, jadi terjebak scope=kelas tanpa picker (403). Disamakan
+  // dgn Admin TU (Guru+Pegawai, tanpa Siswa).
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
-  const isAdmin = !role || getActiveSession()?.isKepalaSekolah === true || isKeuanganCap || UNRESTRICTED_ROLES.includes(role);
-  const [scope, setScope] = useState<"kelas" | "pegawai">("kelas");
+  const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
+  const canViewSiswa = !role || isKepalaSekolah || (!!role && FULL_ACCESS_ROLES.includes(role));
+  const canViewStaff = canViewSiswa || isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role));
+  const [scope, setScope] = useState<"kelas" | "pegawai">(canViewSiswa ? "kelas" : "pegawai");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [now] = useState(new Date());
@@ -48,7 +56,7 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canViewSiswa) {
       api.attendanceClasses().then((res) => {
         if (res.success) {
           setClassOptions(res.data);
@@ -56,11 +64,11 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
         }
       });
     }
-  }, [isAdmin]);
+  }, [canViewSiswa]);
 
   useEffect(() => {
     (async () => {
-      if (scope === "kelas" && isAdmin && !selectedClass) return;
+      if (scope === "kelas" && canViewSiswa && !selectedClass) return;
       setLoading(true);
       setError("");
       const [tingkat, kelas] = selectedClass ? selectedClass.split("|") : [undefined, undefined];
@@ -75,7 +83,7 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
       }
       setLoading(false);
     })();
-  }, [scope, selectedClass, bulan, tahun, isAdmin]);
+  }, [scope, selectedClass, bulan, tahun, canViewSiswa]);
 
   function changeMonth(delta: number) {
     let m = bulan + delta;
@@ -113,10 +121,12 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
           </Button>
         </View>
 
-        {isAdmin && (
+        {canViewStaff && (
           <View className="gap-2">
-            <SimplePicker value={scope} options={scopeOptions} onChange={(v) => { setScope(v as "kelas" | "pegawai"); setSelectedClass(""); }} />
-            {scope === "kelas" && classPickerOptions.length > 0 && (
+            {canViewSiswa && (
+              <SimplePicker value={scope} options={scopeOptions} onChange={(v) => { setScope(v as "kelas" | "pegawai"); setSelectedClass(""); }} />
+            )}
+            {scope === "kelas" && canViewSiswa && classPickerOptions.length > 0 && (
               <SimplePicker value={selectedClass} options={classPickerOptions} onChange={setSelectedClass} />
             )}
           </View>
