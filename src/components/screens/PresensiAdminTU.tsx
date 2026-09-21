@@ -25,14 +25,22 @@ const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU", "A
 // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah. isWaliKelas (2026-09-04,
 // Fase 3) - Guru Kelas JUGA FLAG sekarang, sama pola - dulu `role === "Guru
 // Kelas"`.
-function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean): TabType[] {
-  if (!role || isKepalaSekolah || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
+// isKeuanganCap (2026-09-21) - "Keuangan" di UNRESTRICTED_ROLES di atas cuma
+// cocok kalau role DASAR akun itu literal "Keuangan" (akun standalone lama).
+// Sejak Keuangan jadi MURNI capability yang ditempel ke akun guru/pegawai
+// yang sudah ada (Kapasitas Tambahan), akun begitu role dasarnya tetap
+// "Guru"/"Pegawai" - jatuh ke cabang paling bawah (cuma lihat dirinya
+// sendiri/1 tab). Ditemukan dari laporan user (screenshot nyata: akun
+// Keuangan cuma dapat 1 tab "Pegawai", tanpa Guru/Siswa) - port 1:1 dari
+// perbaikan webview.
+function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean): TabType[] {
+  if (!role || isKepalaSekolah || isKeuanganCap || UNRESTRICTED_ROLES.includes(role)) return ["Siswa", "Guru", "Pegawai"];
   if (role === "Guru" && isWaliKelas) return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
-function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean): boolean {
-  return !role || !!isKepalaSekolah || UNRESTRICTED_ROLES.includes(role);
+function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean): boolean {
+  return !role || !!isKepalaSekolah || !!isKeuanganCap || UNRESTRICTED_ROLES.includes(role);
 }
 function badgeVariantForStatus(status: string): "success" | "error" | "warning" | "info" | "muted" {
   if (status === "Hadir") return "success";
@@ -50,8 +58,9 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const colors = useThemeColors();
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
-  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas), [role, isKepalaSekolah, isWaliKelas]);
-  const unrestricted = isUnrestricted(role, isKepalaSekolah);
+  const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
+  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas, isKeuanganCap), [role, isKepalaSekolah, isWaliKelas, isKeuanganCap]);
+  const unrestricted = isUnrestricted(role, isKepalaSekolah, isKeuanganCap);
   const [tab, setTab] = useState<TabType>(tabs[0]);
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState<AttendanceRow[]>([]);

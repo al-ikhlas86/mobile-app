@@ -28,7 +28,11 @@ function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen
   // pernah ada lagi) - dicek terpisah, tab Presensi tetap tampilkan view
   // admin-wide (Siswa/Guru/Pegawai) utk kepsek apa pun role dasarnya.
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
-  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  // isKeuanganCap (2026-09-21) - Keuangan via capability (role dasar tetap
+  // Guru/Pegawai) tidak cocok `role === "Keuangan"` di bawah - port 1:1 dari
+  // perbaikan webview (App.tsx isAdminOrKeuangan).
+  const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
+  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   return <PresensiScreen role={role} isWaliKelas={isWaliKelas} onNavigate={onNavigate} />;
 }

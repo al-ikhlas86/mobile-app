@@ -29,7 +29,11 @@ const UNRESTRICTED_ROLES: RoleName[] = ["Admin IT", "Supervisor", "Admin TU", "A
 // "Kepala Sekolah (SD/TK)" terpisah.
 export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const colors = useThemeColors();
-  const isAdmin = !role || getActiveSession()?.isKepalaSekolah === true || UNRESTRICTED_ROLES.includes(role);
+  // isKeuanganCap (2026-09-21) - port 1:1 dari perbaikan webview - Keuangan
+  // via capability (role dasar tetap Guru/Pegawai) luput dari cek literal
+  // role di bawah, jadi terjebak scope=kelas tanpa picker (403).
+  const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
+  const isAdmin = !role || getActiveSession()?.isKepalaSekolah === true || isKeuanganCap || UNRESTRICTED_ROLES.includes(role);
   const [scope, setScope] = useState<"kelas" | "pegawai">("kelas");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
