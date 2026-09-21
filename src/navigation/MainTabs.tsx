@@ -19,28 +19,32 @@ import { getActiveSession, type RoleName } from "../services/authService";
 const ADMIN_MEDIA_ROLES: RoleName[] = ["Admin Media", "Admin Media (SD)", "Admin Media (TK & Playground)"];
 const ADMIN_TU_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)"];
 
+// isPureAdminNoPresensi (2026-09-21, BUG NYATA dilaporkan user - akun
+// Rachmad Muladi ditambahkan capability admin_tu, jadi TIDAK BISA presensi
+// sendiri, tab Presensi langsung lompat ke rekap admin) - port 1:1 dari
+// perbaikan webview (App.tsx). SEBELUMNYA kondisi di bawah MENCAMPUR (a)
+// akun administratif MURNI tanpa employee_cache_id (literal role Admin
+// TU/Admin IT/Keuangan/Supervisor, sama spt Admin Media - memang tidak py
+// presensi sendiri) DENGAN (b) capability/flag yang DITEMPEL ke akun
+// Guru/Pegawai/Guru Kelas ASLI (admin_tu/keuangan/supervisor capability,
+// ATAU isKepalaSekolah - SEMUA "FLAG di atas role dasar", BUKAN role
+// administratif terpisah) - orang grup (b) TETAP pegawai asli yang WAJIB
+// presensi harian spt biasa. HANYA literal role administratif murni yang
+// dianggap "tidak py presensi sendiri" - capability/flag apa pun di atas
+// role dasar TIDAK PERNAH menghalangi presensi pribadi lagi.
+function isPureAdminNoPresensi(role: RoleName): boolean {
+  return ADMIN_TU_ROLES.includes(role) || role === "Admin IT" || role === "Keuangan" || role === "Supervisor";
+}
+
 function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
   if (role === "Orang Tua") return <PresensiAnak />;
   if (ADMIN_MEDIA_ROLES.includes(role)) return <PlaceholderScreen title="Akun administratif - gunakan akun utama utk presensi" />;
-  // Kepala Sekolah (2026-09-04) - FLAG di atas role dasar (BUKAN lagi role
-  // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah, string itu tidak
-  // pernah ada lagi) - dicek terpisah, tab Presensi tetap tampilkan view
-  // admin-wide (Siswa/Guru/Pegawai) utk kepsek apa pun role dasarnya.
-  const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
-  // isKeuanganCap (2026-09-21) - Keuangan via capability (role dasar tetap
-  // Guru/Pegawai) tidak cocok `role === "Keuangan"` di bawah - port 1:1 dari
-  // perbaikan webview (App.tsx isAdminOrKeuangan).
-  const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
-  // isSupervisorCap (2026-09-21) - fix Keuangan di atas tidak menyertakan
-  // Supervisor-via-capability, akibatnya masuk ke PresensiScreen biasa
-  // dulu (bukan langsung PresensiAdminTU) - tetap bisa sampai lewat tombol
-  // "Rekap Kehadiran" di sana, tapi tidak sekonsisten role admin lain.
-  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
-  // isAdminTuCap (2026-09-21) - ADMIN_TU_ROLES.includes(role) di atas cuma
-  // cocok role literal, luput utk Admin TU via capability - diperbaiki
-  // proaktif dgn pola sama Keuangan/Supervisor.
-  const isAdminTuCap = (getActiveSession()?.capabilities ?? []).includes("admin_tu");
-  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || isSupervisorCap || isAdminTuCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  if (isPureAdminNoPresensi(role)) return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  // isKepalaSekolah/capability admin_tu/keuangan/supervisor SEKARANG SEMUA
+  // jatuh ke PresensiScreen (presensi pribadi + tombol "Rekap Kehadiran")
+  // - bukan lagi langsung PresensiAdminTU. PresensiAdminTU.tsx SENDIRI baca
+  // getActiveSession() independen (bukan cuma props `role`), jadi scope
+  // admin-wide TETAP benar begitu masuk lewat tombol Rekap Kehadiran.
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   return <PresensiScreen role={role} isWaliKelas={isWaliKelas} onNavigate={onNavigate} />;
 }

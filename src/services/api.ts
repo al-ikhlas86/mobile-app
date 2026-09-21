@@ -289,6 +289,9 @@ export const api = {
   chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
   // Kelola Pelatih (2026-09-21) - sebelumnya cuma ada di webview, sekarang
   // di-port ke sini juga supaya Admin IT bisa tambah/hapus Pelatih dari HP.
+  // Cari Guru/Pegawai utk ditambah jadi Pelatih - port 1:1 dari webview,
+  // lihat catatan lengkap di sana + backend routes/chatbot.js.
+  chatbotSearchPegawai: (q: string) => authedFetch(`/api/chatbot/pegawai?q=${encodeURIComponent(q)}`),
   chatbotTrainers: () => authedFetch("/api/chatbot/trainers"),
   chatbotAddTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "POST" }),
   chatbotRemoveTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "DELETE" }),

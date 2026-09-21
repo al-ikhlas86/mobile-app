@@ -55,7 +55,7 @@ export function ChatbotScreen() {
         </View>
       )}
       {tab === "Chatbot" && <ChatPane />}
-      {tab === "Pelatih" && <PelatihPane isAdminIt={isAdminIt} />}
+      {tab === "Pelatih" && <PelatihPane isAdminIt={isAdminIt} onTestChatbot={() => setTab("Chatbot")} />}
       {tab === "Sinkronisasi" && <SinkronisasiPane />}
     </View>
   );
@@ -135,7 +135,7 @@ function ChatPane() {
   );
 }
 
-function PelatihPane({ isAdminIt }: { isAdminIt: boolean }) {
+function PelatihPane({ isAdminIt, onTestChatbot }: { isAdminIt: boolean; onTestChatbot: () => void }) {
   const colors = useThemeColors();
   const [entries, setEntries] = useState<TrainingEntry[]>([]);
   const [input, setInput] = useState("");
@@ -204,7 +204,10 @@ function PelatihPane({ isAdminIt }: { isAdminIt: boolean }) {
           className="bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm min-h-[80px]"
         />
         {!!error && <Text className="text-xs text-red-500 mt-1.5">{error}</Text>}
-        <Button onPress={handleAdd} disabled={saving || !input.trim()} loading={saving} className="mt-2">Simpan Pembelajaran</Button>
+        <View className="flex-row gap-2 mt-2">
+          <Button onPress={handleAdd} disabled={saving || !input.trim()} loading={saving}>Simpan Pembelajaran</Button>
+          <Button onPress={onTestChatbot} variant="outline">Uji Coba di Chatbot</Button>
+        </View>
       </Card>
 
       <View className="gap-2">
@@ -270,24 +273,26 @@ function KelolaPelatihCard() {
   const colors = useThemeColors();
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loadingTrainers, setLoadingTrainers] = useState(true);
-  const [allUsers, setAllUsers] = useState<AdminUserLite[]>([]);
+  const [hasil, setHasil] = useState<AdminUserLite[]>([]);
   const [query, setQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
 
   const loadTrainers = () => api.chatbotTrainers().then((res: any) => { if (res.success) setTrainers(res.data); setLoadingTrainers(false); });
+  useEffect(() => { loadTrainers(); }, []);
+
+  // q kosong = tampilkan SEMUA Guru/Pegawai - port 1:1 dari webview, lihat
+  // catatan lengkap di sana + backend routes/chatbot.js.
   useEffect(() => {
-    loadTrainers();
-    api.adminUsers().then((res: any) => { if (res.success) setAllUsers(res.data); });
-  }, []);
+    const timer = setTimeout(() => {
+      api.chatbotSearchPegawai(query.trim()).then((res: any) => { if (res.success) setHasil(res.data); });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const trainerIds = new Set(trainers.map((t) => t.user_id));
-  const hasil = query.trim().length >= 2
-    ? allUsers
-        .filter((u) => !trainerIds.has(u.id))
-        .filter((u) => `${u.full_name} ${u.username} ${u.phone ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))
-        .slice(0, 8)
-    : [];
+  const hasilTersaring = hasil.filter((u) => !trainerIds.has(u.id));
 
   async function handleAdd(userId: number) {
     setAddingId(userId);
@@ -314,25 +319,33 @@ function KelolaPelatihCard() {
         Orang yang ditambahkan di sini akan punya tab "Pelatih" saat login, dan bisa menambah pembelajaran chatbot.
       </Text>
 
-      <View className="relative mb-3" style={{ zIndex: 10 }}>
+      <View className="relative mb-3" style={{ zIndex: searchFocused ? 20 : 10 }}>
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Cari nama/username utk ditambahkan..."
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+          placeholder="Cari nama Guru/Pegawai, atau kosongkan..."
           icon={<Search size={15} color={colors.mutedForeground} />}
           autoCapitalize="none"
         />
-        {hasil.length > 0 && (
+        {searchFocused && (
           <View
             className="absolute left-0 right-0 bg-card border border-border rounded-xl overflow-hidden"
             style={{ top: "100%", marginTop: 4, elevation: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
           >
-            {hasil.map((u) => (
-              <Pressable key={u.id} onPress={() => handleAdd(u.id)} disabled={addingId === u.id} className="flex-row items-center justify-between gap-2 px-3.5 py-2.5 border-b border-border/50">
-                <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{u.full_name} <Text className="text-muted-foreground">({u.username})</Text></Text>
-                <Text className="text-xs font-medium text-primary">{addingId === u.id ? "..." : "+ Tambah"}</Text>
-              </Pressable>
-            ))}
+            {hasilTersaring.length === 0 ? (
+              <Text className="text-xs text-muted-foreground text-center py-3">Tidak ada Guru/Pegawai yang cocok.</Text>
+            ) : (
+              <GestureScrollView style={{ maxHeight: 280 }} nestedScrollEnabled showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
+                {hasilTersaring.map((u) => (
+                  <Pressable key={u.id} onPress={() => handleAdd(u.id)} disabled={addingId === u.id} className="flex-row items-center justify-between gap-2 px-3.5 py-2.5 border-b border-border/50">
+                    <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{u.full_name} <Text className="text-muted-foreground">({u.username})</Text></Text>
+                    <Text className="text-xs font-medium text-primary">{addingId === u.id ? "..." : "+ Tambah"}</Text>
+                  </Pressable>
+                ))}
+              </GestureScrollView>
+            )}
           </View>
         )}
       </View>
