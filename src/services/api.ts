@@ -277,6 +277,14 @@ export async function refreshSessionFromServer() {
 
 export const api = {
   me: () => authedFetch("/api/auth/me"),
+  chatbotStatus: () => authedFetch("/api/chatbot/status"),
+  chatbotMessages: () => authedFetch("/api/chatbot/messages"),
+  chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }),
+  chatbotTraining: () => authedFetch("/api/chatbot/training"),
+  chatbotAddTraining: (content: string) => authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content }) }),
+  chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
+  chatbotGetSettings: () => authedFetch("/api/chatbot/settings"),
+  chatbotSaveSettings: (data: { baseUrl: string; apiKey?: string; model: string }) => authedFetch("/api/chatbot/settings", { method: "PUT", body: JSON.stringify(data) }),
   tahunAjaranPilihan: () => authedFetch("/api/tahun-ajaran/pilihan"),
   uploadAvatar: (uri: string, mimeType: string) => {
     const form = new FormData();
