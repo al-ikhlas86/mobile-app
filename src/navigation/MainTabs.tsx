@@ -32,7 +32,12 @@ function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen
   // Guru/Pegawai) tidak cocok `role === "Keuangan"` di bawah - port 1:1 dari
   // perbaikan webview (App.tsx isAdminOrKeuangan).
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
-  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  // isSupervisorCap (2026-09-21) - fix Keuangan di atas tidak menyertakan
+  // Supervisor-via-capability, akibatnya masuk ke PresensiScreen biasa
+  // dulu (bukan langsung PresensiAdminTU) - tetap bisa sampai lewat tombol
+  // "Rekap Kehadiran" di sana, tapi tidak sekonsisten role admin lain.
+  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
+  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || isSupervisorCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   return <PresensiScreen role={role} isWaliKelas={isWaliKelas} onNavigate={onNavigate} />;
 }

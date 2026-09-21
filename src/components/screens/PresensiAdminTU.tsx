@@ -29,21 +29,24 @@ const STAFF_ONLY_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK
 // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah. isWaliKelas (2026-09-04,
 // Fase 3) - Guru Kelas JUGA FLAG sekarang, sama pola - dulu `role === "Guru
 // Kelas"`.
-// isKeuanganCap (2026-09-21) - Keuangan SEKARANG murni capability yang
-// ditempel ke akun guru/pegawai yang sudah ada (Kapasitas Tambahan), role
-// dasarnya tetap "Guru"/"Pegawai" - literal role check tidak akan pernah
-// cocok. Ditemukan dari laporan user (screenshot nyata: akun Keuangan cuma
-// dapat 1 tab "Pegawai") - port 1:1 dari perbaikan webview. Disamakan dgn
-// Admin TU (Guru+Pegawai, tanpa Siswa).
-function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean): TabType[] {
-  if (!role || isKepalaSekolah || (!!role && FULL_ACCESS_ROLES.includes(role))) return ["Siswa", "Guru", "Pegawai"];
+// isKeuanganCap/isSupervisorCap (2026-09-21) - Keuangan/Supervisor SEKARANG
+// bisa murni capability yang ditempel ke akun guru/pegawai yang sudah ada
+// (Kapasitas Tambahan), role dasarnya tetap "Guru"/"Pegawai" - literal role
+// check tidak akan pernah cocok. BUG NYATA ditemukan 2x (laporan user):
+// pertama Keuangan (sudah diperbaiki), fix itu TERNYATA tidak menyertakan
+// isSupervisorCap - akun Supervisor-via-capability (mis. Reinaldy, role
+// dasar Pegawai) masih jatuh ke ["Pegawai"] saja - port 1:1 dari perbaikan
+// webview. Supervisor = FULL_ACCESS (Siswa+Guru+Pegawai, SAMA Admin IT),
+// BEDA dari Keuangan/TU yang cuma Guru+Pegawai.
+function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean): TabType[] {
+  if (!role || isKepalaSekolah || isSupervisorCap || (!!role && FULL_ACCESS_ROLES.includes(role))) return ["Siswa", "Guru", "Pegawai"];
   if (isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role))) return ["Guru", "Pegawai"];
   if (role === "Guru" && isWaliKelas) return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
-function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean): boolean {
-  return !role || !!isKepalaSekolah || !!isKeuanganCap || FULL_ACCESS_ROLES.includes(role) || STAFF_ONLY_ROLES.includes(role);
+function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean): boolean {
+  return !role || !!isKepalaSekolah || !!isKeuanganCap || !!isSupervisorCap || FULL_ACCESS_ROLES.includes(role) || STAFF_ONLY_ROLES.includes(role);
 }
 function badgeVariantForStatus(status: string): "success" | "error" | "warning" | "info" | "muted" {
   if (status === "Hadir") return "success";
@@ -62,8 +65,9 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
-  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas, isKeuanganCap), [role, isKepalaSekolah, isWaliKelas, isKeuanganCap]);
-  const unrestricted = isUnrestricted(role, isKepalaSekolah, isKeuanganCap);
+  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
+  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap), [role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap]);
+  const unrestricted = isUnrestricted(role, isKepalaSekolah, isKeuanganCap, isSupervisorCap);
   const [tab, setTab] = useState<TabType>(tabs[0]);
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState<AttendanceRow[]>([]);

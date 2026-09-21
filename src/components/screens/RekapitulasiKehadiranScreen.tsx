@@ -38,9 +38,14 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   // via capability (role dasar tetap Guru/Pegawai) luput dari cek literal
   // role di bawah, jadi terjebak scope=kelas tanpa picker (403). Disamakan
   // dgn Admin TU (Guru+Pegawai, tanpa Siswa).
+  // isSupervisorCap (2026-09-21) - BUG NYATA ke-2 (laporan user: akun
+  // Reinaldy, Pegawai+Supervisor-capability, cuma dapat scope Guru &
+  // Pegawai, tanpa Siswa) - fix Keuangan sebelumnya tidak menyertakan
+  // Supervisor. Supervisor = FULL_ACCESS (canViewSiswa SAMA Admin IT).
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
+  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
-  const canViewSiswa = !role || isKepalaSekolah || (!!role && FULL_ACCESS_ROLES.includes(role));
+  const canViewSiswa = !role || isKepalaSekolah || isSupervisorCap || (!!role && FULL_ACCESS_ROLES.includes(role));
   const canViewStaff = canViewSiswa || isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role));
   const [scope, setScope] = useState<"kelas" | "pegawai">(canViewSiswa ? "kelas" : "pegawai");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
