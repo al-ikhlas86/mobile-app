@@ -42,11 +42,14 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   // Reinaldy, Pegawai+Supervisor-capability, cuma dapat scope Guru &
   // Pegawai, tanpa Siswa) - fix Keuangan sebelumnya tidak menyertakan
   // Supervisor. Supervisor = FULL_ACCESS (canViewSiswa SAMA Admin IT).
+  // isAdminTuCap (2026-09-21) - Admin TU JUGA salah satu dari 4 capability -
+  // diperbaiki proaktif dgn pola sama, port 1:1 dari webview.
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
   const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
+  const isAdminTuCap = (getActiveSession()?.capabilities ?? []).includes("admin_tu");
   const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
   const canViewSiswa = !role || isKepalaSekolah || isSupervisorCap || (!!role && FULL_ACCESS_ROLES.includes(role));
-  const canViewStaff = canViewSiswa || isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role));
+  const canViewStaff = canViewSiswa || isKeuanganCap || isAdminTuCap || (!!role && STAFF_ONLY_ROLES.includes(role));
   const [scope, setScope] = useState<"kelas" | "pegawai">(canViewSiswa ? "kelas" : "pegawai");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");

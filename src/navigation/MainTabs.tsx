@@ -37,7 +37,11 @@ function PresensiTab({ role, onNavigate }: { role: RoleName; onNavigate: (screen
   // dulu (bukan langsung PresensiAdminTU) - tetap bisa sampai lewat tombol
   // "Rekap Kehadiran" di sana, tapi tidak sekonsisten role admin lain.
   const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
-  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || isSupervisorCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
+  // isAdminTuCap (2026-09-21) - ADMIN_TU_ROLES.includes(role) di atas cuma
+  // cocok role literal, luput utk Admin TU via capability - diperbaiki
+  // proaktif dgn pola sama Keuangan/Supervisor.
+  const isAdminTuCap = (getActiveSession()?.capabilities ?? []).includes("admin_tu");
+  if (ADMIN_TU_ROLES.includes(role) || isKepalaSekolah || isKeuanganCap || isSupervisorCap || isAdminTuCap || role === "Admin IT" || role === "Keuangan" || role === "Supervisor") return <PresensiAdminTU role={role} onNavigate={onNavigate} />;
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   return <PresensiScreen role={role} isWaliKelas={isWaliKelas} onNavigate={onNavigate} />;
 }

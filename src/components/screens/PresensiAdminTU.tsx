@@ -29,24 +29,23 @@ const STAFF_ONLY_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK
 // "Kepala Sekolah (SD)"/"(TK & Playground)" terpisah. isWaliKelas (2026-09-04,
 // Fase 3) - Guru Kelas JUGA FLAG sekarang, sama pola - dulu `role === "Guru
 // Kelas"`.
-// isKeuanganCap/isSupervisorCap (2026-09-21) - Keuangan/Supervisor SEKARANG
-// bisa murni capability yang ditempel ke akun guru/pegawai yang sudah ada
-// (Kapasitas Tambahan), role dasarnya tetap "Guru"/"Pegawai" - literal role
-// check tidak akan pernah cocok. BUG NYATA ditemukan 2x (laporan user):
-// pertama Keuangan (sudah diperbaiki), fix itu TERNYATA tidak menyertakan
-// isSupervisorCap - akun Supervisor-via-capability (mis. Reinaldy, role
-// dasar Pegawai) masih jatuh ke ["Pegawai"] saja - port 1:1 dari perbaikan
-// webview. Supervisor = FULL_ACCESS (Siswa+Guru+Pegawai, SAMA Admin IT),
-// BEDA dari Keuangan/TU yang cuma Guru+Pegawai.
-function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean): TabType[] {
+// isKeuanganCap/isSupervisorCap/isAdminTuCap (2026-09-21) - Keuangan/
+// Supervisor/Admin TU SEKARANG bisa murni capability yang ditempel ke akun
+// guru/pegawai yang sudah ada (Kapasitas Tambahan), role dasarnya tetap
+// "Guru"/"Pegawai" - literal role check tidak akan pernah cocok. BUG NYATA
+// ditemukan berulang (laporan user): Keuangan, lalu Supervisor. Admin TU
+// diperbaiki PROAKTIF (pola identik, 1 dari 4 capability yang sama) - port
+// 1:1 dari perbaikan webview. Supervisor = FULL_ACCESS (Siswa+Guru+Pegawai,
+// SAMA Admin IT), Keuangan/Admin TU cuma Guru+Pegawai.
+function allowedTabsForRole(role?: RoleName, isKepalaSekolah?: boolean, isWaliKelas?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean, isAdminTuCap?: boolean): TabType[] {
   if (!role || isKepalaSekolah || isSupervisorCap || (!!role && FULL_ACCESS_ROLES.includes(role))) return ["Siswa", "Guru", "Pegawai"];
-  if (isKeuanganCap || (!!role && STAFF_ONLY_ROLES.includes(role))) return ["Guru", "Pegawai"];
+  if (isKeuanganCap || isAdminTuCap || (!!role && STAFF_ONLY_ROLES.includes(role))) return ["Guru", "Pegawai"];
   if (role === "Guru" && isWaliKelas) return ["Siswa", "Guru"];
   if (role === "Guru") return ["Guru"];
   return ["Pegawai"];
 }
-function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean): boolean {
-  return !role || !!isKepalaSekolah || !!isKeuanganCap || !!isSupervisorCap || FULL_ACCESS_ROLES.includes(role) || STAFF_ONLY_ROLES.includes(role);
+function isUnrestricted(role?: RoleName, isKepalaSekolah?: boolean, isKeuanganCap?: boolean, isSupervisorCap?: boolean, isAdminTuCap?: boolean): boolean {
+  return !role || !!isKepalaSekolah || !!isKeuanganCap || !!isSupervisorCap || !!isAdminTuCap || FULL_ACCESS_ROLES.includes(role) || STAFF_ONLY_ROLES.includes(role);
 }
 function badgeVariantForStatus(status: string): "success" | "error" | "warning" | "info" | "muted" {
   if (status === "Hadir") return "success";
@@ -66,8 +65,9 @@ export function PresensiAdminTU({ role, onNavigate }: Props = {}) {
   const isWaliKelas = getActiveSession()?.isWaliKelas === true;
   const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
   const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
-  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap), [role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap]);
-  const unrestricted = isUnrestricted(role, isKepalaSekolah, isKeuanganCap, isSupervisorCap);
+  const isAdminTuCap = (getActiveSession()?.capabilities ?? []).includes("admin_tu");
+  const tabs = useMemo(() => allowedTabsForRole(role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap, isAdminTuCap), [role, isKepalaSekolah, isWaliKelas, isKeuanganCap, isSupervisorCap, isAdminTuCap]);
+  const unrestricted = isUnrestricted(role, isKepalaSekolah, isKeuanganCap, isSupervisorCap, isAdminTuCap);
   const [tab, setTab] = useState<TabType>(tabs[0]);
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState<AttendanceRow[]>([]);
