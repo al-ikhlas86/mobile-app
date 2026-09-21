@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from "react-native";
 // ScrollView gesture-handler KHUSUS dropdown saran model - dropdown ini
 // dipasang di dalam ScrollView RN biasa milik SinkronisasiPane sendiri,
 // nested scroll RN vs RN macet (sama root cause dgn catatan SimplePicker.tsx
@@ -7,7 +7,7 @@ import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from 
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
-import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search, Lock } from "lucide-react-native";
+import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search, Lock, RotateCcw } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -73,11 +73,21 @@ function ChatPane({ hidden }: { hidden: boolean }) {
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   // Gerbang atomik pakai ref (bukan state `sending`) - port 1:1 dari
   // webview (lihat catatan lengkap di sana), nutup celah double-invoke
   // handleSend() yang bikin pesan/jawaban "nyampur, tampil dobel".
   const sendingRef = useRef(false);
+  // firstLoadDoneRef - port 1:1 dari webview (2026-09-21, diminta user:
+  // "tiap baru buka kaya ke-scroll cepet gitu, gaenak dilihat").
+  // onContentSizeChange di ScrollView bawah dipicu tiap ukuran konten
+  // berubah, TERMASUK pas riwayat lama baru pertama kali dimuat (dari
+  // "Memuat..." jadi banyak pesan sekaligus) - scrollToEnd({animated:true})
+  // di momen itu yang keliatan "meluncur cepat". false=belum lewat load
+  // pertama (animated:false/instan), true=sudah (baru animated:true utk
+  // pesan baru berikutnya).
+  const firstLoadDoneRef = useRef(false);
 
   // useFocusEffect (BUKAN useEffect biasa) - satu hook rangkap 2 tugas:
   // muat pertama kali DAN sinkron ulang tiap balik ke tab Chatbot (port
@@ -169,6 +179,31 @@ function ChatPane({ hidden }: { hidden: boolean }) {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
   }
 
+  // Reset chat manual - port 1:1 dari webview (2026-09-21, diminta user:
+  // "sediakan button reset chat agar kembali dari 0, supaya gaperlu
+  // nunggu 30 hari"). Alert.alert (bukan window.confirm - tidak ada di
+  // RN) dgn tombol destructive, pola sama persis
+  // ManajemenPenggunaScreen.tsx (handleDeleteCatalog dkk).
+  function handleReset() {
+    if (sendingRef.current || resetting) return;
+    Alert.alert("Reset Chat", "Hapus semua riwayat chat ini? Tidak bisa dibatalkan.", [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Hapus",
+        style: "destructive",
+        onPress: async () => {
+          setResetting(true);
+          const res: any = await api.chatbotResetMessages();
+          setResetting(false);
+          if (!res.success) { setError(res.message ?? "Gagal menghapus riwayat."); return; }
+          setError("");
+          setMessages([]);
+          firstLoadDoneRef.current = false;
+        },
+      },
+    ]);
+  }
+
   const messagesTampil = messages.filter((m) => m.content !== "");
 
   return (
@@ -182,7 +217,24 @@ function ChatPane({ hidden }: { hidden: boolean }) {
     // webview. display:"none" (RN View dukung ini di style) - ChatPane
     // TETAP HIDUP di belakang layar, tidak pernah unmount lagi.
     <View className="flex-1 gap-3" style={hidden ? { display: "none" } : undefined}>
-      <ScrollView ref={scrollRef} className="flex-1" contentContainerStyle={{ gap: 10, paddingBottom: 8 }} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
+      {messagesTampil.length > 0 && (
+        <View className="flex-row justify-end flex-shrink-0">
+          <Pressable onPress={handleReset} disabled={resetting} className="flex-row items-center gap-1 px-2 py-1 rounded-md" style={{ opacity: resetting ? 0.5 : 1 }}>
+            <RotateCcw size={12} color={colors.mutedForeground} />
+            <Text className="text-xs text-muted-foreground">{resetting ? "Menghapus..." : "Reset Chat"}</Text>
+          </Pressable>
+        </View>
+      )}
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        contentContainerStyle={{ gap: 10, paddingBottom: 8 }}
+        onContentSizeChange={() => {
+          const animated = firstLoadDoneRef.current;
+          scrollRef.current?.scrollToEnd({ animated });
+          if (!loading) firstLoadDoneRef.current = true;
+        }}
+      >
         {loading ? (
           <Text className="text-sm text-muted-foreground text-center py-8">Memuat...</Text>
         ) : messagesTampil.length === 0 ? (

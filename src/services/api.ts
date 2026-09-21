@@ -279,6 +279,7 @@ export const api = {
   me: () => authedFetch("/api/auth/me"),
   chatbotStatus: () => authedFetch("/api/chatbot/status"),
   chatbotMessages: () => authedFetch("/api/chatbot/messages"),
+  chatbotResetMessages: () => authedFetch("/api/chatbot/messages", { method: "DELETE" }),
   // Timeout 65 detik (port 1:1 dari webview) - model AI gratisan kadang
   // butuh lebih lama dari default 15 detik, lihat catatan lengkap di
   // services/api.ts webview + backend/src/services/chatbotAi.js.
