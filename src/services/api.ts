@@ -285,7 +285,13 @@ export const api = {
   chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }, 65000),
   chatbotTraining: () => authedFetch("/api/chatbot/training"),
   chatbotAddTraining: (content: string) => authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content }) }),
+  chatbotEditTraining: (id: number, content: string) => authedFetch(`/api/chatbot/training/${id}`, { method: "PUT", body: JSON.stringify({ content }) }),
   chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
+  // Kelola Pelatih (2026-09-21) - sebelumnya cuma ada di webview, sekarang
+  // di-port ke sini juga supaya Admin IT bisa tambah/hapus Pelatih dari HP.
+  chatbotTrainers: () => authedFetch("/api/chatbot/trainers"),
+  chatbotAddTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "POST" }),
+  chatbotRemoveTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "DELETE" }),
   chatbotGetSettings: () => authedFetch("/api/chatbot/settings"),
   chatbotSaveSettings: (data: { baseUrl: string; apiKey?: string; model: string }) => authedFetch("/api/chatbot/settings", { method: "PUT", body: JSON.stringify(data) }),
   chatbotListModels: (data: { baseUrl?: string; apiKey?: string }) => authedFetch("/api/chatbot/settings/models", { method: "POST", body: JSON.stringify(data) }),

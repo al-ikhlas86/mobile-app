@@ -5,7 +5,7 @@ import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from 
 // nested scroll RN vs RN macet (sama root cause dgn catatan SimplePicker.tsx
 // - scroll dalam kalah rebutan gesture ke scroll luar).
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
-import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap } from "lucide-react-native";
+import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -13,7 +13,9 @@ import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface Message { id: number; role: "user" | "assistant"; content: string; created_at: string; }
-interface TrainingEntry { id: number; content: string; created_at: string; trainer_name: string; }
+interface TrainingEntry { id: number; content: string; created_at: string; trainer_user_id: number; trainer_name: string; canEdit: boolean; }
+interface Trainer { user_id: number; full_name: string; username: string; granted_at: string; }
+interface AdminUserLite { id: number; full_name: string; username: string; phone: string | null; }
 type TabType = "Chatbot" | "Pelatih" | "Sinkronisasi";
 
 // Port 1:1 dari webview (ChatbotScreen.tsx) - cakupan tab persis
@@ -53,7 +55,7 @@ export function ChatbotScreen() {
         </View>
       )}
       {tab === "Chatbot" && <ChatPane />}
-      {tab === "Pelatih" && <PelatihPane />}
+      {tab === "Pelatih" && <PelatihPane isAdminIt={isAdminIt} />}
       {tab === "Sinkronisasi" && <SinkronisasiPane />}
     </View>
   );
@@ -94,7 +96,7 @@ function ChatPane() {
         ) : messages.length === 0 ? (
           <View className="items-center gap-2 py-12">
             <Bot size={32} color={colors.mutedForeground} />
-            <Text className="text-sm text-muted-foreground text-center px-6">Tanya apa saja seputar sekolah - kalender kegiatan, dll.</Text>
+            <Text className="text-sm text-muted-foreground text-center px-6">Tanya apa saja - jadwal akademik, curhat, konsultasi, atau ngobrol santai aja.</Text>
           </View>
         ) : (
           messages.map((m) => (
@@ -133,13 +135,16 @@ function ChatPane() {
   );
 }
 
-function PelatihPane() {
+function PelatihPane({ isAdminIt }: { isAdminIt: boolean }) {
   const colors = useThemeColors();
   const [entries, setEntries] = useState<TrainingEntry[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = () => api.chatbotTraining().then((res: any) => { if (res.success) setEntries(res.data); setLoading(false); });
   useEffect(() => { load(); }, []);
@@ -161,8 +166,26 @@ function PelatihPane() {
     load();
   }
 
+  function startEdit(entry: TrainingEntry) {
+    setEditingId(entry.id);
+    setEditContent(entry.content);
+  }
+
+  async function handleSaveEdit(id: number) {
+    const isi = editContent.trim();
+    if (!isi) return;
+    setSavingEdit(true);
+    const res: any = await api.chatbotEditTraining(id, isi);
+    setSavingEdit(false);
+    if (!res.success) return;
+    setEditingId(null);
+    load();
+  }
+
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ gap: 16 }}>
+      {isAdminIt && <KelolaPelatihCard />}
+
       <Card padding="md">
         <View className="flex-row items-center gap-1.5 mb-2">
           <GraduationCap size={16} color={colors.primary} />
@@ -193,18 +216,144 @@ function PelatihPane() {
         ) : (
           entries.map((e) => (
             <Card key={e.id} padding="sm">
-              <View className="flex-row items-start gap-2">
-                <Text className="text-sm text-foreground flex-1">{e.content}</Text>
-                <Pressable onPress={() => handleDelete(e.id)} className="p-1 rounded-full">
-                  <Trash2 size={14} color={colors.destructive} />
-                </Pressable>
-              </View>
-              <Text className="text-[10px] text-muted-foreground mt-1.5">oleh {e.trainer_name}</Text>
+              {editingId === e.id ? (
+                <View className="gap-2">
+                  <TextInput
+                    value={editContent}
+                    onChangeText={setEditContent}
+                    placeholderTextColor={colors.mutedForeground}
+                    multiline
+                    numberOfLines={3}
+                    className="bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm min-h-[70px]"
+                  />
+                  <View className="flex-row gap-2 justify-end">
+                    <Pressable onPress={() => setEditingId(null)} className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-lg">
+                      <X size={13} color={colors.mutedForeground} />
+                      <Text className="text-xs text-muted-foreground">Batal</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleSaveEdit(e.id)} disabled={savingEdit || !editContent.trim()} className="flex-row items-center gap-1 bg-primary px-2.5 py-1.5 rounded-lg" style={{ opacity: savingEdit || !editContent.trim() ? 0.5 : 1 }}>
+                      <Check size={13} color={colors.primaryForeground} />
+                      <Text className="text-xs text-primary-foreground">Simpan</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <View className="flex-row items-start gap-2">
+                    <Text className="text-sm text-foreground flex-1">{e.content}</Text>
+                    {e.canEdit && (
+                      <View className="flex-row gap-0.5">
+                        <Pressable onPress={() => startEdit(e)} className="p-1 rounded-full">
+                          <Pencil size={14} color={colors.primary} />
+                        </Pressable>
+                        <Pressable onPress={() => handleDelete(e.id)} className="p-1 rounded-full">
+                          <Trash2 size={14} color={colors.destructive} />
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-[10px] text-muted-foreground mt-1.5">oleh {e.trainer_name}</Text>
+                </>
+              )}
             </Card>
           ))
         )}
       </View>
     </ScrollView>
+  );
+}
+
+// Kelola Pelatih (Admin IT saja) - port 1:1 dari webview, lihat catatan
+// lengkap di sana kenapa ini GAP yang perlu ditutup (endpoint sudah lama
+// ada, cuma belum ada UI-nya di app manapun).
+function KelolaPelatihCard() {
+  const colors = useThemeColors();
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [loadingTrainers, setLoadingTrainers] = useState(true);
+  const [allUsers, setAllUsers] = useState<AdminUserLite[]>([]);
+  const [query, setQuery] = useState("");
+  const [addingId, setAddingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  const loadTrainers = () => api.chatbotTrainers().then((res: any) => { if (res.success) setTrainers(res.data); setLoadingTrainers(false); });
+  useEffect(() => {
+    loadTrainers();
+    api.adminUsers().then((res: any) => { if (res.success) setAllUsers(res.data); });
+  }, []);
+
+  const trainerIds = new Set(trainers.map((t) => t.user_id));
+  const hasil = query.trim().length >= 2
+    ? allUsers
+        .filter((u) => !trainerIds.has(u.id))
+        .filter((u) => `${u.full_name} ${u.username} ${u.phone ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))
+        .slice(0, 8)
+    : [];
+
+  async function handleAdd(userId: number) {
+    setAddingId(userId);
+    await api.chatbotAddTrainer(userId);
+    setAddingId(null);
+    setQuery("");
+    loadTrainers();
+  }
+
+  async function handleRemove(userId: number) {
+    setRemovingId(userId);
+    await api.chatbotRemoveTrainer(userId);
+    setRemovingId(null);
+    loadTrainers();
+  }
+
+  return (
+    <Card padding="md">
+      <View className="flex-row items-center gap-1.5 mb-2">
+        <UserPlus size={16} color={colors.primary} />
+        <Text className="text-sm font-semibold text-foreground">Kelola Pelatih</Text>
+      </View>
+      <Text className="text-xs text-muted-foreground mb-3">
+        Orang yang ditambahkan di sini akan punya tab "Pelatih" saat login, dan bisa menambah pembelajaran chatbot.
+      </Text>
+
+      <View className="relative mb-3" style={{ zIndex: 10 }}>
+        <Input
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Cari nama/username utk ditambahkan..."
+          icon={<Search size={15} color={colors.mutedForeground} />}
+          autoCapitalize="none"
+        />
+        {hasil.length > 0 && (
+          <View
+            className="absolute left-0 right-0 bg-card border border-border rounded-xl overflow-hidden"
+            style={{ top: "100%", marginTop: 4, elevation: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
+          >
+            {hasil.map((u) => (
+              <Pressable key={u.id} onPress={() => handleAdd(u.id)} disabled={addingId === u.id} className="flex-row items-center justify-between gap-2 px-3.5 py-2.5 border-b border-border/50">
+                <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{u.full_name} <Text className="text-muted-foreground">({u.username})</Text></Text>
+                <Text className="text-xs font-medium text-primary">{addingId === u.id ? "..." : "+ Tambah"}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {loadingTrainers ? (
+        <Text className="text-xs text-muted-foreground text-center py-2">Memuat...</Text>
+      ) : trainers.length === 0 ? (
+        <Text className="text-xs text-muted-foreground text-center py-2">Belum ada Pelatih selain Admin IT.</Text>
+      ) : (
+        <View className="gap-1.5">
+          {trainers.map((t) => (
+            <View key={t.user_id} className="flex-row items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2">
+              <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{t.full_name} <Text className="text-muted-foreground text-xs">({t.username})</Text></Text>
+              <Pressable onPress={() => handleRemove(t.user_id)} disabled={removingId === t.user_id} className="px-2 py-1 rounded-lg">
+                <Text className="text-xs text-red-500">Hapus</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+    </Card>
   );
 }
 
