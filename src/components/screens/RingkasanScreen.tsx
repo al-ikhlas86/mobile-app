@@ -5,7 +5,7 @@ import { Card } from "../ui/Card";
 import { SimplePicker } from "../ui/SimplePicker";
 import { useThemeColors } from "../../context/ThemeContext";
 import { api } from "../../services/api";
-import type { RoleName } from "../../services/authService";
+import { getActiveSession, type RoleName } from "../../services/authService";
 
 interface RingkasanData {
   hariAktif: number;
@@ -56,7 +56,9 @@ function SimpleBarRow({ data, color, colors }: { data: { tanggal: string; count:
 export function RingkasanScreen({ role }: { role: RoleName }) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const canPickUnit = role === "Admin IT" || role === "Supervisor";
+  // isSupervisorCap (2026-09-21) - port 1:1 dari perbaikan webview.
+  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
+  const canPickUnit = role === "Admin IT" || role === "Supervisor" || isSupervisorCap;
   const [units, setUnits] = useState<{ id: number; label: string }[]>([]);
   const [unitId, setUnitId] = useState<number | undefined>(undefined);
   const now = new Date();

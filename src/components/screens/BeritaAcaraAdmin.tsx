@@ -26,9 +26,12 @@ function myAdminMediaCatalogIds(): number[] {
   const session = getActiveSession();
   return (session?.catalogRoles ?? []).filter((r) => r.roleType === "admin_media").map((r) => r.catalogId);
 }
+// isSupervisorCap (2026-09-21) - Supervisor via capability (role dasar
+// tetap Guru/Pegawai) luput dari cek literal role di atas - port pola sama
+// dgn perbaikan Keuangan di PresensiAdminTU.tsx.
 function isGlobalBeritaAdmin(): boolean {
-  const role = getActiveSession()?.role;
-  return role === "Admin IT" || role === "Supervisor";
+  const session = getActiveSession();
+  return session?.role === "Admin IT" || session?.role === "Supervisor" || (session?.capabilities ?? []).includes("supervisor");
 }
 
 type AdminView = "list" | "form";
