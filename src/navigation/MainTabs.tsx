@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Home, FileText, Clock, Bell, User, Sun, Moon, MessageCircle } from "lucide-react-native";
+import { Home, FileText, Clock, User, Sun, Moon, MessageCircle } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { DashboardScreen } from "../components/screens/DashboardScreen";
 import { BeritaAcaraScreen } from "../components/screens/BeritaAcaraScreen";
@@ -11,9 +11,7 @@ import { PresensiAnak } from "../components/screens/PresensiAnak";
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { ChatbotScreen } from "../components/screens/ChatbotScreen";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
-import { NotifikasiScreen } from "../components/screens/NotifikasiScreen";
 import { ProfilScreen } from "../components/screens/ProfilScreen";
-import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
 import { getActiveSession, type RoleName } from "../services/authService";
 
 // admin_tu_sd/tk & admin_media_sd/tk DIGABUNG jadi generik (2026-09-14,
@@ -80,18 +78,18 @@ interface Props {
   onOpenDemoSwitcher: () => void;
 }
 
-// Bottom tabs 5 menu - persis strukturnya dgn BottomNav.tsx versi webview.
-// Header judul (headerShown:true) sengaja DIAKTIFKAN utk 4 tab non-Beranda -
+// Bottom tabs - persis strukturnya dgn BottomNav.tsx versi webview. Tab
+// Notifikasi DIHAPUS dari sini (2026-09-21) - akses tetap ada lewat bel
+// di header Beranda (DashboardLayout.tsx) + tap notifikasi push, layar
+// "notifikasi" sekarang Stack.Screen biasa (lihat RootNavigator.tsx).
+// Header judul (headerShown:true) sengaja DIAKTIFKAN utk tab non-Beranda -
 // SEBELUMNYA mati total di semua tab, itu penyebab layar Berita Acara/
-// Presensi/Notifikasi/Profil kelihatan "kurang turun" (konten mepet ke
-// status bar tanpa judul layar spt versi web). Beranda TETAP headerShown:
-// false krn py header custom sendiri di dalam DashboardLayout (hero+ikon).
+// Presensi/Profil kelihatan "kurang turun" (konten mepet ke status bar
+// tanpa judul layar spt versi web). Beranda TETAP headerShown: false krn
+// py header custom sendiri di dalam DashboardLayout (hero+ikon).
 export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOpenTahunAjaranSwitcher, onNavigateStack, canUseDemoMode, demoActive, onOpenDemoSwitcher }: Props) {
   const { isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
-  // Badge angka notifikasi (2026-08-31, spt WA/Line) - lihat catatan
-  // lengkap di hook (juga men-set badge ikon aplikasi di homescreen HP).
-  const unreadCount = useUnreadNotificationCount();
   const activeColor = isDark ? "#D0AF68" : "#356447";
   const inactiveColor = isDark ? "#A3A3AA" : "#6E776F";
   const bg = isDark ? "#19191C" : "#FFFFFF";
@@ -146,17 +144,6 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
         options={{ title: "Chatbot", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={MessageCircle} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <ChatbotScreen />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="notifikasi"
-        options={{
-          title: "Notifikasi",
-          tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Bell} focused={focused} color={color} activeColor={activeColor} isDark={isDark} />,
-          tabBarBadge: unreadCount > 0 ? (unreadCount > 9 ? "9+" : unreadCount) : undefined,
-          tabBarBadgeStyle: { backgroundColor: "#ef4444", fontSize: 10 },
-        }}
-      >
-        {() => <NotifikasiScreen onNavigate={onNavigateStack} />}
       </Tab.Screen>
       <Tab.Screen
         name="profil"

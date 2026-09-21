@@ -5,6 +5,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme, type NavigationContainerR
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MainTabs } from "./MainTabs";
 import { LoginScreen } from "../components/screens/LoginScreen";
+import { NotifikasiScreen } from "../components/screens/NotifikasiScreen";
 import { FaceEnrollmentScreen } from "../components/screens/FaceEnrollmentScreen";
 import { PengenalanWajahTabs } from "../components/screens/PengenalanWajahTabs";
 import { UbahPasswordScreen } from "../components/screens/UbahPasswordScreen";
@@ -65,7 +66,11 @@ const Stack = createNativeStackNavigator();
 // ("NAVIGATE ... was not handled by any navigator") - laporan user
 // sebelumnya sempat dikira sudah beres krn dites lewat pembacaan kode, BUKAN
 // lewat klik sungguhan di HP.
-const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "notifikasi", "profil"]);
+// "notifikasi" SENGAJA tidak di sini lagi (2026-09-21) - bukan tab bottom
+// nav lagi (dihapus dari MainTabs, akses lewat bel di header Beranda /
+// tap notifikasi push saja), sekarang Stack.Screen level-atas biasa spt
+// "ubah-password" dkk.
+const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "chatbot", "profil"]);
 
 function navigateTo(navigation: { navigate: (name: string, params?: unknown) => void } | null | undefined, screen: string, params?: Record<string, unknown>) {
   if (!navigation) return;
@@ -354,6 +359,9 @@ export function RootNavigator() {
                   onOpenDemoSwitcher={() => { handleLoadDemoRoles(); setShowDemoSwitcher(true); }}
                 />
               )}
+            </Stack.Screen>
+            <Stack.Screen name="notifikasi" options={{ headerShown: true, title: "Notifikasi" }}>
+              {({ navigation }) => <NotifikasiScreen onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
             <Stack.Screen name="pengenalan-wajah" options={{ headerShown: true, title: "Pengenalan Wajah" }}>
               {({ navigation }) => (

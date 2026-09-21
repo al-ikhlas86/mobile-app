@@ -7,6 +7,7 @@ import { useAccountSwitcher } from "../context/AccountSwitcherContext";
 import { getActiveSession } from "../services/authService";
 import { resolveAvatarUrl } from "../services/api";
 import { getViewingYear, useViewingYearTick } from "../services/viewingYearService";
+import { useUnreadNotificationCount } from "../hooks/useUnreadNotificationCount";
 
 interface DashboardLayoutProps {
   name: string;
@@ -39,6 +40,10 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children, on
   // langsung dari viewingYearService bukan prop).
   useViewingYearTick();
   const viewingYear = getViewingYear();
+  // Badge unread dipindah kesini (2026-09-21) - tab "Notifikasi" dihapus
+  // dari bottom nav (BottomNav webview versi lama; MainTabs di sini)
+  // supaya tidak hilang begitu saja dari pandangan, cuma pindah tempat.
+  const unreadCount = useUnreadNotificationCount();
   const [refreshing, setRefreshing] = useState(false);
   async function handleRefresh() {
     if (!onRefresh) return;
@@ -71,8 +76,13 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children, on
           <Pressable onPress={openSwitcher} className="w-8 h-8 rounded-full bg-white/20 items-center justify-center overflow-hidden">
             {avatarUrl ? <Image source={{ uri: avatarUrl }} className="w-full h-full" /> : <Text className="text-white text-xs font-bold">{session?.avatarInitials ?? ""}</Text>}
           </Pressable>
-          <Pressable onPress={() => navigation.navigate("notifikasi")} className="w-8 h-8 rounded-full bg-black/20 items-center justify-center">
+          <Pressable onPress={() => navigation.navigate("notifikasi")} className="relative w-8 h-8 rounded-full bg-black/20 items-center justify-center">
             <Bell size={15} color="#fff" />
+            {unreadCount > 0 && (
+              <View className="absolute -right-1 -top-1 min-w-[16px] h-4 rounded-full bg-red-500 items-center justify-center px-1">
+                <Text className="text-white text-[9px] font-bold">{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            )}
           </Pressable>
         </View>
 
