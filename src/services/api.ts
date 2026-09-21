@@ -181,7 +181,7 @@ export async function verifyOtp(
 // terpanggil. 15 detik dianggap wajar utk request JSON biasa (jauh lebih
 // pendek dari upload 30 detik - respons JSON normal harusnya cepat).
 const FETCH_TIMEOUT_MS = 15000;
-async function authedFetch(path: string, options: RequestInit = {}) {
+async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: number = FETCH_TIMEOUT_MS) {
   const token = getActiveToken();
   // X-Viewing-Tahun-Ajaran (2026-09-04, Fase 4) - dipasang di SETIAP request
   // HANYA kalau popup "Ganti Tahun Ajaran" sedang aktif memilih tahun BUKAN
@@ -190,7 +190,7 @@ async function authedFetch(path: string, options: RequestInit = {}) {
   // pola webview api.ts.
   const viewingYear = getViewingYear();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${API_URL}${path}`, {
       ...options,
@@ -279,7 +279,10 @@ export const api = {
   me: () => authedFetch("/api/auth/me"),
   chatbotStatus: () => authedFetch("/api/chatbot/status"),
   chatbotMessages: () => authedFetch("/api/chatbot/messages"),
-  chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }),
+  // Timeout 65 detik (port 1:1 dari webview) - model AI gratisan kadang
+  // butuh lebih lama dari default 15 detik, lihat catatan lengkap di
+  // services/api.ts webview + backend/src/services/chatbotAi.js.
+  chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }, 65000),
   chatbotTraining: () => authedFetch("/api/chatbot/training"),
   chatbotAddTraining: (content: string) => authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content }) }),
   chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
