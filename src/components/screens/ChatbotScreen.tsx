@@ -6,6 +6,7 @@ import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from 
 // - scroll dalam kalah rebutan gesture ke scroll luar).
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search, Lock } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -56,14 +57,14 @@ export function ChatbotScreen() {
           ))}
         </View>
       )}
-      {tab === "Chatbot" && <ChatPane />}
+      <ChatPane hidden={tab !== "Chatbot"} />
       {tab === "Pelatih" && <PelatihPane isAdminIt={isAdminIt} onTestChatbot={() => setTab("Chatbot")} />}
       {tab === "Sinkronisasi" && <SinkronisasiPane />}
     </View>
   );
 }
 
-function ChatPane() {
+function ChatPane({ hidden }: { hidden: boolean }) {
   const colors = useThemeColors();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -171,7 +172,16 @@ function ChatPane() {
   const messagesTampil = messages.filter((m) => m.content !== "");
 
   return (
-    <View className="flex-1 gap-3">
+    // style display (BUKAN lagi {tab === "Chatbot" && <ChatPane/>} di
+    // ChatbotScreen induk, lihat catatan di sana) - port 1:1 dari fix
+    // webview (2026-09-21): ChatPane SEBELUMNYA BENERAN unmount begitu
+    // pindah ke tab internal Pelatih/Sinkronisasi (state messages,
+    // sendingRef, loop pembaca stream yg lagi jalan SEMUA hancur), akar
+    // bug NYATA "kirim pesan -> pindah tab -> balik -> pesan hilang, cuma
+    // refresh yg benerin" - sama persis dgn yg dilaporkan+diperbaiki di
+    // webview. display:"none" (RN View dukung ini di style) - ChatPane
+    // TETAP HIDUP di belakang layar, tidak pernah unmount lagi.
+    <View className="flex-1 gap-3" style={hidden ? { display: "none" } : undefined}>
       <ScrollView ref={scrollRef} className="flex-1" contentContainerStyle={{ gap: 10, paddingBottom: 8 }} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
         {loading ? (
           <Text className="text-sm text-muted-foreground text-center py-8">Memuat...</Text>
@@ -204,21 +214,37 @@ function ChatPane() {
 
       {!!error && <Text className="text-xs text-red-500 text-center">{error}</Text>}
 
-      <View className="flex-row gap-2 items-end">
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder="Ketik pertanyaan..."
-          placeholderTextColor={colors.mutedForeground}
-          multiline
-          onContentSizeChange={(e) => setInputHeight(Math.max(40, Math.min(e.nativeEvent.contentSize.height, 100)))}
-          style={{ height: inputHeight, textAlignVertical: "top" }}
-          className="flex-1 bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm"
-        />
-        <Pressable onPress={handleSend} disabled={sending || !input.trim()} className={`w-11 h-11 rounded-full bg-primary items-center justify-center ${sending || !input.trim() ? "opacity-50" : ""}`}>
-          <Send size={16} color={colors.primaryForeground} />
-        </Pressable>
-      </View>
+      {/* KeyboardStickyView (2026-09-21, ditahan dulu sampai fix webview
+          oke, sekarang giliran mobile) - SEBELUMNYA layar ini SATU-
+          SATUNYA yang belum punya penanganan keyboard sama sekali (layar
+          lain sudah pakai KeyboardAwareScrollView dari library yang SAMA,
+          mis. BuatPengumumanScreen.tsx) - tanpa ini, di iOS (yang TIDAK
+          auto-resize layar spt Android) kolom ketik bisa ketutup total
+          sama keyboard. translateY sebesar tinggi keyboard aktual (native,
+          BUKAN dvh/hitungan manual spt webview) - offset default 0/0
+          brarti posisi SAAT KEYBOARD TERTUTUP sama sekali TIDAK berubah
+          (behavior sekarang yg sudah benar dibiarkan apa adanya), cuma
+          NAMBAH pergeseran pas keyboard kebuka. bg-background - wrapper
+          ini SECARA VISUAL menimpa bagian bawah ScrollView pesan pas
+          digeser naik (transform tidak mengubah layout box lain), warna
+          latar wajib solid biar tidak transparan/tembus pandang. */}
+      <KeyboardStickyView>
+        <View className="flex-row gap-2 items-end bg-background pt-1">
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="Ketik pertanyaan..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            onContentSizeChange={(e) => setInputHeight(Math.max(40, Math.min(e.nativeEvent.contentSize.height, 100)))}
+            style={{ height: inputHeight, textAlignVertical: "top" }}
+            className="flex-1 bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm"
+          />
+          <Pressable onPress={handleSend} disabled={sending || !input.trim()} className={`w-11 h-11 rounded-full bg-primary items-center justify-center ${sending || !input.trim() ? "opacity-50" : ""}`}>
+            <Send size={16} color={colors.primaryForeground} />
+          </Pressable>
+        </View>
+      </KeyboardStickyView>
     </View>
   );
 }
