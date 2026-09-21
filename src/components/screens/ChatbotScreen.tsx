@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from "react-native";
 // ScrollView gesture-handler KHUSUS dropdown saran model - dropdown ini
 // dipasang di dalam ScrollView RN biasa milik SinkronisasiPane sendiri,
 // nested scroll RN vs RN macet (sama root cause dgn catatan SimplePicker.tsx
 // - scroll dalam kalah rebutan gesture ke scroll luar).
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
-import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search } from "lucide-react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search, Lock } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
-import { api } from "../../services/api";
+import { api, API_URL } from "../../services/api";
+import { getActiveToken } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface Message { id: number; role: "user" | "assistant"; content: string; created_at: string; }
@@ -65,41 +67,125 @@ function ChatPane() {
   const colors = useThemeColors();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [inputHeight, setInputHeight] = useState(40);
   const [sending, setSending] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
+  // Gerbang atomik pakai ref (bukan state `sending`) - port 1:1 dari
+  // webview (lihat catatan lengkap di sana), nutup celah double-invoke
+  // handleSend() yang bikin pesan/jawaban "nyampur, tampil dobel".
+  const sendingRef = useRef(false);
 
-  useEffect(() => {
-    api.chatbotMessages().then((res: any) => { if (res.success) setMessages(res.data); setLoading(false); });
-  }, []);
+  // useFocusEffect (BUKAN useEffect biasa) - satu hook rangkap 2 tugas:
+  // muat pertama kali DAN sinkron ulang tiap balik ke tab Chatbot (port
+  // dari IntersectionObserver di webview, tapi versi native React
+  // Navigation - pola sama persis dgn PresensiScreen.tsx punya). Dilewati
+  // kalau lagi streaming (sendingRef) supaya tidak menimpa progres yang
+  // sedang jalan.
+  useFocusEffect(
+    useCallback(() => {
+      if (sendingRef.current) return;
+      api.chatbotMessages().then((res: any) => { if (res.success) setMessages(res.data); setLoading(false); });
+    }, [])
+  );
 
+  // Endpoint stream (POST /api/chatbot/messages/stream) balikin baris demi
+  // baris JSON (newline-delimited) - port 1:1 dari webview. res.body di RN
+  // fetch (Expo ~57/RN 0.86) TERUKUR dukung getReader(), tapi tetap dikasih
+  // fallback baca-sekaligus (res.text()) kalau ternyata di sebagian device
+  // tidak - tetap jalan, cuma tanpa efek ngetik progresif.
   async function handleSend() {
+    if (sendingRef.current) return;
     const pesan = input.trim();
-    if (!pesan || sending) return;
+    if (!pesan) return;
+    sendingRef.current = true;
     setError("");
     setSending(true);
+    setThinking(true);
     setInput("");
-    setMessages((prev) => [...prev, { id: Date.now(), role: "user", content: pesan, created_at: new Date().toISOString() }]);
-    const res: any = await api.chatbotSend(pesan);
+    setInputHeight(40);
+    // Id lokal negatif - id asli dari server SELALU positif (auto-increment
+    // MySQL), jadi mustahil tabrakan, sama persis pola webview.
+    const userMsgId = -Date.now();
+    setMessages((prev) => [...prev, { id: userMsgId, role: "user", content: pesan, created_at: new Date().toISOString() }]);
+    const placeholderId = userMsgId - 1;
+    setMessages((prev) => [...prev, { id: placeholderId, role: "assistant", content: "", created_at: new Date().toISOString() }]);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+
+    const prosesBaris = (baris: string) => {
+      if (!baris.trim()) return;
+      let evt: any;
+      try { evt = JSON.parse(baris); } catch { return; }
+      if (evt.type === "chunk") {
+        setThinking(false);
+        setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, content: m.content + evt.text } : m)));
+      } else if (evt.type === "done") {
+        setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, id: evt.id, created_at: evt.created_at } : m)));
+      } else if (evt.type === "error") {
+        throw new Error(evt.message || "Gagal mengirim pesan.");
+      }
+    };
+
+    let galat = "";
+    try {
+      const token = getActiveToken();
+      const res = await fetch(`${API_URL}/api/chatbot/messages/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
+        body: JSON.stringify({ message: pesan }),
+      });
+      if (res.body && typeof (res.body as any).getReader === "function") {
+        const reader = (res.body as any).getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const baris = buffer.split("\n");
+          buffer = baris.pop() ?? "";
+          for (const line of baris) prosesBaris(line);
+        }
+        if (buffer) prosesBaris(buffer);
+      } else {
+        // Fallback - fetch RN di device ini tidak dukung streaming body.
+        const teks = await res.text();
+        for (const line of teks.split("\n")) prosesBaris(line);
+      }
+    } catch (err: any) {
+      galat = err?.message || "Tidak dapat menghubungi server.";
+    }
+
+    if (galat) {
+      setError(galat);
+      setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
+    }
+    sendingRef.current = false;
     setSending(false);
-    if (!res.success) { setError(res.message ?? "Gagal mengirim pesan."); return; }
-    setMessages((prev) => [...prev, res.data]);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    setThinking(false);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
   }
+
+  const messagesTampil = messages.filter((m) => m.content !== "");
 
   return (
     <View className="flex-1 gap-3">
       <ScrollView ref={scrollRef} className="flex-1" contentContainerStyle={{ gap: 10, paddingBottom: 8 }} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
         {loading ? (
           <Text className="text-sm text-muted-foreground text-center py-8">Memuat...</Text>
-        ) : messages.length === 0 ? (
+        ) : messagesTampil.length === 0 ? (
           <View className="items-center gap-2 py-12">
             <Bot size={32} color={colors.mutedForeground} />
             <Text className="text-sm text-muted-foreground text-center px-6">Tanya apa saja - jadwal akademik, curhat, konsultasi, atau ngobrol santai aja.</Text>
+            <View className="flex-row items-center gap-1 mt-2 px-6">
+              <Lock size={11} color={colors.mutedForeground} />
+              <Text className="text-[10px] text-muted-foreground text-center flex-shrink">Percakapan tersimpan terenkripsi - Admin IT/siapa pun tidak bisa membaca isinya langsung dari database.</Text>
+            </View>
           </View>
         ) : (
-          messages.map((m) => (
+          messagesTampil.map((m) => (
             <View key={m.id} className={`flex-row gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               {m.role === "assistant" && (
                 <View className="w-7 h-7 rounded-full bg-primary/10 items-center justify-center mt-0.5"><Bot size={14} color={colors.primary} /></View>
@@ -113,7 +199,7 @@ function ChatPane() {
             </View>
           ))
         )}
-        {sending && <Text className="text-xs text-muted-foreground text-center">Chatbot sedang mengetik...</Text>}
+        {thinking && <Text className="text-xs text-muted-foreground text-center">Chatbot sedang mengetik...</Text>}
       </ScrollView>
 
       {!!error && <Text className="text-xs text-red-500 text-center">{error}</Text>}
@@ -125,7 +211,9 @@ function ChatPane() {
           placeholder="Ketik pertanyaan..."
           placeholderTextColor={colors.mutedForeground}
           multiline
-          className="flex-1 bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm max-h-24"
+          onContentSizeChange={(e) => setInputHeight(Math.max(40, Math.min(e.nativeEvent.contentSize.height, 100)))}
+          style={{ height: inputHeight, textAlignVertical: "top" }}
+          className="flex-1 bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm"
         />
         <Pressable onPress={handleSend} disabled={sending || !input.trim()} className={`w-11 h-11 rounded-full bg-primary items-center justify-center ${sending || !input.trim() ? "opacity-50" : ""}`}>
           <Send size={16} color={colors.primaryForeground} />
@@ -205,8 +293,8 @@ function PelatihPane({ isAdminIt, onTestChatbot }: { isAdminIt: boolean; onTestC
         />
         {!!error && <Text className="text-xs text-red-500 mt-1.5">{error}</Text>}
         <View className="flex-row gap-2 mt-2">
-          <Button onPress={handleAdd} disabled={saving || !input.trim()} loading={saving}>Simpan Pembelajaran</Button>
-          <Button onPress={onTestChatbot} variant="outline">Uji Coba di Chatbot</Button>
+          <Button onPress={handleAdd} disabled={saving || !input.trim()} loading={saving} size="sm">Simpan Pembelajaran</Button>
+          <Button onPress={onTestChatbot} variant="outline" size="sm">Uji Coba di Chatbot</Button>
         </View>
       </Card>
 
