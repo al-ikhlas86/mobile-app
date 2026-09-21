@@ -217,7 +217,7 @@ function SinkronisasiPane() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
-  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [modelOptions, setModelOptions] = useState<{ id: string; isCombo: boolean }[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelFocused, setModelFocused] = useState(false);
 
@@ -242,7 +242,12 @@ function SinkronisasiPane() {
     return () => clearTimeout(timer);
   }, [baseUrl, apiKey]);
 
-  const filteredModelOptions = modelOptions.filter((m) => m.toLowerCase().includes(model.trim().toLowerCase()));
+  // Combo (dibuat manual Admin IT di dashboard 9Router) ditaruh paling
+  // atas - port 1:1 dari webview, lihat catatan lengkap di sana kenapa
+  // model mentah provider bisa sangat banyak tapi belum tentu valid.
+  const filteredModelOptions = modelOptions
+    .filter((m) => m.id.toLowerCase().includes(model.trim().toLowerCase()))
+    .sort((a, b) => Number(b.isCombo) - Number(a.isCombo));
 
   async function handleSave() {
     if (!baseUrl.trim() || !model.trim()) { setMessage({ text: "Base URL dan Model wajib diisi.", ok: false }); return; }
@@ -293,12 +298,18 @@ function SinkronisasiPane() {
               >
                 <GestureScrollView style={{ maxHeight: Math.min(filteredModelOptions.length, 5) * 40 }} nestedScrollEnabled showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
                   {filteredModelOptions.map((m) => (
-                    <Pressable key={m} onPress={() => { setModel(m); setModelFocused(false); }} className="px-4 justify-center border-b border-border/50" style={{ height: 40 }}>
-                      <Text numberOfLines={1} className="text-sm text-foreground">{m}</Text>
+                    <Pressable key={m.id} onPress={() => { setModel(m.id); setModelFocused(false); }} className="flex-row items-center justify-between gap-2 px-4 border-b border-border/50" style={{ height: 40 }}>
+                      <Text numberOfLines={1} className="flex-1 text-sm text-foreground">{m.id}</Text>
+                      {m.isCombo && (
+                        <Text className="text-[10px] font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5">Combo</Text>
+                      )}
                     </Pressable>
                   ))}
                 </GestureScrollView>
               </View>
+            )}
+            {!loadingModels && modelOptions.some((m) => !m.isCombo) && (
+              <Text className="text-xs text-muted-foreground mt-1">Disarankan pilih yang bertanda "Combo" - selain itu cuma daftar mentah dari provider, belum tentu benar2 tersambung/berfungsi.</Text>
             )}
           </View>
         </View>
