@@ -20,6 +20,7 @@ const STATUS_TEXT: Record<string, string> = {
 };
 const CELL_W = 28;
 const NAME_W = 130;
+const NO_W = 28;
 
 // Cakupan per-role (spesifikasi eksplisit user, 2026-09-21) - Admin IT/
 // Supervisor/Kepala Sekolah -> Siswa+Guru+Pegawai; Admin TU/Keuangan ->
@@ -155,6 +156,7 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
             <Card padding="none" className="overflow-hidden">
               {/* Header */}
               <View className="flex-row bg-muted border-b border-border">
+                <View style={{ width: NO_W }} className="items-center py-2"><Text className="text-[10px] font-semibold text-foreground">No</Text></View>
                 <View style={{ width: NAME_W }} className="px-2 py-2 justify-center"><Text className="text-xs font-semibold text-foreground">Nama</Text></View>
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
                   <View key={d} style={{ width: CELL_W }} className="items-center py-2"><Text className="text-[10px] text-muted-foreground">{d}</Text></View>
@@ -165,8 +167,9 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
               </View>
               {/* Rows */}
               <ScrollView style={{ maxHeight: 480 }}>
-                {rows.map((row) => (
+                {rows.map((row, i) => (
                   <View key={row.id} className="flex-row border-b border-border/50">
+                    <View style={{ width: NO_W }} className="items-center justify-center py-1.5"><Text className="text-xs text-muted-foreground">{i + 1}</Text></View>
                     <View style={{ width: NAME_W }} className="px-2 py-1.5 justify-center"><Text className="text-xs text-foreground" numberOfLines={1}>{row.nama}</Text></View>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
                       const code = row.harian[String(d)] ?? "-";
