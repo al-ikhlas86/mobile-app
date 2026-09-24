@@ -75,6 +75,11 @@ interface ServerUser {
   capabilities?: string[];
   catalog_roles?: { roleType: string; catalogId: number }[];
   is_wali_kelas?: boolean | number;
+  // is_alumni (2026-09-24, Poin 3 Fase 2 - port dari webview api.ts) - GAP
+  // ditemukan saat porting layar Akademik: field ini tidak pernah ada di
+  // Mobile-App, jadi GuruTugasScreen.tsx/GuruMateriScreen.tsx sebelumnya
+  // selalu membaca isAlumni=false. Lihat catatan lengkap di authService.ts.
+  is_alumni?: boolean | number;
 }
 
 function toSavedAccount(user: ServerUser, token: string): SavedAccount {
@@ -91,6 +96,7 @@ function toSavedAccount(user: ServerUser, token: string): SavedAccount {
     capabilities: user.capabilities ?? [],
     catalogRoles: user.catalog_roles ?? [],
     isWaliKelas: Number(user.is_wali_kelas) === 1,
+    isAlumni: Number(user.is_alumni) === 1,
   };
 }
 
@@ -272,6 +278,7 @@ export async function refreshSessionFromServer() {
     capabilities: res.user.capabilities ?? [],
     catalogRoles: res.user.catalog_roles ?? [],
     isWaliKelas: Number(res.user.is_wali_kelas) === 1,
+    isAlumni: Number(res.user.is_alumni) === 1,
   });
 }
 
@@ -427,11 +434,19 @@ export const api = {
 
   // Tugas & Materi Pembelajaran - lihat routes/tugas.js (Node)
   tugasKelasOptions: () => authedFetch("/api/tugas/kelas-options"),
+  // pengajaranOptions (2026-09-24, Poin 3 Fase 2, port dari webview) - GANTI
+  // kelasOptions di atas utk layar baru: kombinasi kelas+mapel yang BENERAN
+  // diampu guru. kelasOptions TETAP dipertahankan apa adanya.
+  tugasPengajaranOptions: () => authedFetch("/api/tugas/pengajaran-options"),
   // SELALU FormData (bukan cabang JSON vs FormData terpisah) - konsisten
   // dgn berapa pun jumlah field, dan backend (multer .single()) mengurai
   // field teks dari multipart sama baiknya dgn tanpa file sama sekali.
   // `lampiran` opsional: { uri, name, mimeType } dari expo-document-picker.
-  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string; deadlineJam?: string; kunciOtomatis?: boolean; lampiran?: { uri: string; name: string; mimeType: string } }) => {
+  // mataPelajaranSourceId+pengajaranModeBaru (2026-09-24) - lihat catatan
+  // lengkap di webview api.ts/routes/tugas.js::POST /create. SELALU kirim
+  // pengajaranModeBaru dari layar BARU (Akademik) supaya server validasi
+  // ulang kelas+mapel-nya benar2 yang diampu.
+  tugasCreate: (data: { kelasId: number; jenis: "tugas" | "materi"; judul: string; deskripsi?: string; tanggal: string; deadline?: string; deadlineJam?: string; kunciOtomatis?: boolean; lampiran?: { uri: string; name: string; mimeType: string }; mataPelajaranSourceId?: number | null; pengajaranModeBaru?: boolean }) => {
     const form = new FormData();
     form.append("jenis", data.jenis);
     form.append("judul", data.judul);
@@ -442,6 +457,10 @@ export const api = {
     if (data.kunciOtomatis) form.append("kunciOtomatis", "1");
     form.append("kelasId", String(data.kelasId));
     if (data.lampiran) form.append("lampiran", fileFromUri(data.lampiran.uri, data.lampiran.name, data.lampiran.mimeType));
+    if (data.pengajaranModeBaru) {
+      form.append("pengajaranMode", "baru");
+      if (data.mataPelajaranSourceId) form.append("mataPelajaranSourceId", String(data.mataPelajaranSourceId));
+    }
     return authedUpload("/api/tugas/create", form);
   },
   // Buka/tutup pengumpulan (2026-09-03). `dibukaManual` MENGALAHKAN kunci
@@ -450,10 +469,26 @@ export const api = {
     authedFetch(`/api/tugas/${id}/kunci`, { method: "PATCH", body: JSON.stringify(body) }),
   tugasBeriNilai: (id: number, body: { studentCacheId: number; nilai?: string; catatan?: string }) =>
     authedFetch(`/api/tugas/${id}/nilai`, { method: "POST", body: JSON.stringify(body) }),
-  tugasMine: () => authedFetch("/api/tugas/mine"),
+  // filter opsional (2026-09-24, Poin 3 Fase 2) - jenis/kelasId/mataPelajaranSourceId.
+  tugasMine: (filter?: { jenis?: "tugas" | "materi"; kelasId?: number; mataPelajaranSourceId?: number | null }) => {
+    const qs = new URLSearchParams();
+    if (filter?.jenis) qs.set("jenis", filter.jenis);
+    if (filter?.kelasId) qs.set("kelasId", String(filter.kelasId));
+    if (filter?.mataPelajaranSourceId !== undefined) qs.set("mataPelajaranSourceId", filter.mataPelajaranSourceId === null ? "null" : String(filter.mataPelajaranSourceId));
+    const q = qs.toString();
+    return authedFetch(`/api/tugas/mine${q ? `?${q}` : ""}`);
+  },
   tugasRekap: (id: number) => authedFetch(`/api/tugas/${id}/rekap`),
+  // PDF rekap (2026-09-24) - token sekali-pakai, buka via Linking.openURL
+  // (RN, beda dari window.open web) - lihat pemakaiannya di layar.
+  tugasRekapDownloadLink: (id: number) => authedFetch(`/api/tugas/${id}/rekap/download-link`),
   tugasDelete: (id: number) => authedFetch(`/api/tugas/${id}`, { method: "DELETE" }),
-  tugasAnak: (studentCacheId: number) => authedFetch(`/api/tugas/anak?studentCacheId=${studentCacheId}`),
+  tugasAnak: (studentCacheId: number, filter?: { jenis?: "tugas" | "materi"; mataPelajaranSourceId?: number | null }) => {
+    const qs = new URLSearchParams({ studentCacheId: String(studentCacheId) });
+    if (filter?.jenis) qs.set("jenis", filter.jenis);
+    if (filter?.mataPelajaranSourceId !== undefined) qs.set("mataPelajaranSourceId", filter.mataPelajaranSourceId === null ? "null" : String(filter.mataPelajaranSourceId));
+    return authedFetch(`/api/tugas/anak?${qs.toString()}`);
+  },
   tugasTandaiSelesai: (id: number, studentCacheId: number) =>
     authedFetch(`/api/tugas/${id}/tandai-selesai`, { method: "POST", body: JSON.stringify({ studentCacheId }) }),
   // Kirim jawaban SUNGGUHAN (teks dan/atau lampiran) - superset tandai-selesai

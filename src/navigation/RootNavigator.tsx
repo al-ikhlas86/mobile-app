@@ -34,9 +34,15 @@ import { BeritaAcaraAdmin } from "../components/screens/BeritaAcaraAdmin";
 import { StatistikKontenScreen } from "../components/screens/StatistikKontenScreen";
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
-import { JadwalPelajaranScreen } from "../components/screens/JadwalPelajaranScreen";
-import { BuatTugasScreen } from "../components/screens/BuatTugasScreen";
-import { TugasAnakScreen } from "../components/screens/TugasAnakScreen";
+// Poin 3 Fase 2 (2026-09-24) - JadwalPelajaranScreen TETAP dipakai APA
+// ADANYA, tapi TIDAK LAGI diimpor langsung di sini - sekarang dikonsumsi
+// dari DALAM AkademikGuruScreen/AkademikSiswaScreen sbg tab pertama (lihat
+// file itu), bukan lagi rute layar penuh sendiri di sini. BuatTugasScreen/
+// TugasAnakScreen LAMA (tugas+materi tercampur) DIHAPUS - digantikan
+// AkademikGuruScreen (guru) / AkademikSiswaScreen (siswa/ortu).
+import { KalenderKegiatanScreen } from "../components/screens/KalenderKegiatanScreen";
+import { AkademikGuruScreen } from "../components/screens/AkademikGuruScreen";
+import { AkademikSiswaScreen } from "../components/screens/AkademikSiswaScreen";
 import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
 import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PersetujuanPsbScreen } from "../components/screens/PersetujuanPsbScreen";
@@ -438,11 +444,17 @@ export function RootNavigator() {
                 />
               )}
             </Stack.Screen>
-            <Stack.Screen name="jadwal-pelajaran" options={{ headerShown: true, title: "Kalender Akademik" }}>
-              {() => <JadwalPelajaranScreen mode={session.role === "Orang Tua" ? "anak" : "guru"} />}
+            <Stack.Screen name="kalender-kegiatan" options={{ headerShown: true, title: "Kalender Kegiatan" }} component={KalenderKegiatanScreen} />
+            <Stack.Screen name="akademik" options={{ headerShown: true, title: "Akademik" }}>
+              {() => (session.role === "Orang Tua" ? <AkademikSiswaScreen /> : <AkademikGuruScreen />)}
             </Stack.Screen>
-            <Stack.Screen name="buat-tugas" options={{ headerShown: true, title: "Buat Tugas / Materi" }} component={BuatTugasScreen} />
-            <Stack.Screen name="tugas-anak" options={{ headerShown: true, title: "Tugas & Materi" }} component={TugasAnakScreen} />
+            {/* tugas-anak - rute LAMA dipertahankan sbg alias krn
+                notifications.action_screen (routes/tugas.js,
+                services/pengingatTugas.js) MENYIMPAN string ini di baris
+                lama/baru - tap notifikasi tugas/materi (push maupun in-app)
+                HARUS tetap resolve ke layar yg benar, tidak boleh mati
+                begitu rute lama dihapus dari menu. */}
+            <Stack.Screen name="tugas-anak" options={{ headerShown: true, title: "Akademik" }} component={AkademikSiswaScreen} />
             <Stack.Screen name="jadwal-kerja" options={{ headerShown: true, title: "Jadwal Kerja" }} component={JadwalKerjaScreen} />
             <Stack.Screen name="cari-siswa-guru" options={{ headerShown: true, title: "Cari Siswa & Guru" }} component={CariSiswaGuruScreen} />
             <Stack.Screen name="persetujuan-psb" options={{ headerShown: true, title: "Persetujuan PSB" }} component={PersetujuanPsbScreen} />

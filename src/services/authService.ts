@@ -65,6 +65,12 @@ export interface SavedAccount {
   // Guru Kelas (2026-09-04, Fase 3) - FLAG tambahan di atas role dasar
   // 'Guru', lihat catatan lengkap di webview authService.ts.
   isWaliKelas?: boolean;
+  // Status Akun Alumni (2026-09-24, Poin 3 Fase 2 - port dari webview
+  // authService.ts, GAP ditemukan saat porting layar Akademik: field ini
+  // tidak pernah ada di Mobile-App sebelumnya) - siswa lulus lewat akun
+  // ortu / pegawai purna-bakti, akses terbatas, lihat backend
+  // middleware/auth.js blockAlumni.
+  isAlumni?: boolean;
   // Role Definitions (2026-09-15) - detail PER-KATALOG dari capabilities di
   // atas, lihat catatan lengkap di webview authService.ts.
   catalogRoles?: { roleType: string; catalogId: number }[];
@@ -81,6 +87,7 @@ export interface ActiveSession {
   isKepalaSekolah?: boolean;
   capabilities?: string[];
   isWaliKelas?: boolean;
+  isAlumni?: boolean;
   catalogRoles?: { roleType: string; catalogId: number }[];
 }
 
@@ -137,6 +144,7 @@ async function purgeAdminItOnColdStart(
       isKepalaSekolah: next.isKepalaSekolah,
       capabilities: next.capabilities,
       isWaliKelas: next.isWaliKelas,
+      isAlumni: next.isAlumni,
       catalogRoles: next.catalogRoles,
     };
     await AsyncStorage.setItem(KEYS.activeSession, JSON.stringify(newSession));
@@ -204,6 +212,7 @@ export async function saveSession(account: SavedAccount): Promise<ActiveSession>
     isKepalaSekolah: account.isKepalaSekolah,
     capabilities: account.capabilities,
     isWaliKelas: account.isWaliKelas,
+    isAlumni: account.isAlumni,
     catalogRoles: account.catalogRoles,
   };
   cachedSession = session;
@@ -227,6 +236,7 @@ export async function refreshActiveSessionCapabilities(fresh: {
   isKepalaSekolah?: boolean;
   capabilities?: string[];
   isWaliKelas?: boolean;
+  isAlumni?: boolean;
   catalogRoles?: { roleType: string; catalogId: number }[];
 }): Promise<ActiveSession | null> {
   assertLoaded();
@@ -305,6 +315,7 @@ export async function switchAccount(accountId: string): Promise<ActiveSession | 
     isKepalaSekolah: saved.isKepalaSekolah,
     capabilities: saved.capabilities,
     isWaliKelas: saved.isWaliKelas,
+    isAlumni: saved.isAlumni,
     catalogRoles: saved.catalogRoles,
   };
   cachedSession = session;

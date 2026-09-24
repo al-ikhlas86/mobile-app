@@ -9,6 +9,7 @@ import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession, useSessionRefreshTick, type RoleName } from "../../../services/authService";
+import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -52,6 +53,12 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const isMediaLike = hasCap("admin_media");
   const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
+  // Badge notifikasi menu Akademik (2026-09-24, Poin 3 Fase 2) - hook yang
+  // SAMA juga dipanggil DashboardLayout (beda instance, jadi tetap 2 siklus
+  // poll terpisah tiap 15 detik) - trade-off SENGAJA diambil (JSON singkat,
+  // 1x per buka dashboard) drpd angkat state ini lewat context/prop-drilling
+  // ke 9+ file dashboard, pola sama persis useBerandaPreferensi (QuickMenuGrid.tsx).
+  const { akademik: akademikBadge } = useUnreadNotificationCount();
 
   // fetchAttendanceData murni fetch (TIDAK setState sendiri) - dipakai 2
   // pemanggil dgn kebutuhan guard beda: useFocusEffect di bawah HARUS
@@ -144,8 +151,11 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ] : []),
     ] },
     { title: "Mengajar", items: [
-      { label: "Kalender Akademik", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
-      { label: "Buat Tugas / Materi", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("buat-tugas") },
+      { label: "Kalender Kegiatan", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("kalender-kegiatan") },
+      // Akademik (2026-09-24, Poin 3 Fase 2) - GANTI "Kalender Akademik" +
+      // "Buat Tugas / Materi" lama, lihat catatan lengkap di webview
+      // GuruDashboard.tsx.
+      { label: "Akademik", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
     ] },
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },

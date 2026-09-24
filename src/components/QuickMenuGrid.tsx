@@ -44,6 +44,8 @@ export interface QuickMenuItem {
   icon: React.ReactNode;
   colorScheme: "blue" | "green" | "orange" | "red" | "purple" | "teal" | "indigo" | "pink";
   onPress: () => void;
+  /** badgeCount (2026-09-24, Poin 3 Fase 2) - lihat catatan sama di webview QuickMenuGrid.tsx. */
+  badgeCount?: number;
 }
 export interface MenuCategory {
   title: string;
@@ -68,8 +70,15 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
       className="flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-2 min-h-[58px] active:opacity-70"
       style={{ width: "48%" }}
     >
-      <View className={`w-9 h-9 rounded-full items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
-        {item.icon}
+      <View className="relative">
+        <View className={`w-9 h-9 rounded-full items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
+          {item.icon}
+        </View>
+        {!!item.badgeCount && (
+          <View className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 items-center justify-center px-1">
+            <Text className="text-white text-[9px] font-bold">{item.badgeCount > 9 ? "9+" : item.badgeCount}</Text>
+          </View>
+        )}
       </View>
       <Text numberOfLines={2} className="flex-1 text-[10.5px] font-semibold text-foreground">{item.label}</Text>
     </Pressable>

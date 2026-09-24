@@ -43,7 +43,7 @@ export function DashboardLayout({ name, roleLabel, date, unitLabel, children, on
   // Badge unread dipindah kesini (2026-09-21) - tab "Notifikasi" dihapus
   // dari bottom nav (BottomNav webview versi lama; MainTabs di sini)
   // supaya tidak hilang begitu saja dari pandangan, cuma pindah tempat.
-  const unreadCount = useUnreadNotificationCount();
+  const { total: unreadCount } = useUnreadNotificationCount();
   const [refreshing, setRefreshing] = useState(false);
   async function handleRefresh() {
     if (!onRefresh) return;

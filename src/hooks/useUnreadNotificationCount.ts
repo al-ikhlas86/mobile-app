@@ -35,8 +35,21 @@ const POLL_INTERVAL_MS = 15000;
 // "menempel" di homescreen adalah nilai benar dari titik (3) ini.
 // TETAP bukan jaminan 100% (perilaku launcher pihak ketiga, di luar
 // kendali kode), tapi menutup celah race yang ditemukan di fix pertama.
-export function useUnreadNotificationCount(): number {
-  const [count, setCount] = useState(0);
+/**
+ * `akademik` (2026-09-24, Poin 3 Fase 2, diminta eksplisit user: "icon
+ * angka notifikasi" di menu tugas/materi) - dari `byType` yang backend
+ * SUDAH sertakan di respons `/api/notifications/unread-count` (aditif,
+ * `count`/total tidak berubah). Digabung ke hook YANG SAMA (bukan hook
+ * poll terpisah) supaya tidak dobel panggilan API tiap 15 detik - HANYA 1
+ * pemanggil (DashboardLayout.tsx) jadi aman diubah bentuk return-nya.
+ */
+export interface UnreadNotificationCount {
+  total: number;
+  akademik: number;
+}
+
+export function useUnreadNotificationCount(): UnreadNotificationCount {
+  const [state, setState] = useState<UnreadNotificationCount>({ total: 0, akademik: 0 });
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +58,7 @@ export function useUnreadNotificationCount(): number {
       const res = await api.notificationsUnreadCount();
       if (cancelled) return;
       if (res.success) {
-        setCount(res.count);
+        setState({ total: res.count, akademik: (res.byType?.tugas_baru ?? 0) + (res.byType?.materi_baru ?? 0) });
         Notifications.setBadgeCountAsync(res.count).catch(() => {});
       }
     }
@@ -70,5 +83,5 @@ export function useUnreadNotificationCount(): number {
     };
   }, []);
 
-  return count;
+  return state;
 }

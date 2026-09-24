@@ -11,6 +11,7 @@ import { ChildSwitcher } from "../../ChildSwitcher";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
+import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -39,6 +40,8 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const colors = useThemeColors();
   const session = getActiveSession();
   const news = useNewsList();
+  // Badge notifikasi menu Akademik - lihat catatan sama di GuruDashboard.tsx.
+  const { akademik: akademikBadge } = useUnreadNotificationCount();
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   // fetchChildrenData murni fetch (TIDAK setState sendiri) - dipakai 2
@@ -110,8 +113,11 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const menuCategories: MenuCategory[] = [
     { title: "Anak", items: [
       { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi") },
-      { label: "Kalender Akademik", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-pelajaran") },
-      { label: "Tugas & Materi", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("tugas-anak") },
+      { label: "Kalender Kegiatan", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("kalender-kegiatan") },
+      // Akademik (2026-09-24, Poin 3 Fase 2) - GANTI "Kalender Akademik" +
+      // "Tugas & Materi" lama, lihat catatan lengkap di webview
+      // OrangTuaDashboard.tsx.
+      { label: "Akademik", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
