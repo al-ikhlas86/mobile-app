@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -106,6 +106,11 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       ] : []),
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
+        // Jam Keterlambatan & Lokasi Presensi (2026-09-24) - Kepsek CUMA
+        // bisa atur katalog sendiri (backend yang validasi), singkron dgn
+        // Admin IT/Admin TU katalog yang sama - bukan salinan terpisah.
+        { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
+        { label: "Lokasi Presensi", icon: <MapPin size={20} color="#047857" />, colorScheme: "green" as const, onPress: () => onNavigate("pengaturan-lokasi") },
       ] : []),
       // Kepsek TANPA wali-kelas/TU juga butuh lihat Aduan Masuk (sejak Aduan
       // Pegawai ada, 2026-09-14) - blok isWaliKelas/isTuLike SUDAH

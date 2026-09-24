@@ -285,7 +285,11 @@ export const api = {
   // services/api.ts webview + backend/src/services/chatbotAi.js.
   chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }, 65000),
   chatbotTraining: () => authedFetch("/api/chatbot/training"),
-  chatbotAddTraining: (content: string) => authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content }) }),
+  // catalogId (2026-09-24, Sistem Katalog) - HANYA berpengaruh utk Admin IT
+  // (opsional, kosong = berlaku semua katalog). Pelatih biasa dikunci server
+  // ke katalognya sendiri, argumen ini diabaikan backend kalau bukan admin_it.
+  chatbotAddTraining: (content: string, catalogId?: number | null) =>
+    authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content, ...(catalogId !== undefined ? { catalog_id: catalogId } : {}) }) }),
   chatbotEditTraining: (id: number, content: string) => authedFetch(`/api/chatbot/training/${id}`, { method: "PUT", body: JSON.stringify({ content }) }),
   chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
   // Kelola Pelatih (2026-09-21) - sebelumnya cuma ada di webview, sekarang
@@ -388,18 +392,21 @@ export const api = {
   leaveApproveGuru: (id: number) => authedFetch(`/api/leave/${id}/approve-guru`, { method: "POST", body: JSON.stringify({}) }),
   leaveRejectGuru: (id: number, reason?: string) => authedFetch(`/api/leave/${id}/reject-guru`, { method: "POST", body: JSON.stringify({ reason }) }),
 
-  // Pengaturan lokasi+radius geofence presensi (Admin IT).
+  // Pengaturan lokasi+radius geofence presensi PER KATALOG (2026-09-24) -
+  // Admin IT (semua katalog) + Admin TU/Kepala Sekolah (katalog sendiri),
+  // lihat routes/attendanceLocations.js.
   attendanceLocations: () => authedFetch("/api/attendance-locations"),
-  attendanceLocationCreate: (data: { nama: string; lat: number; lng: number; radius_meter: number }) =>
+  attendanceLocationCreate: (data: { nama: string; lat: number; lng: number; radius_meter: number; catalog_id: number }) =>
     authedFetch("/api/attendance-locations", { method: "POST", body: JSON.stringify(data) }),
-  attendanceLocationUpdate: (id: number, data: Partial<{ nama: string; lat: number; lng: number; radius_meter: number; is_active: boolean }>) =>
+  attendanceLocationUpdate: (id: number, data: Partial<{ nama: string; lat: number; lng: number; radius_meter: number; is_active: boolean; catalog_id: number }>) =>
     authedFetch(`/api/attendance-locations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   attendanceLocationDelete: (id: number) => authedFetch(`/api/attendance-locations/${id}`, { method: "DELETE" }),
 
-  // Pengaturan jam keterlambatan (Admin IT) - menggantikan SettingsController
-  // Absen, lihat routes/attendanceSettings.js & services/attendanceStatus.js (Node).
+  // Pengaturan jam keterlambatan PER KATALOG (2026-09-24, Sistem Katalog) -
+  // Admin IT lihat semua katalog, Admin TU/Kepsek cuma katalog sendiri,
+  // lihat routes/attendanceSettings.js & services/attendanceStatus.js (Node).
   lateCutoffGet: () => authedFetch("/api/attendance-settings/late-cutoff"),
-  lateCutoffUpdate: (data: Partial<{ late_cutoff_siswa: string; late_cutoff_staff: string; late_cutoff_tk_playground: string }>) =>
+  lateCutoffUpdate: (data: { catalogId: number } & Partial<{ siswa: string | null; guru: string | null; pegawai: string | null }>) =>
     authedFetch("/api/attendance-settings/late-cutoff", { method: "PUT", body: JSON.stringify(data) }),
 
   // Statistik Ringkasan (fitur baru, lihat routes/ringkasan.js Node)

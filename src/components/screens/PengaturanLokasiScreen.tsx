@@ -6,6 +6,7 @@ import { MapPin, Plus, X, Power } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
+import { SimplePicker } from "../ui/SimplePicker";
 import { useThemeColors } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 
@@ -16,17 +17,25 @@ interface LocationRow {
   lng: number;
   radius_meter: number;
   is_active: 0 | 1;
+  catalog_id: number | null;
+  catalog_nama: string | null;
 }
 
-// Admin IT saja - kelola lokasi+radius presensi GPS (attendance_locations
-// di Absen, lihat AttendanceLocationController). Desain fail-closed: kalau
-// 0 lokasi aktif, SEMUA check-in ditolak server-side (bukan fail-open) -
-// jadi menghapus lokasi terakhir/menonaktifkan semua akan mengunci total
-// presensi GPS seluruh sekolah, disampaikan jelas lewat peringatan di UI.
+interface Catalog { id: number; kode: string; nama: string; }
+
+// Kelola lokasi+radius presensi GPS PER KATALOG (2026-09-24, BUG NYATA
+// diperbaiki - audit Sistem Katalog: SEBELUMNYA gak ada konsep katalog sama
+// sekali, "1 titik lokasi aktif" dianggap berlaku semua sekolah - siswa/
+// pegawai 1 katalog bisa lolos absen di lokasi katalog lain). Admin IT lihat
+// semua katalog, Admin TU/Kepala Sekolah cuma katalog sendiri (backend yang
+// validasi). Desain fail-closed PER KATALOG: kalau 0 lokasi aktif di suatu
+// katalog, SEMUA check-in GPS di katalog itu ditolak (bukan fail-open) -
+// disampaikan jelas lewat peringatan di UI.
 export function PengaturanLokasiScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [rows, setRows] = useState<LocationRow[]>([]);
+  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -35,6 +44,7 @@ export function PengaturanLokasiScreen() {
   const [newLat, setNewLat] = useState("");
   const [newLng, setNewLng] = useState("");
   const [newRadius, setNewRadius] = useState("100");
+  const [newCatalogId, setNewCatalogId] = useState("");
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -43,13 +53,18 @@ export function PengaturanLokasiScreen() {
     setError("");
     const res = await api.attendanceLocations();
     setLoading(false);
-    if (res.success) setRows(res.data);
-    else setError(res.message ?? "Gagal memuat daftar lokasi.");
+    if (res.success) {
+      setRows(res.data);
+      setCatalogs(res.catalogs ?? []);
+      setNewCatalogId((prev) => prev || (res.catalogs?.[0]?.id ? String(res.catalogs[0].id) : ""));
+    } else {
+      setError(res.message ?? "Gagal memuat daftar lokasi.");
+    }
   };
 
   useEffect(() => { load(); }, []);
 
-  const activeCount = rows.filter((r) => r.is_active).length;
+  const emptyCatalogs = catalogs.filter((c) => !rows.some((r) => r.catalog_id === c.id && r.is_active));
 
   const resetAddForm = () => {
     setNewNama(""); setNewLat(""); setNewLng(""); setNewRadius("100"); setAddError(""); setShowAddForm(false);
@@ -60,11 +75,12 @@ export function PengaturanLokasiScreen() {
     const lng = parseFloat(newLng);
     const radius = parseInt(newRadius, 10);
     if (!newNama.trim()) { setAddError("Nama lokasi wajib diisi."); return; }
+    if (!newCatalogId) { setAddError("Pilih katalog dulu."); return; }
     if (Number.isNaN(lat) || lat < -90 || lat > 90) { setAddError("Latitude tidak valid (-90 s/d 90)."); return; }
     if (Number.isNaN(lng) || lng < -180 || lng > 180) { setAddError("Longitude tidak valid (-180 s/d 180)."); return; }
     if (Number.isNaN(radius) || radius < 5 || radius > 5000) { setAddError("Radius tidak valid (5 s/d 5000 meter)."); return; }
     setAddSaving(true); setAddError("");
-    const res = await api.attendanceLocationCreate({ nama: newNama.trim(), lat, lng, radius_meter: radius });
+    const res = await api.attendanceLocationCreate({ nama: newNama.trim(), lat, lng, radius_meter: radius, catalog_id: Number(newCatalogId) });
     setAddSaving(false);
     if (res.success) { resetAddForm(); load(); }
     else setAddError(res.message ?? "Gagal menambah lokasi.");
@@ -98,17 +114,17 @@ export function PengaturanLokasiScreen() {
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
       <Text className="text-xs text-muted-foreground">
-        Presensi GPS (check-in/check-out) hanya diterima kalau lokasi HP berada di dalam radius salah satu titik di
-        bawah ini. Tiap lokasi bisa punya radius berbeda.
+        Presensi GPS (check-in/check-out) hanya diterima kalau lokasi HP berada di dalam radius salah satu titik milik
+        KATALOG yang sama dengan orang yang absen. Tiap katalog (unit sekolah) diatur terpisah.
       </Text>
 
-      {activeCount === 0 && (
+      {emptyCatalogs.length > 0 && (
         <Card padding="md" className="border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10">
           <View className="flex-row items-start gap-2">
             <MapPin size={16} color="#dc2626" style={{ marginTop: 2 }} />
             <Text className="text-sm text-red-700 dark:text-red-400 flex-1">
-              <Text className="font-semibold">Tidak ada lokasi aktif.</Text> Semua presensi GPS di seluruh sekolah
-              akan DITOLAK sampai minimal 1 lokasi diaktifkan.
+              <Text className="font-semibold">Katalog {emptyCatalogs.map((c) => c.nama).join(", ")} belum punya lokasi aktif.</Text> Semua
+              presensi GPS di katalog itu akan DITOLAK sampai minimal 1 lokasi diaktifkan.
             </Text>
           </View>
         </Card>
@@ -125,6 +141,14 @@ export function PengaturanLokasiScreen() {
             <Pressable onPress={resetAddForm}><X size={16} color={colors.mutedForeground} /></Pressable>
           </View>
           <View className="gap-2.5">
+            {catalogs.length > 1 && (
+              <SimplePicker
+                value={newCatalogId}
+                onChange={setNewCatalogId}
+                placeholder="Pilih katalog..."
+                options={catalogs.map((c) => ({ value: String(c.id), label: c.nama }))}
+              />
+            )}
             <TextInput value={newNama} onChangeText={setNewNama} placeholder="Nama lokasi (mis. Gedung SD)" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
             <View className="flex-row gap-2.5">
               <TextInput value={newLat} onChangeText={setNewLat} placeholder="Latitude" keyboardType="numbers-and-punctuation" className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
@@ -148,6 +172,7 @@ export function PengaturanLokasiScreen() {
                 <View className="flex-1">
                   <Text className="text-sm font-semibold text-foreground">{row.nama}</Text>
                   <Text className="text-xs text-muted-foreground">{row.lat}, {row.lng} · radius {row.radius_meter}m</Text>
+                  {row.catalog_nama ? <Text className="text-xs text-primary font-medium mt-0.5">Katalog {row.catalog_nama}</Text> : null}
                 </View>
               </View>
               <Badge variant={row.is_active ? "success" : "muted"}>{row.is_active ? "Aktif" : "Nonaktif"}</Badge>

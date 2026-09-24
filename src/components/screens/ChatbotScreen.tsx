@@ -11,12 +11,14 @@ import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, C
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { SimplePicker } from "../ui/SimplePicker";
 import { api, API_URL } from "../../services/api";
 import { getActiveToken } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface Message { id: number; role: "user" | "assistant"; content: string; created_at: string; }
-interface TrainingEntry { id: number; content: string; created_at: string; trainer_user_id: number; trainer_name: string; canEdit: boolean; }
+interface TrainingEntry { id: number; content: string; created_at: string; trainer_user_id: number; trainer_name: string; catalog_id: number | null; catalog_nama: string | null; canEdit: boolean; }
+interface CatalogOpt { id: number; kode: string; nama: string; }
 interface Trainer { user_id: number; full_name: string; username: string; granted_at: string; }
 interface AdminUserLite { id: number; full_name: string; username: string; phone: string | null; }
 type TabType = "Chatbot" | "Pelatih" | "Sinkronisasi";
@@ -311,16 +313,25 @@ function PelatihPane({ isAdminIt, onTestChatbot }: { isAdminIt: boolean; onTestC
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [catalogs, setCatalogs] = useState<CatalogOpt[]>([]);
+  // "" = berlaku SEMUA katalog (Admin IT saja - lihat api.chatbotAddTraining).
+  const [newCatalogId, setNewCatalogId] = useState("");
 
   const load = () => api.chatbotTraining().then((res: any) => { if (res.success) setEntries(res.data); setLoading(false); });
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Daftar katalog cuma dibutuhkan Admin IT (pemilih opsional saat
+    // menambah pelatihan) - Pelatih biasa dikunci server ke katalognya
+    // sendiri, tidak perlu memilih apa pun.
+    if (isAdminIt) api.adminCatalogs().then((res: any) => { if (res.success) setCatalogs(res.data); });
+  }, [isAdminIt]);
 
   async function handleAdd() {
     const isi = input.trim();
     if (!isi) return;
     setSaving(true);
     setError("");
-    const res: any = await api.chatbotAddTraining(isi);
+    const res: any = await api.chatbotAddTraining(isi, isAdminIt ? (newCatalogId ? Number(newCatalogId) : null) : undefined);
     setSaving(false);
     if (!res.success) { setError(res.message ?? "Gagal menyimpan."); return; }
     setInput("");
@@ -369,6 +380,19 @@ function PelatihPane({ isAdminIt, onTestChatbot }: { isAdminIt: boolean; onTestC
           numberOfLines={3}
           className="bg-input-background border border-border rounded-xl px-3.5 py-2.5 text-foreground text-sm min-h-[80px]"
         />
+        {isAdminIt ? (
+          <View className="mt-2 gap-1">
+            <Text className="text-xs font-medium text-muted-foreground">Berlaku untuk katalog</Text>
+            <SimplePicker
+              value={newCatalogId}
+              onChange={setNewCatalogId}
+              placeholder="Semua katalog"
+              options={[{ value: "", label: "Semua katalog" }, ...catalogs.map((c) => ({ value: String(c.id), label: c.nama }))]}
+            />
+          </View>
+        ) : (
+          <Text className="text-[10px] text-muted-foreground mt-1.5">Pembelajaran ini cuma berlaku untuk chatbot katalog Anda sendiri.</Text>
+        )}
         {!!error && <Text className="text-xs text-red-500 mt-1.5">{error}</Text>}
         <View className="flex-row gap-2 mt-2">
           <Button onPress={handleAdd} disabled={saving || !input.trim()} loading={saving} size="sm">Simpan Pembelajaran</Button>
@@ -421,7 +445,7 @@ function PelatihPane({ isAdminIt, onTestChatbot }: { isAdminIt: boolean; onTestC
                       </View>
                     )}
                   </View>
-                  <Text className="text-[10px] text-muted-foreground mt-1.5">oleh {e.trainer_name}</Text>
+                  <Text className="text-[10px] text-muted-foreground mt-1.5">oleh {e.trainer_name} · {e.catalog_nama ?? "Semua katalog"}</Text>
                 </>
               )}
             </Card>
