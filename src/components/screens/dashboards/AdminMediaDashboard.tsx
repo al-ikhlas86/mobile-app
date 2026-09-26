@@ -42,13 +42,13 @@ export function AdminMediaDashboard({ onNavigate }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Berita Acara", items: [
-      { label: "Kelola Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara-admin") },
+      { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara-admin") },
       { label: "Berita Acara (Lihat)", icon: <BookOpen size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
       { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("statistik-konten") },
       { label: "Pengguna Diblokir", icon: <Ban size={20} color="#be123c" />, colorScheme: "red", onPress: () => onNavigate("blokiran-komentar") },
     ] },
     { title: "Akun", items: [
-      { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
+      { label: "Profil", icon: <User size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
     ] },
   ];
 

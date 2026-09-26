@@ -91,7 +91,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Presensi & Wajah", items: [
-      { label: "Presensi Pegawai", icon: <Clock size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
+      { label: "Presensi Pegawai", icon: <Clock size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
@@ -138,7 +138,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan-pegawai") },
     ] },
     { title: "Akun", items: [
-      { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
+      { label: "Profil", icon: <User size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
     ] },
   ];
 

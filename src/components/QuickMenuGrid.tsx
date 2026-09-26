@@ -52,15 +52,17 @@ export interface MenuCategory {
   items: QuickMenuItem[];
 }
 
+// Perbaikan (2026-09-26) - lihat catatan sama persis di webview
+// QuickMenuGrid.tsx (blue/green dulu sama2 emerald, indigo dulu lime).
 export const MENU_BG_COLORS: Record<string, string> = {
-  blue: "bg-emerald-50 dark:bg-emerald-900/10",
-  green: "bg-emerald-50 dark:bg-emerald-900/10",
-  orange: "bg-amber-50 dark:bg-amber-900/10",
-  red: "bg-rose-50",
-  purple: "bg-violet-50",
-  teal: "bg-teal-50 dark:bg-teal-900/10",
-  indigo: "bg-lime-50",
-  pink: "bg-pink-50 dark:bg-pink-900/10",
+  blue: "bg-blue-50 dark:bg-blue-950/45",
+  green: "bg-green-50 dark:bg-green-950/45",
+  orange: "bg-amber-50 dark:bg-amber-950/45",
+  red: "bg-rose-50 dark:bg-rose-950/45",
+  purple: "bg-violet-50 dark:bg-violet-950/45",
+  teal: "bg-teal-50 dark:bg-teal-950/45",
+  indigo: "bg-indigo-50 dark:bg-indigo-950/45",
+  pink: "bg-pink-50 dark:bg-pink-950/45",
 };
 
 export function QuickMenuButton({ item }: { item: QuickMenuItem }) {

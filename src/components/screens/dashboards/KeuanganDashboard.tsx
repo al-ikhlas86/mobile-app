@@ -20,19 +20,19 @@ export function KeuanganDashboard({ onNavigate }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Keuangan", items: [
-      { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("keuangan-admin") },
+      { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("keuangan-admin") },
       // Placeholder - port dari webview (Projek.md 2026-08-13, dipasang
       // kembali atas permintaan user 2026-08-29).
       { label: "Tagihan", icon: <FileText size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Tagihan" }) },
-      { label: "Pembayaran Masuk", icon: <TrendingUp size={20} color="#16a34a" />, colorScheme: "green", onPress: () => onNavigate("placeholder", { title: "Pembayaran Masuk" }) },
+      { label: "Pembayaran Masuk", icon: <TrendingUp size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("placeholder", { title: "Pembayaran Masuk" }) },
       { label: "Tunggakan", icon: <AlertCircle size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("placeholder", { title: "Tunggakan" }) },
       { label: "Rekap Keuangan", icon: <BarChart2 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("placeholder", { title: "Rekap Keuangan" }) },
-      { label: "Laporan Keuangan", icon: <BarChart2 size={20} color="#4f46e5" />, colorScheme: "indigo", onPress: () => onNavigate("placeholder", { title: "Laporan Keuangan" }) },
+      { label: "Laporan Keuangan", icon: <BarChart2 size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("placeholder", { title: "Laporan Keuangan" }) },
       { label: "Riwayat Transaksi", icon: <History size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("placeholder", { title: "Riwayat Transaksi" }) },
     ] },
     { title: "Operasional", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
-      { label: "Presensi", icon: <Clock size={20} color="#16a34a" />, colorScheme: "green", onPress: () => onNavigate("presensi") },
+      { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      { label: "Presensi", icon: <Clock size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("presensi") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },
   ];

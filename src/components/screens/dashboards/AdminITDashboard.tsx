@@ -46,27 +46,27 @@ export function AdminITDashboard({ onNavigate }: Props) {
 
   const menuCategories: MenuCategory[] = [
     { title: "Administrasi Pengguna", items: [
-      { label: "Manajemen Pengguna", icon: <Users size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("manajemen-pengguna") },
+      { label: "Manajemen Pengguna", icon: <Users size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("manajemen-pengguna") },
       { label: "Kapasitas Tambahan", icon: <Users2 size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kapasitas-tambahan") },
       { label: "Role & Hak Akses", icon: <Shield size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("role-hak-akses") },
-      { label: "Koneksi Bot WhatsApp", icon: <MessageCircle size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("koneksi-wa-bot") },
+      { label: "Koneksi Bot WhatsApp", icon: <MessageCircle size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("koneksi-wa-bot") },
       { label: "Buat Pengumuman", icon: <Megaphone size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("buat-pengumuman") },
       { label: "Pengguna Diblokir", icon: <Ban size={20} color="#be123c" />, colorScheme: "red", onPress: () => onNavigate("blokiran-komentar") },
     ] },
     { title: "Operasional", items: [
-      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#2563eb" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
-      { label: "Berita Acara", icon: <FileText size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
-      { label: "Keuangan", icon: <CreditCard size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
+      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
+      { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      { label: "Keuangan", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
       { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
       { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
-      { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#047857" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
+      { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
       { label: "Backup Database", icon: <HardDrive size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("backup-database") },
       { label: "Status Sinkronisasi", icon: <Activity size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("status-sinkronisasi") },
-      { label: "Log Aktivitas", icon: <History size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("log-aktivitas") },
+      { label: "Log Aktivitas", icon: <History size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("log-aktivitas") },
     ] },
   ];
 
