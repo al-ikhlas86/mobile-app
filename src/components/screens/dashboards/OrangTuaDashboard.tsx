@@ -153,7 +153,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
         <Text className="text-xs font-semibold text-muted-foreground mb-2 uppercase">Ringkasan</Text>
         <View className="flex-row gap-2">
           <View className="flex-1 gap-2">
-            <SummaryCard compact label="Presensi Bulan Ini" value={`${totalHadirBulanIni} hari`} icon={<Info size={13} color="#047857" />} colorScheme="blue" />
+            <SummaryCard compact label="Presensi Bulan Ini" value={`${totalHadirBulanIni} hari`} icon={<Info size={13} color="#1d4ed8" />} colorScheme="blue" />
             <SummaryCard compact label="Status Hari Ini" value={hadirHariIni ? "Hadir" : "-"} icon={<CheckCircle size={13} color="#16a34a" />} colorScheme={hadirHariIni ? "green" : "default"} />
           </View>
           <View className="flex-1 rounded-lg px-2.5 py-2 border border-border border-l-4 bg-amber-50 dark:bg-amber-900/10 justify-center" style={{ borderLeftColor: "#f59e0b" }}>

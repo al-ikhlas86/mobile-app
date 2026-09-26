@@ -10,8 +10,10 @@ interface SummaryCardProps {
   compact?: boolean;
 }
 
+// Fix (2026-09-26) - blue SEBELUMNYA emerald, lihat catatan sama di
+// QuickMenuGrid.tsx & webview SummaryCard.tsx.
 const schemes = {
-  blue: { iconBg: "bg-emerald-100 dark:bg-emerald-900/20", iconWrap: "" },
+  blue: { iconBg: "bg-blue-100 dark:bg-blue-900/20", iconWrap: "" },
   green: { iconBg: "bg-green-100 dark:bg-green-900/20", iconWrap: "" },
   orange: { iconBg: "bg-amber-100 dark:bg-amber-900/20", iconWrap: "" },
   red: { iconBg: "bg-red-100 dark:bg-red-900/20", iconWrap: "" },

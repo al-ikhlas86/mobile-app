@@ -57,7 +57,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
           <Text className="text-sm text-muted-foreground">Memuat...</Text>
         ) : stats ? (
           <View className="flex-row gap-3">
-            <View className="flex-1"><SummaryCard label="Total Siswa Aktif" value={String(stats.totalSiswaAktif)} icon={<GraduationCap size={18} color="#047857" />} colorScheme="blue" subtitle="dari Hub API" /></View>
+            <View className="flex-1"><SummaryCard label="Total Siswa Aktif" value={String(stats.totalSiswaAktif)} icon={<GraduationCap size={18} color="#1d4ed8" />} colorScheme="blue" subtitle="dari Hub API" /></View>
             <View className="flex-1"><SummaryCard label="Total Pegawai Aktif" value={String(stats.totalPegawaiAktif)} icon={<UserCog size={18} color="#16a34a" />} colorScheme="green" subtitle="dari Hub API" /></View>
           </View>
         ) : (

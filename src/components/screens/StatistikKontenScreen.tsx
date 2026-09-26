@@ -39,7 +39,7 @@ export function StatistikKontenScreen({ onNavigate }: { onNavigate: (screen: str
       <Text className="text-xs text-muted-foreground">Statistik keterlibatan (suka + komentar) berita acara di unit Anda. Cuma berita yang sudah terbit yang dihitung keterlibatannya.</Text>
 
       <View className="flex-row flex-wrap gap-3">
-        <View style={{ width: "47%" }}><SummaryCard label="Berita Terbit" value={String(data.total_published)} icon={<FileText size={18} color="#047857" />} colorScheme="blue" subtitle={`${data.total_pending} menunggu/draft`} /></View>
+        <View style={{ width: "47%" }}><SummaryCard label="Berita Terbit" value={String(data.total_published)} icon={<FileText size={18} color="#1d4ed8" />} colorScheme="blue" subtitle={`${data.total_pending} menunggu/draft`} /></View>
         <View style={{ width: "47%" }}><SummaryCard label="Total Berita" value={String(data.total_berita)} icon={<FileText size={18} color={colors.mutedForeground} />} colorScheme="default" subtitle="semua status" /></View>
         <View style={{ width: "47%" }}><SummaryCard label="Total Suka" value={String(data.total_likes)} icon={<Heart size={18} color="#ef4444" />} colorScheme="red" subtitle="seluruh berita terbit" /></View>
         <View style={{ width: "47%" }}><SummaryCard label="Total Komentar" value={String(data.total_comments)} icon={<MessageCircle size={18} color="#16a34a" />} colorScheme="green" subtitle="seluruh berita terbit" /></View>
