@@ -113,14 +113,14 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const menuCategories: MenuCategory[] = [
     { title: "Anak", items: [
       { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi") },
-      { label: "Kalender Kegiatan", icon: <BookOpen size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("kalender-kegiatan") },
+      { label: "Kalender Kegiatan", icon: <BookOpen size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("kalender-kegiatan") },
       // Akademik (2026-09-24, Poin 3 Fase 2) - GANTI "Kalender Akademik" +
       // "Tugas & Materi" lama, lihat catatan lengkap di webview
       // OrangTuaDashboard.tsx.
-      { label: "Akademik", icon: <ClipboardList size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
+      { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
-      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#047857" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
+      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
       // Placeholder - tombol saja dulu (2026-09-11, poin #9) - lihat catatan
       // lengkap di versi webview OrangTuaDashboard.tsx.
       { label: "Seragam", icon: <Shirt size={20} color="#c2410c" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Seragam (segera hadir)" }) },
@@ -129,7 +129,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
     ] },
     { title: "Akun", items: [
-      { label: "Profil", icon: <User size={20} color="#4d7c0f" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
+      { label: "Profil", icon: <User size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
     ] },
   ];
 
