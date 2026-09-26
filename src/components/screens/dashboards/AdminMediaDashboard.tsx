@@ -71,7 +71,7 @@ export function AdminMediaDashboard({ onNavigate }: Props) {
         ) : stats ? (
           <>
             <View className="flex-row gap-2.5">
-              <View className="flex-1"><SummaryCard label="Berita Terbit" value={String(stats.total_published)} icon={<FileText size={16} color="#047857" />} colorScheme="blue" compact /></View>
+              <View className="flex-1"><SummaryCard label="Berita Terbit" value={String(stats.total_published)} icon={<FileText size={16} color="#1d4ed8" />} colorScheme="blue" compact /></View>
               <View className="flex-1"><SummaryCard label="Total Suka" value={String(stats.total_likes)} icon={<Heart size={16} color="#be123c" />} colorScheme="red" compact /></View>
               <View className="flex-1"><SummaryCard label="Total Komentar" value={String(stats.total_comments)} icon={<MessageCircle size={16} color="#16a34a" />} colorScheme="green" compact /></View>
             </View>

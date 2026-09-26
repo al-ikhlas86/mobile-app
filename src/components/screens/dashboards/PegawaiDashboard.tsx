@@ -153,7 +153,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
         ) : (
           <View className="flex-row gap-3">
             <View className="flex-1"><SummaryCard label="Status Hari Ini" value={hadirHariIni ? "Hadir" : "-"} icon={<CheckCircle size={18} color={hadirHariIni ? "#16a34a" : colors.mutedForeground} />} colorScheme={hadirHariIni ? "green" : "default"} subtitle={today} /></View>
-            <View className="flex-1"><SummaryCard label="Presensi Bulan Ini" value={String(hadirBulanIni)} icon={<Calendar size={18} color="#047857" />} colorScheme="blue" subtitle="hari hadir" /></View>
+            <View className="flex-1"><SummaryCard label="Presensi Bulan Ini" value={String(hadirBulanIni)} icon={<Calendar size={18} color="#1d4ed8" />} colorScheme="blue" subtitle="hari hadir" /></View>
           </View>
         )}
       </View>

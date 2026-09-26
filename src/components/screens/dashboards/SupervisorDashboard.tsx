@@ -70,7 +70,7 @@ export function SupervisorDashboard({ onNavigate }: Props) {
           <Text className="text-sm text-muted-foreground">Memuat...</Text>
         ) : stats ? (
           <View className="flex-row flex-wrap gap-3">
-            <View style={{ width: "47%" }}><SummaryCard label="Total Siswa Aktif" value={String(stats.totalSiswaAktif)} icon={<GraduationCap size={18} color="#047857" />} colorScheme="blue" subtitle="dari Hub API" /></View>
+            <View style={{ width: "47%" }}><SummaryCard label="Total Siswa Aktif" value={String(stats.totalSiswaAktif)} icon={<GraduationCap size={18} color="#1d4ed8" />} colorScheme="blue" subtitle="dari Hub API" /></View>
             <View style={{ width: "47%" }}><SummaryCard label="Total Pengguna Aktif" value={String(stats.totalPenggunaAktif)} icon={<Users size={18} color="#7c3aed" />} colorScheme="purple" subtitle="akun aplikasi ini" /></View>
             <View style={{ width: "47%" }}><SummaryCard label="Total Pegawai Aktif" value={String(stats.totalPegawaiAktif)} icon={<UserCog size={18} color="#16a34a" />} colorScheme="green" subtitle="dari Hub API" /></View>
             <View style={{ width: "47%" }}><SummaryCard label="Sinkronisasi Terakhir" value={formatSync(stats.lastSyncAt)} icon={<RefreshCw size={18} color="#b45309" />} colorScheme="orange" subtitle="Hub API + Absen" /></View>
