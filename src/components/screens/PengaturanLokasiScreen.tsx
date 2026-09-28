@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { MapPin, Plus, X, Power } from "lucide-react-native";
+import { MapPin, Plus, X, Power, Pencil } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -48,6 +48,16 @@ export function PengaturanLokasiScreen() {
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
+  // Edit lokasi yang sudah ada (2026-09-28) - lihat catatan sama di versi
+  // webview (src/app/components/screens/PengaturanLokasiScreen.tsx).
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editNama, setEditNama] = useState("");
+  const [editLat, setEditLat] = useState("");
+  const [editLng, setEditLng] = useState("");
+  const [editRadius, setEditRadius] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -84,6 +94,35 @@ export function PengaturanLokasiScreen() {
     setAddSaving(false);
     if (res.success) { resetAddForm(); load(); }
     else setAddError(res.message ?? "Gagal menambah lokasi.");
+  }
+
+  function startEdit(row: LocationRow) {
+    setEditingId(row.id);
+    setEditNama(row.nama);
+    setEditLat(String(row.lat));
+    setEditLng(String(row.lng));
+    setEditRadius(String(row.radius_meter));
+    setEditError("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError("");
+  }
+
+  async function handleEditSave(row: LocationRow) {
+    const lat = parseFloat(editLat);
+    const lng = parseFloat(editLng);
+    const radius = parseInt(editRadius, 10);
+    if (!editNama.trim()) { setEditError("Nama lokasi wajib diisi."); return; }
+    if (Number.isNaN(lat) || lat < -90 || lat > 90) { setEditError("Latitude tidak valid (-90 s/d 90)."); return; }
+    if (Number.isNaN(lng) || lng < -180 || lng > 180) { setEditError("Longitude tidak valid (-180 s/d 180)."); return; }
+    if (Number.isNaN(radius) || radius < 5 || radius > 5000) { setEditError("Radius tidak valid (5 s/d 5000 meter)."); return; }
+    setEditSaving(true); setEditError("");
+    const res = await api.attendanceLocationUpdate(row.id, { nama: editNama.trim(), lat, lng, radius_meter: radius });
+    setEditSaving(false);
+    if (res.success) { setEditingId(null); load(); }
+    else setEditError(res.message ?? "Gagal menyimpan perubahan.");
   }
 
   async function handleToggleActive(row: LocationRow) {
@@ -166,23 +205,45 @@ export function PengaturanLokasiScreen() {
       ) : (
         rows.map((row) => (
           <Card key={row.id} padding="md">
-            <View className="flex-row items-start justify-between gap-2">
-              <View className="flex-row items-start gap-2 flex-1">
-                <MapPin size={16} color={colors.primary} style={{ marginTop: 2 }} />
-                <View className="flex-1">
-                  <Text className="text-sm font-semibold text-foreground">{row.nama}</Text>
-                  <Text className="text-xs text-muted-foreground">{row.lat}, {row.lng} · radius {row.radius_meter}m</Text>
-                  {row.catalog_nama ? <Text className="text-xs text-primary font-medium mt-0.5">Katalog {row.catalog_nama}</Text> : null}
+            {editingId === row.id ? (
+              <View className="gap-2.5">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-sm font-semibold text-foreground">Edit Lokasi</Text>
+                  <Pressable onPress={cancelEdit}><X size={16} color={colors.mutedForeground} /></Pressable>
                 </View>
+                <TextInput value={editNama} onChangeText={setEditNama} placeholder="Nama lokasi" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
+                <View className="flex-row gap-2.5">
+                  <TextInput value={editLat} onChangeText={setEditLat} placeholder="Latitude" keyboardType="numbers-and-punctuation" className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
+                  <TextInput value={editLng} onChangeText={setEditLng} placeholder="Longitude" keyboardType="numbers-and-punctuation" className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
+                </View>
+                <TextInput value={editRadius} onChangeText={setEditRadius} placeholder="Radius (meter)" keyboardType="number-pad" className="bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground" />
+                {editError ? <Text className="text-xs text-red-500">{editError}</Text> : null}
+                <Button onPress={() => handleEditSave(row)} loading={editSaving} fullWidth>{editSaving ? "Menyimpan..." : "Simpan Perubahan"}</Button>
               </View>
-              <Badge variant={row.is_active ? "success" : "muted"}>{row.is_active ? "Aktif" : "Nonaktif"}</Badge>
-            </View>
-            <View className="flex-row gap-2 mt-3">
-              <Button size="sm" variant="outline" className="flex-1" disabled={busyId === row.id} onPress={() => handleToggleActive(row)}>
-                <Power size={13} color={colors.primary} />{"  "}{row.is_active ? "Nonaktifkan" : "Aktifkan"}
-              </Button>
-              <Button size="sm" variant="destructive" className="flex-1" disabled={busyId === row.id} onPress={() => handleDelete(row)}>Hapus</Button>
-            </View>
+            ) : (
+              <>
+                <View className="flex-row items-start justify-between gap-2">
+                  <View className="flex-row items-start gap-2 flex-1">
+                    <MapPin size={16} color={colors.primary} style={{ marginTop: 2 }} />
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-foreground">{row.nama}</Text>
+                      <Text className="text-xs text-muted-foreground">{row.lat}, {row.lng} · radius {row.radius_meter}m</Text>
+                      {row.catalog_nama ? <Text className="text-xs text-primary font-medium mt-0.5">Katalog {row.catalog_nama}</Text> : null}
+                    </View>
+                  </View>
+                  <Badge variant={row.is_active ? "success" : "muted"}>{row.is_active ? "Aktif" : "Nonaktif"}</Badge>
+                </View>
+                <View className="flex-row gap-2 mt-3">
+                  <Button size="sm" variant="outline" className="flex-1" disabled={busyId === row.id} onPress={() => startEdit(row)}>
+                    <Pencil size={13} color={colors.primary} />{"  "}Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1" disabled={busyId === row.id} onPress={() => handleToggleActive(row)}>
+                    <Power size={13} color={colors.primary} />{"  "}{row.is_active ? "Nonaktifkan" : "Aktifkan"}
+                  </Button>
+                  <Button size="sm" variant="destructive" className="flex-1" disabled={busyId === row.id} onPress={() => handleDelete(row)}>Hapus</Button>
+                </View>
+              </>
+            )}
           </Card>
         ))
       )}
