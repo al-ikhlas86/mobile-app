@@ -27,6 +27,7 @@ import { RoleHakAksesScreen } from "../components/screens/RoleHakAksesScreen";
 import { BuatPengumumanScreen } from "../components/screens/BuatPengumumanScreen";
 import { BackupDatabaseScreen } from "../components/screens/BackupDatabaseScreen";
 import { SyncStatusScreen } from "../components/screens/SyncStatusScreen";
+import { ServerHealthScreen } from "../components/screens/ServerHealthScreen";
 import { ActivityLogScreen } from "../components/screens/ActivityLogScreen";
 import { KeuanganAdmin } from "../components/screens/KeuanganAdmin";
 import { DetailPembayaran } from "../components/screens/DetailPembayaran";
@@ -426,6 +427,7 @@ export function RootNavigator() {
             <Stack.Screen name="buat-pengumuman" options={{ headerShown: true, title: "Buat Pengumuman" }} component={BuatPengumumanScreen} />
             <Stack.Screen name="backup-database" options={{ headerShown: true, title: "Backup Database" }} component={BackupDatabaseScreen} />
             <Stack.Screen name="status-sinkronisasi" options={{ headerShown: true, title: "Status Sinkronisasi" }} component={SyncStatusScreen} />
+            <Stack.Screen name="kondisi-vps" options={{ headerShown: true, title: "Kondisi VPS" }} component={ServerHealthScreen} />
             <Stack.Screen name="log-aktivitas" options={{ headerShown: true, title: "Log Aktivitas" }} component={ActivityLogScreen} />
             <Stack.Screen name="keuangan-admin" options={{ headerShown: true, title: "Keuangan" }} component={KeuanganAdmin} />
             <Stack.Screen name="detail-pembayaran" options={{ headerShown: true, title: "Rincian Biaya" }} component={DetailPembayaran} />

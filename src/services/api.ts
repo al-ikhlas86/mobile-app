@@ -598,6 +598,7 @@ export const api = {
   adminGetAlertPhone: () => authedFetch("/api/admin/alert-phone"),
   adminSetAlertPhone: (phone: string) => authedFetch("/api/admin/alert-phone", { method: "PUT", body: JSON.stringify({ phone }) }),
   adminSyncStatus: () => authedFetch("/api/admin/sync-status"),
+  adminServerHealth: () => authedFetch("/api/admin/server-health"),
   adminHubUnits: () => authedFetch("/api/admin/hub-units"),
   // approve SEKARANG WAJIB sertakan unitId + katalog (2026-09-14, Sistem
   // Katalog) - pilih catalogId yang sudah ada ATAU bikin baru inline lewat

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2 } from "lucide-react-native";
+import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -67,6 +67,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Backup Database", icon: <HardDrive size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("backup-database") },
       { label: "Status Sinkronisasi", icon: <Activity size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("status-sinkronisasi") },
       { label: "Log Aktivitas", icon: <History size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("log-aktivitas") },
+      { label: "Kondisi VPS", icon: <Server size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("kondisi-vps") },
     ] },
   ];
 
