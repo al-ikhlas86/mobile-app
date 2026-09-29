@@ -607,6 +607,15 @@ export const api = {
     authedFetch(`/api/admin/hub-units/${id}/approve`, { method: "POST", body: JSON.stringify(data) }),
   adminRejectHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/reject`, { method: "POST" }),
   adminDeactivateHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/deactivate`, { method: "POST" }),
+  // Instalasi Keuangan desktop (2026-09-29) - tab "Keuangan" di Status Sinkronisasi.
+  // 1 instalasi boleh terikat >1 katalog (SD + TK) -> catalogIds.
+  adminKeuanganInstallations: () => authedFetch("/api/admin/keuangan-installations"),
+  adminKeuanganApprove: (id: number, catalogIds: number[]) =>
+    authedFetch(`/api/admin/keuangan-installations/${id}/approve`, { method: "POST", body: JSON.stringify({ catalogIds }) }),
+  adminKeuanganSetCatalogs: (id: number, catalogIds: number[]) =>
+    authedFetch(`/api/admin/keuangan-installations/${id}/catalogs`, { method: "PUT", body: JSON.stringify({ catalogIds }) }),
+  adminKeuanganRevoke: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}/revoke`, { method: "POST" }),
+  adminKeuanganDelete: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}`, { method: "DELETE" }),
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),
   adminCreateAnnouncement: (data: { title: string; message: string; target_role: string; catalog_id?: number }) =>
     authedFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(data) }),

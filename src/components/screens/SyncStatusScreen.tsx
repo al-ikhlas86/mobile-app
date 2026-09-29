@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Alert, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban } from "lucide-react-native";
+import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban, Database, Wallet } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
+import { KeuanganInstallationsSection, type KeuanganInstallation } from "./KeuanganInstallationsSection";
 
 const POLL_MS = 10000;
 interface SourceStatus { lastSuccessAt: string | null; lastAttemptAt: string | null; failStreak: number; lastError: string | null; healthy: boolean; }
@@ -249,6 +250,8 @@ export function SyncStatusScreen() {
   const colors = useThemeColors();
   const [data, setData] = useState<{ hubApi: SourceStatus } | null>(null);
   const [units, setUnits] = useState<HubUnit[] | null>(null);
+  const [keuangan, setKeuangan] = useState<KeuanganInstallation[] | null>(null);
+  const [activeTab, setActiveTab] = useState<"datamaster" | "keuangan">("datamaster");
   const [error, setError] = useState("");
   const [lastCheck, setLastCheck] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -258,21 +261,63 @@ export function SyncStatusScreen() {
     if (res.success && res.data) setUnits(res.data);
   };
 
+  const muatKeuangan = async () => {
+    const res = await api.adminKeuanganInstallations();
+    if (res.success && res.data) setKeuangan(res.data);
+  };
+
   const poll = async () => {
     const res = await api.adminSyncStatus();
     if (!res.success || !res.data) { setError("Gagal memuat status sinkronisasi."); return; }
     setError(""); setData(res.data); setLastCheck(new Date().toLocaleTimeString("id-ID"));
   };
 
+  // Permintaan izin Keuangan ikut disegarkan tiap siklus polling.
+  const siklus = async () => {
+    await poll();
+    await muatKeuangan();
+  };
+
   useEffect(() => {
     poll();
     muatUnits();
-    timerRef.current = setInterval(poll, POLL_MS);
+    muatKeuangan();
+    timerRef.current = setInterval(siklus, POLL_MS);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
+  const pendingKeuangan = (keuangan ?? []).filter((i) => !i.is_approved && !i.approved_at).length;
+
+  const tabBtn = (key: "datamaster" | "keuangan", label: string, icon: React.ReactNode, badge = 0) => (
+    <Pressable
+      onPress={() => setActiveTab(key)}
+      className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === key ? "bg-card" : ""}`}
+    >
+      {icon}
+      <Text className={`text-sm font-medium ${activeTab === key ? "text-foreground" : "text-muted-foreground"}`}>{label}</Text>
+      {badge > 0 ? (
+        <View className="bg-amber-500 rounded-full min-w-[18px] h-[18px] px-1 items-center justify-center">
+          <Text className="text-white text-[10px] font-semibold">{badge}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }}>
+      <View className="flex-row gap-2 p-1 bg-muted rounded-xl">
+        {tabBtn("datamaster", "Data Master", <Database size={15} color={activeTab === "datamaster" ? colors.primary : colors.mutedForeground} />)}
+        {tabBtn("keuangan", "Keuangan", <Wallet size={15} color={activeTab === "keuangan" ? colors.primary : colors.mutedForeground} />, pendingKeuangan)}
+      </View>
+
+      {activeTab === "keuangan" ? (
+        keuangan ? (
+          <KeuanganInstallationsSection installations={keuangan} onChanged={muatKeuangan} />
+        ) : (
+          <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /><Text className="text-sm text-muted-foreground mt-2">Memuat...</Text></View></Card>
+        )
+      ) : (
+      <>
       <Text className="text-xs text-muted-foreground">Kondisi sinkronisasi data terkini. "Sehat" berarti siklus terakhir berhasil. Setelah 3x gagal berturut-turut, alarm WA otomatis terkirim.</Text>
       {error ? (
         <Card padding="lg"><View className="items-center py-4"><AlertTriangle size={40} color="#ef4444" /><Text className="text-sm text-muted-foreground mt-2">{error}</Text></View></Card>
@@ -282,6 +327,8 @@ export function SyncStatusScreen() {
         <SourceCard title="Hub API (Data Master Siswa/Guru/Pegawai)" status={data.hubApi} />
       )}
       {units && <HubUnitsSection units={units} onChanged={muatUnits} />}
+      </>
+      )}
       {lastCheck ? (
         <View className="flex-row items-center justify-center gap-1"><RefreshCw size={12} color={colors.mutedForeground} /><Text className="text-xs text-muted-foreground">Terakhir dicek: {lastCheck}</Text></View>
       ) : null}
