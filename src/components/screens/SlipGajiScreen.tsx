@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { Receipt, AlertCircle, ChevronDown } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
-import { formatRupiah, formatTanggal, formatPeriodeBulan, formatWaktuPerbarui } from "../../utils/keuanganFormat";
+import { formatRupiah, formatTanggal, formatPeriodeBulan, formatWaktuPerbarui, tahunAjaranDariPeriode, tahunAjaranBerjalan } from "../../utils/keuanganFormat";
 
 interface Baris { nama: string; bagian: string; jumlah: number; qty: number | null }
 interface Slip {
@@ -14,13 +14,16 @@ interface Slip {
 
 // Slip Gaji guru/pegawai (2026-10-01) - port dari webview (SlipGajiScreen.tsx).
 // Hanya slip yang SUDAH DIBAYAR yang pernah dikirim aplikasi Keuangan, dan
-// endpoint server dibatasi ke pemilik akun sendiri.
+// endpoint server dibatasi ke pemilik akun sendiri. Semua slip tersimpan di server; layar
+// menampilkan PER TAHUN AJARAN (Juli-Juni) - default tahun ajaran berjalan, yang lama dipilih
+// lewat chip di atas daftar.
 export function SlipGajiScreen() {
   const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [slips, setSlips] = useState<Slip[]>([]);
   const [terbuka, setTerbuka] = useState<string | null>(null);
+  const [tahunAjaran, setTahunAjaran] = useState<string | null>(null);
 
   useEffect(() => {
     let batal = false;
@@ -29,11 +32,22 @@ export function SlipGajiScreen() {
       if (!res?.success) { setError(res?.message ?? "Gagal memuat slip gaji."); setLoading(false); return; }
       const urut = ([...(res.data ?? [])] as Slip[]).sort((a, b) => b.periode.localeCompare(a.periode));
       setSlips(urut);
-      setTerbuka(urut[0]?.id ?? null);
+      // Default: tahun ajaran berjalan kalau punya slip, kalau tidak -> tahun ajaran terbaru yang punya slip.
+      const daftar = [...new Set(urut.map((x) => tahunAjaranDariPeriode(x.periode)))];
+      const awal = daftar.includes(tahunAjaranBerjalan()) ? tahunAjaranBerjalan() : (daftar[0] ?? null);
+      setTahunAjaran(awal);
+      setTerbuka(urut.find((x) => tahunAjaranDariPeriode(x.periode) === awal)?.id ?? null);
       setLoading(false);
     }).catch(() => { if (!batal) { setError("Gagal memuat slip gaji. Periksa koneksi internet."); setLoading(false); } });
     return () => { batal = true; };
   }, []);
+
+  const daftarTahun = useMemo(() => {
+    const hitung = new Map<string, number>();
+    slips.forEach((x) => hitung.set(tahunAjaranDariPeriode(x.periode), (hitung.get(tahunAjaranDariPeriode(x.periode)) ?? 0) + 1));
+    return [...hitung.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [slips]);
+  const slipTampil = tahunAjaran ? slips.filter((x) => tahunAjaranDariPeriode(x.periode) === tahunAjaran) : slips;
 
   if (loading) {
     return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
@@ -61,7 +75,24 @@ export function SlipGajiScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16, paddingBottom: 48, gap: 12 }}>
-      {slips.map((s) => {
+      {daftarTahun.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ flexGrow: 0 }}>
+          {daftarTahun.map(([ta, jumlah]) => {
+            const aktif = ta === tahunAjaran;
+            return (
+              <Pressable
+                key={ta}
+                onPress={() => { setTahunAjaran(ta); setTerbuka(slips.find((x) => tahunAjaranDariPeriode(x.periode) === ta)?.id ?? null); }}
+                className={`px-3.5 py-2 rounded-xl border ${aktif ? "bg-primary border-primary" : "bg-card border-border"}`}
+              >
+                <Text className={`text-sm font-medium ${aktif ? "text-primary-foreground" : "text-foreground"}`}>{ta}</Text>
+                <Text className={`text-[10px] ${aktif ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{jumlah} slip</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+      {slipTampil.map((s) => {
         const buka = terbuka === s.id;
         return (
           <Card key={s.id} padding="none">

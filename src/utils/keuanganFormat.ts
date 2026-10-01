@@ -34,3 +34,17 @@ export function formatPeriodeBulan(key: string | null | undefined): string {
   if (!m) return key ?? "-";
   return `${BULAN_PANJANG[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
 }
+
+// Tahun ajaran dari kunci periode gaji "YYYY-MM" (tahun ajaran Juli-Juni):
+// "2026-09" -> "2026/2027", "2027-03" -> "2026/2027". Dipakai mengelompokkan slip gaji.
+export function tahunAjaranDariPeriode(key: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(key ?? "");
+  if (!m) return "Lainnya";
+  const y = Number(m[1]);
+  return Number(m[2]) >= 7 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
+}
+
+export function tahunAjaranBerjalan(sekarang: Date = new Date()): string {
+  const y = sekarang.getFullYear();
+  return sekarang.getMonth() + 1 >= 7 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
+}
