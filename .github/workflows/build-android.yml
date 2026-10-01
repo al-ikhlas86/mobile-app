@@ -137,7 +137,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/vps_deploy_key
           chmod 600 ~/.ssh/vps_deploy_key
-          cat android/app/build/outputs/apk/release/app-release.apk | ssh -i ~/.ssh/vps_deploy_key -o StrictHostKeyChecking=accept-new ubuntu@168.110.196.103
+          cat android/app/build/outputs/apk/release/app-release.apk | ssh -i ~/.ssh/vps_deploy_key -o StrictHostKeyChecking=accept-new ubuntu@alikhlas86.duckdns.org
           rm -f ~/.ssh/vps_deploy_key
 
       - name: Create GitHub Release
