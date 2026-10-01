@@ -74,6 +74,10 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   const [complete, setComplete] = useState(false);
   const [doneAngles, setDoneAngles] = useState<Set<string>>(new Set());
   const [cameraActive, setCameraActive] = useState(false);
+  // `starting` = tombol Mulai/Daftar Ulang sudah ditekan tapi kamera belum aktif (izin kamera dsb).
+  // Layar pemindaian langsung tampil dgn "Menyiapkan kamera..." - tanpa ini layar sempat "berkedip" ke
+  // menu lama selama menunggu kamera.
+  const [starting, setStarting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [status, setStatus] = useState<StatusInfo>({ kind: "idle", text: "Posisikan wajah di dalam bingkai" });
@@ -161,23 +165,29 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
 
   const nextStep = STEPS.find((s) => !doneAngles.has(s.angle));
 
-  async function startCamera() {
+  // Mengembalikan true kalau kamera berhasil diaktifkan.
+  async function startCamera(): Promise<boolean> {
     setError("");
     setShowSuccess(false);
+    setStarting(true);
     ubahStatus("idle", "Posisikan wajah di dalam bingkai");
     setYaw(null);
     if (!permission?.granted) {
       const res = await requestPermission();
       if (!res.granted) {
+        setStarting(false);
         setError("Izin kamera ditolak. Aktifkan izin kamera utk aplikasi ini di Pengaturan HP.");
-        return;
+        return false;
       }
     }
     setCameraActive(true);
+    setStarting(false);
+    return true;
   }
 
   function stopCamera() {
     setCameraActive(false);
+    setStarting(false);
     conditionMetSinceRef.current = 0;
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
   }
@@ -229,10 +239,16 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doneAngles, cameraActive]);
 
-  function handleReenroll() {
+  async function handleReenroll() {
+    // Status lama disimpan: kalau izin kamera ditolak, pendaftaran yang SUDAH ADA tidak boleh tampak hilang.
+    const cadangan = { complete, selesai: doneAngles };
     setDoneAngles(new Set());
     setComplete(false);
-    startCamera();
+    const ok = await startCamera();
+    if (!ok) {
+      setComplete(cadangan.complete);
+      setDoneAngles(cadangan.selesai);
+    }
   }
 
   // Polling otomatis - sama persis logikanya dgn versi web (lihat komentar di
@@ -315,7 +331,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   const sebagian = !complete && doneAngles.size > 0;
 
   // ============================ TAHAP 2 - PINDAI ============================
-  if (cameraActive) {
+  if (cameraActive || starting) {
     const langkahKe = nextStep ? STEPS.findIndex((s) => s.angle === nextStep.angle) : STEPS.length - 1;
     const warna = WARNA_CINCIN[status.kind];
     let meter = 0;
@@ -357,7 +373,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
           {/* animateShutter=false - akar masalah layar "kedip-kedip": expo-camera
               menyalakan animasi kilat tiap takePictureAsync() (default true) dan
               captureFrame() dipanggil berulang selama auto-scan. */}
-          <CameraView ref={cameraRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} facing="front" animateShutter={false} />
+          {cameraActive && <CameraView ref={cameraRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} facing="front" animateShutter={false} />}
           {w > 0 && (
             <Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ position: "absolute", top: 0, left: 0 }} pointerEvents="none">
               <Defs>
@@ -388,9 +404,10 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
             </Animated.View>
           )}
 
-          {capturing && (
-            <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.3)" }}>
+          {(capturing || !cameraActive) && (
+            <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.3)", gap: 8 }}>
               <ActivityIndicator size="large" color="#ffffff" />
+              {!cameraActive ? <Text className="text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>Menyiapkan kamera...</Text> : null}
             </View>
           )}
         </View>
@@ -412,7 +429,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
             {status.kind === "ok" || status.kind === "busy"
               ? <CheckCircle2 size={14} color="#16a34a" />
               : status.kind === "idle" ? <ScanFace size={14} color={colors.mutedForeground} /> : <AlertCircle size={14} color={status.kind === "error" ? "#dc2626" : "#d97706"} />}
-            <Text numberOfLines={1} className={`text-xs font-medium shrink ${CHIP[status.kind].txt}`}>{status.text}</Text>
+            <Text numberOfLines={1} className={`text-xs font-medium shrink ${CHIP[status.kind].txt}`}>{cameraActive ? status.text : "Menyiapkan kamera..."}</Text>
           </View>
         </View>
       </View>
