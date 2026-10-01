@@ -1,30 +1,29 @@
 // ============================================================
 // PENGENALAN WAJAH - Daftarkan wajah lewat kamera. Alur 3 tahap (redesain
 // 2026-10-01, port dari webview FaceEnrollmentScreen.tsx - JAGA KEDUANYA
-// TETAP SEJAJAR):
-//   1. MENU    - status terdaftar/belum + tombol "Mulai"/"Lanjutkan" (belum/
-//                sebagian) atau "Daftar Ulang" (sudah lengkap)
-//   2. PINDAI  - kamera dgn PANDUAN: bingkai oval posisi wajah, siku sudut,
-//                panah arah putar kepala, indikator langkah, meter putaran
-//                kepala, dan status langsung
+// TETAP SEJAJAR), SEMUA MUAT SATU LAYAR TANPA SCROLL:
+//   1. MENU    - status terdaftar/belum + tombol "Mulai"/"Lanjutkan" atau "Daftar Ulang"
+//   2. PINDAI  - kamera mengisi sisa layar dgn PANDUAN: bingkai oval + siku, panah
+//                arah putar kepala, indikator langkah, meter putaran, status langsung
 //   3. BERHASIL - layar sukses, "Selesai" kembali ke MENU
 //
-// LOGIKA DETEKSI TIDAK DIUBAH SAMA SEKALI (hanya tampilan yang dibangun
-// ulang): polling /api/face/analyze, ambang yaw/ukuran/ketajaman, tanda yaw,
-// cooldown, penyimpanan sampel PERSIS seperti versi yang sudah dikalibrasi
-// lewat pengujian nyata. Satu permintaan pada satu waktu (busyRef).
+// LOGIKA DETEKSI TIDAK DIUBAH (hanya tampilan): polling /api/face/analyze, ambang
+// yaw/ukuran/ketajaman, tanda yaw, cooldown, penyimpanan sampel PERSIS seperti
+// versi yang dikalibrasi lewat pengujian nyata. Tombol "Ambil Manual" DIHAPUS
+// (permintaan user) setelah bug kontrak /analyze diperbaiki di backend.
 // ============================================================
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { View, Text, ActivityIndicator, ScrollView, Animated, Vibration } from "react-native";
+import { View, Text, ActivityIndicator, Animated, Vibration, Pressable } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import Svg, { Defs, Mask, Rect, Ellipse, G, Path } from "react-native-svg";
-import { CheckCircle2, Circle, Camera, AlertCircle, ScanFace, ArrowLeft, ArrowRight, X, Lightbulb } from "lucide-react-native";
+import { CheckCircle2, Circle, Camera, AlertCircle, ScanFace, ArrowLeft, ArrowRight, X } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { ChildSwitcher, type ChildOption } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
+import { geometriOval } from "../../utils/faceOverlay";
 
 interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -79,6 +78,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   const [capturing, setCapturing] = useState(false);
   const [status, setStatus] = useState<StatusInfo>({ kind: "idle", text: "Posisikan wajah di dalam bingkai" });
   const [yaw, setYaw] = useState<number | null>(null);
+  const [ukuranKamera, setUkuranKamera] = useState({ w: 0, h: 0 });
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
 
@@ -235,13 +235,6 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     startCamera();
   }
 
-  async function handleManualCapture() {
-    if (!nextStep || capturing) return;
-    const frame = await captureFrame();
-    if (!frame) return;
-    await submitSample(nextStep.angle, frame);
-  }
-
   // Polling otomatis - sama persis logikanya dgn versi web (lihat komentar di
   // sana soal tanda yaw yang sudah dikalibrasi ke validator server ASLI).
   useEffect(() => {
@@ -257,16 +250,23 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
         const res = await api.faceAnalyze(frame);
         const data = res.data;
 
-        if (!res.success || !data?.face_detected) {
+        // Gagal jaringan/server dibedakan dari "memang tidak ada wajah".
+        if (!res.success) {
           conditionMetSinceRef.current = 0;
           setYaw(null);
-          ubahStatus("warn", "Wajah tidak terdeteksi - posisikan wajah di tengah bingkai");
+          ubahStatus("error", res.message ?? "Gagal menghubungi server, mencoba lagi...");
+          return;
+        }
+        if (!data?.face_detected) {
+          conditionMetSinceRef.current = 0;
+          setYaw(null);
+          ubahStatus("warn", "Wajah tidak terdeteksi - posisikan di tengah bingkai");
           return;
         }
         if (data.face_count > 1) {
           conditionMetSinceRef.current = 0;
           setYaw(null);
-          ubahStatus("warn", "Terdeteksi lebih dari 1 wajah - pastikan hanya Anda di kamera");
+          ubahStatus("warn", "Terdeteksi lebih dari 1 wajah");
           return;
         }
 
@@ -325,41 +325,57 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     }
     const arahTranslasi = nudge.interpolate({ inputRange: [0, 1], outputRange: [0, nextStep?.arah === "kiri" ? -8 : 8] });
     const arahOpacity = nudge.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
+    const { w, h } = ukuranKamera;
+    const g = geometriOval(w, h);
 
     return (
-      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, gap: 16 }}>
-        {/* Indikator langkah */}
-        <View className="w-full self-center flex-row gap-2" style={{ maxWidth: 320 }}>
-          {STEPS.map((s, i) => (
-            <View key={s.angle} className="flex-1">
-              <View className={`h-1.5 rounded-full ${doneAngles.has(s.angle) ? "bg-green-500" : i === langkahKe ? "bg-primary" : "bg-muted"}`} />
-              <Text className={`mt-1 text-[10px] text-center ${i === langkahKe ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{s.label}</Text>
-            </View>
-          ))}
+      <View className="flex-1 bg-background" style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 12 }}>
+        {/* Indikator langkah + tombol batal */}
+        <View className="flex-row items-start" style={{ gap: 12 }}>
+          <View className="flex-1 flex-row" style={{ gap: 8 }}>
+            {STEPS.map((s, i) => (
+              <View key={s.angle} className="flex-1">
+                <View className={`h-1.5 rounded-full ${doneAngles.has(s.angle) ? "bg-green-500" : i === langkahKe ? "bg-primary" : "bg-muted"}`} />
+                <Text className={`mt-1 text-[10px] text-center ${i === langkahKe ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+          <Pressable onPress={stopCamera} accessibilityLabel="Batal" className="p-1.5 rounded-full bg-muted" style={{ marginTop: -4 }}>
+            <X size={16} color={colors.mutedForeground} />
+          </Pressable>
         </View>
 
-        {/* Kamera + panduan oval */}
-        <View className="w-full self-center rounded-3xl overflow-hidden bg-black" style={{ maxWidth: 320, aspectRatio: 3 / 4 }}>
+        {/* Kamera + panduan oval - mengisi seluruh sisa tinggi layar */}
+        <View
+          className="flex-1 w-full self-center rounded-3xl overflow-hidden bg-black"
+          style={{ maxWidth: 384 }}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setUkuranKamera((p) => (Math.round(p.w) === Math.round(width) && Math.round(p.h) === Math.round(height) ? p : { w: width, h: height }));
+          }}
+        >
           {/* animateShutter=false - akar masalah layar "kedip-kedip": expo-camera
               menyalakan animasi kilat tiap takePictureAsync() (default true) dan
               captureFrame() dipanggil berulang selama auto-scan. */}
           <CameraView ref={cameraRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} facing="front" animateShutter={false} />
-          <Svg viewBox="0 0 300 400" preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
-            <Defs>
-              <Mask id="fe-oval-mask">
-                <Rect width="300" height="400" fill="white" />
-                <Ellipse cx="150" cy="190" rx="98" ry="128" fill="black" />
-              </Mask>
-            </Defs>
-            <Rect width="300" height="400" fill="rgba(0,0,0,0.5)" mask="url(#fe-oval-mask)" />
-            <Ellipse cx="150" cy="190" rx="98" ry="128" fill="none" stroke={warna} strokeWidth="4" />
-            <G fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="4" strokeLinecap="round">
-              <Path d="M22 62 V34 a12 12 0 0 1 12 -12 H62" />
-              <Path d="M238 22 H266 a12 12 0 0 1 12 12 V62" />
-              <Path d="M22 338 V366 a12 12 0 0 0 12 12 H62" />
-              <Path d="M278 338 V366 a12 12 0 0 1 -12 12 H238" />
-            </G>
-          </Svg>
+          {w > 0 && (
+            <Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ position: "absolute", top: 0, left: 0 }} pointerEvents="none">
+              <Defs>
+                <Mask id="fe-oval-mask">
+                  <Rect width={w} height={h} fill="white" />
+                  <Ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill="black" />
+                </Mask>
+              </Defs>
+              <Rect width={w} height={h} fill="rgba(0,0,0,0.5)" mask="url(#fe-oval-mask)" />
+              <Ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill="none" stroke={warna} strokeWidth="4" />
+              <G fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <Path d={`M ${g.pad} ${g.pad + g.panjang} V ${g.pad} H ${g.pad + g.panjang}`} />
+                <Path d={`M ${w - g.pad - g.panjang} ${g.pad} H ${w - g.pad} V ${g.pad + g.panjang}`} />
+                <Path d={`M ${g.pad} ${h - g.pad - g.panjang} V ${h - g.pad} H ${g.pad + g.panjang}`} />
+                <Path d={`M ${w - g.pad - g.panjang} ${h - g.pad} H ${w - g.pad} V ${h - g.pad - g.panjang}`} />
+              </G>
+            </Svg>
+          )}
 
           {nextStep?.arah === "kanan" && (
             <Animated.View pointerEvents="none" style={{ position: "absolute", right: 12, top: "50%", marginTop: -17, opacity: arahOpacity, transform: [{ translateX: arahTranslasi }] }}>
@@ -379,69 +395,47 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
           )}
         </View>
 
-        {/* Instruksi + status */}
-        <View className="w-full self-center items-center" style={{ maxWidth: 320, gap: 10 }}>
+        {/* Instruksi + status (ringkas) */}
+        <View className="w-full self-center items-center" style={{ maxWidth: 384, gap: 8 }}>
           {nextStep && (
-            <View className="items-center">
-              <Text className="text-base font-bold text-foreground">{nextStep.label}</Text>
-              <Text className="text-sm text-muted-foreground text-center">{nextStep.instruction}</Text>
-            </View>
+            <Text className="text-sm text-foreground text-center">
+              <Text className="font-bold">{nextStep.label}</Text>
+              <Text className="text-muted-foreground"> · {nextStep.instruction}</Text>
+            </Text>
           )}
           {nextStep && nextStep.arah !== "depan" && (
-            <View className="w-full">
-              <View className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <View className="h-full bg-primary rounded-full" style={{ width: `${Math.round(meter * 100)}%` }} />
-              </View>
-              <Text className="mt-1 text-[10px] text-muted-foreground text-center">Putaran kepala {meter >= 1 ? "cukup - tahan" : "belum cukup"}</Text>
+            <View className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+              <View className="h-full bg-primary rounded-full" style={{ width: `${Math.round(meter * 100)}%` }} />
             </View>
           )}
-          <View className={`px-3.5 py-2 rounded-full flex-row items-center gap-1.5 ${CHIP[status.kind].box}`}>
+          <View className={`max-w-full px-3.5 py-1.5 rounded-full flex-row items-center ${CHIP[status.kind].box}`} style={{ gap: 6 }}>
             {status.kind === "ok" || status.kind === "busy"
               ? <CheckCircle2 size={14} color="#16a34a" />
               : status.kind === "idle" ? <ScanFace size={14} color={colors.mutedForeground} /> : <AlertCircle size={14} color={status.kind === "error" ? "#dc2626" : "#d97706"} />}
-            <Text className={`text-xs font-medium ${CHIP[status.kind].txt}`}>{status.text}</Text>
+            <Text numberOfLines={1} className={`text-xs font-medium shrink ${CHIP[status.kind].txt}`}>{status.text}</Text>
           </View>
         </View>
-
-        <View className="w-full self-center" style={{ maxWidth: 320, gap: 8 }}>
-          <Button fullWidth variant="outline" onPress={handleManualCapture} disabled={capturing || !nextStep}>
-            {capturing ? <ActivityIndicator size="small" color={colors.primary} /> : <Camera size={16} color={colors.primary} />}
-            {"  "}{capturing ? "Memproses..." : "Ambil Manual"}
-          </Button>
-          <Button fullWidth variant="ghost" onPress={stopCamera}>
-            <X size={16} color={colors.mutedForeground} />{"  "}Batal
-          </Button>
-          <Text className="text-[11px] text-muted-foreground text-center">Foto diambil otomatis begitu wajah menghadap arah yang benar. Tombol manual hanya jika deteksi otomatis sulit.</Text>
-        </View>
-      </ScrollView>
+      </View>
     );
   }
 
   // ============================ TAHAP 3 - BERHASIL ============================
   if (showSuccess) {
     return (
-      <View className="flex-1 bg-background items-center justify-center px-6" style={{ gap: 20 }}>
+      <View className="flex-1 bg-background items-center justify-center px-6" style={{ gap: 16 }}>
         <Animated.View
-          className="w-28 h-28 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center"
+          className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center"
           style={{ transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }], opacity: pop }}
         >
-          <CheckCircle2 size={64} color="#22c55e" />
+          <CheckCircle2 size={56} color="#22c55e" />
         </Animated.View>
         <View className="items-center">
           <Text className="text-xl font-bold text-foreground">Berhasil!</Text>
-          <Text className="text-sm text-muted-foreground mt-2 text-center" style={{ maxWidth: 300 }}>
-            Wajah {subjek} berhasil didaftarkan dari 3 sudut dan sudah bisa dikenali sistem presensi otomatis di sekolah.
+          <Text className="text-sm text-muted-foreground mt-1.5 text-center" style={{ maxWidth: 300 }}>
+            Wajah {subjek} sudah terdaftar dan siap dikenali presensi otomatis.
           </Text>
         </View>
-        <View className="flex-row" style={{ gap: 16 }}>
-          {STEPS.map((s) => (
-            <View key={s.angle} className="items-center" style={{ gap: 4 }}>
-              <CheckCircle2 size={18} color="#22c55e" />
-              <Text className="text-[10px] text-muted-foreground">{s.label.replace("Hadap ", "")}</Text>
-            </View>
-          ))}
-        </View>
-        <View className="w-full" style={{ maxWidth: 320 }}>
+        <View className="w-full mt-2" style={{ maxWidth: 320 }}>
           <Button fullWidth onPress={() => setShowSuccess(false)}>Selesai</Button>
         </View>
       </View>
@@ -450,33 +444,33 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
 
   // ============================ TAHAP 1 - MENU ============================
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, gap: 20 }}>
+    <View className="flex-1 bg-background" style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 12 }}>
       {isChild ? <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} /> : null}
 
       {error ? (
-        <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-          <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text>
+        <View className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+          <Text className="text-xs text-red-600 dark:text-red-400">{error}</Text>
         </View>
       ) : null}
 
-      <Card padding="lg">
+      <Card padding="lg" className="flex-1 items-center justify-center" >
         <View className="items-center" style={{ gap: 12 }}>
-          <View className={`w-24 h-24 rounded-full items-center justify-center ${complete ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"}`}>
-            {complete ? <CheckCircle2 size={52} color="#22c55e" /> : <ScanFace size={52} color="#f59e0b" />}
+          <View className={`w-20 h-20 rounded-full items-center justify-center ${complete ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"}`}>
+            {complete ? <CheckCircle2 size={44} color="#22c55e" /> : <ScanFace size={44} color="#f59e0b" />}
           </View>
           <View className="items-center">
             <Text className="text-lg font-bold text-foreground text-center">
               {complete ? "Wajah Sudah Terdaftar" : sebagian ? "Pendaftaran Belum Lengkap" : "Wajah Belum Terdaftar"}
             </Text>
-            <Text className="text-sm text-muted-foreground mt-1.5 text-center">
+            <Text className="text-sm text-muted-foreground mt-1 text-center" style={{ maxWidth: 300 }}>
               {complete
-                ? `Wajah ${subjek} sudah bisa dikenali sistem presensi otomatis di sekolah.`
+                ? `Wajah ${subjek} sudah bisa dikenali presensi otomatis.`
                 : sebagian
-                  ? `Baru ${doneAngles.size} dari 3 sudut untuk ${subjek}. Lanjutkan supaya bisa dikenali sistem presensi otomatis.`
-                  : `Daftarkan wajah ${subjek} dari 3 sudut supaya bisa dikenali sistem presensi otomatis di sekolah.`}
+                  ? `Baru ${doneAngles.size} dari 3 sudut untuk ${subjek}.`
+                  : `Daftarkan wajah ${subjek} dari 3 sudut agar bisa dikenali presensi otomatis.`}
             </Text>
           </View>
-          <View className="flex-row mt-1" style={{ gap: 16 }}>
+          <View className="flex-row" style={{ gap: 20 }}>
             {STEPS.map((s) => (
               <View key={s.angle} className="items-center" style={{ gap: 4 }}>
                 {doneAngles.has(s.angle) ? <CheckCircle2 size={20} color="#22c55e" /> : <Circle size={20} color={colors.mutedForeground} />}
@@ -487,28 +481,15 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
         </View>
       </Card>
 
-      <View style={{ gap: 8 }}>
-        {complete ? (
-          <Button fullWidth variant="outline" onPress={handleReenroll}>
-            <Camera size={16} color={colors.primary} />{"  "}Daftar Ulang
-          </Button>
-        ) : (
-          <Button fullWidth onPress={startCamera}>
-            <Camera size={16} color={colors.primaryForeground} />{"  "}{sebagian ? "Lanjutkan" : "Mulai"}
-          </Button>
-        )}
-        {complete ? <Text className="text-xs text-muted-foreground text-center">Foto lama akan diganti otomatis dengan yang baru, bukan menumpuk data.</Text> : null}
-      </View>
-
-      <Card padding="md">
-        <View className="flex-row items-start gap-2.5">
-          <Lightbulb size={16} color={colors.primary} />
-          <View className="flex-1">
-            <Text className="text-xs font-semibold text-foreground mb-1">Tips agar cepat berhasil</Text>
-            <Text className="text-xs text-muted-foreground">{"• Cari tempat yang terang, hindari cahaya dari belakang.\n• Pastikan wajah tidak tertutup masker atau topi.\n• Ikuti panah di layar, lalu tahan sebentar sampai berhasil."}</Text>
-          </View>
-        </View>
-      </Card>
-    </ScrollView>
+      {complete ? (
+        <Button fullWidth variant="outline" onPress={handleReenroll}>
+          <Camera size={16} color={colors.primary} />{"  "}Daftar Ulang
+        </Button>
+      ) : (
+        <Button fullWidth onPress={startCamera}>
+          <Camera size={16} color={colors.primaryForeground} />{"  "}{sebagian ? "Lanjutkan" : "Mulai"}
+        </Button>
+      )}
+    </View>
   );
 }
