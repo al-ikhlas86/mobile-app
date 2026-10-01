@@ -158,7 +158,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
     ] },
     { title: "Administrasi", items: [
-      { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },
+      { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },
     ] },
     { title: "Informasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },

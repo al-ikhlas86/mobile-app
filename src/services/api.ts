@@ -542,6 +542,9 @@ export const api = {
   faceChildStatus: (studentCacheId?: number) => authedFetch(`/api/face/child/status${studentCacheId ? `?studentCacheId=${studentCacheId}` : ""}`),
   faceChildEnrollSample: (angle: string, sampleIndex: number, imageBase64: string, studentCacheId?: number) =>
     authedFetch("/api/face/child/enroll-sample", { method: "POST", body: JSON.stringify({ angle, sample_index: sampleIndex, image_base64: imageBase64, studentCacheId }) }),
+  // Data keuangan (salinan dari aplikasi Keuangan sekolah, read-only) - 2026-10-01.
+  keuanganAnak: (studentCacheId?: number) => authedFetch(`/api/keuangan-saya/anak${studentCacheId ? `?studentCacheId=${studentCacheId}` : ""}`),
+  keuanganSlip: () => authedFetch("/api/keuangan-saya/slip"),
   stats: () => authedFetch("/api/stats"),
   adminUsers: () => authedFetch("/api/admin/users"),
   adminCreateUser: (data: { username: string; password: string; full_name: string; role: string; phone?: string }) =>

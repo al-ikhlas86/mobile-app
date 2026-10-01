@@ -130,7 +130,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
     ] },
     { title: "Administrasi", items: [
-      { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Slip Gaji" }) },
+      { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },
       { label: "Jadwal Kerja", icon: <Calendar size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("jadwal-kerja") },
       // Aduan Pegawai (2026-09-14) - beda dari "Aduan Masuk" di atas (itu
       // utk MENERIMA, khusus TU/Kepsek) - ini utk SEMUA pegawai MENGIRIM

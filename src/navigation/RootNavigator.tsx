@@ -31,6 +31,7 @@ import { ServerHealthScreen } from "../components/screens/ServerHealthScreen";
 import { ActivityLogScreen } from "../components/screens/ActivityLogScreen";
 import { KeuanganAdmin } from "../components/screens/KeuanganAdmin";
 import { DetailPembayaran } from "../components/screens/DetailPembayaran";
+import { SlipGajiScreen } from "../components/screens/SlipGajiScreen";
 import { BeritaAcaraAdmin } from "../components/screens/BeritaAcaraAdmin";
 import { StatistikKontenScreen } from "../components/screens/StatistikKontenScreen";
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
@@ -431,6 +432,7 @@ export function RootNavigator() {
             <Stack.Screen name="log-aktivitas" options={{ headerShown: true, title: "Log Aktivitas" }} component={ActivityLogScreen} />
             <Stack.Screen name="keuangan-admin" options={{ headerShown: true, title: "Keuangan" }} component={KeuanganAdmin} />
             <Stack.Screen name="detail-pembayaran" options={{ headerShown: true, title: "Rincian Biaya" }} component={DetailPembayaran} />
+            <Stack.Screen name="slip-gaji" options={{ headerShown: true, title: "Slip Gaji" }} component={SlipGajiScreen} />
             <Stack.Screen name="statistik-konten" options={{ headerShown: true, title: "Statistik Konten" }}>
               {({ navigation }) => <StatistikKontenScreen onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>

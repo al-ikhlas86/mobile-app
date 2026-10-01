@@ -120,7 +120,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
-      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("placeholder", { title: "Rincian Biaya (belum tersambung)" }) },
+      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("detail-pembayaran") },
       // Placeholder - tombol saja dulu (2026-09-11, poin #9) - lihat catatan
       // lengkap di versi webview OrangTuaDashboard.tsx.
       { label: "Seragam", icon: <Shirt size={20} color="#c2410c" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Seragam (segera hadir)" }) },
