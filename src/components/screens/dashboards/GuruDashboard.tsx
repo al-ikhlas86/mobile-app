@@ -10,6 +10,7 @@ import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession, useSessionRefreshTick, type RoleName } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
+import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -59,6 +60,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // 1x per buka dashboard) drpd angkat state ini lewat context/prop-drilling
   // ke 9+ file dashboard, pola sama persis useBerandaPreferensi (QuickMenuGrid.tsx).
   const { akademik: akademikBadge } = useUnreadNotificationCount();
+  const tampilNilai = useRaportAktif(); // menu Nilai Raport hanya muncul bila fitur dinyalakan Admin IT (mode demo selalu)
 
   // fetchAttendanceData murni fetch (TIDAK setState sendiri) - dipakai 2
   // pemanggil dgn kebutuhan guard beda: useFocusEffect di bawah HARUS
@@ -156,6 +158,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       // "Buat Tugas / Materi" lama, lihat catatan lengkap di webview
       // GuruDashboard.tsx.
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
+      ...(tampilNilai ? [{ label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-guru") }] : []),
     ] },
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },

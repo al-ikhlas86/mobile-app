@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard, Shirt } from "lucide-react-native";
+import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard, Shirt, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -12,6 +12,7 @@ import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
+import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -42,6 +43,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const news = useNewsList();
   // Badge notifikasi menu Akademik - lihat catatan sama di GuruDashboard.tsx.
   const { akademik: akademikBadge } = useUnreadNotificationCount();
+  const tampilNilai = useRaportAktif(); // menu Nilai Anak hanya muncul bila fitur dinyalakan Admin IT (mode demo selalu)
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   // fetchChildrenData murni fetch (TIDAK setState sendiri) - dipakai 2
@@ -118,6 +120,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       // "Tugas & Materi" lama, lihat catatan lengkap di webview
       // OrangTuaDashboard.tsx.
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
+      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak") }] : []),
       { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
       { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("detail-pembayaran") },

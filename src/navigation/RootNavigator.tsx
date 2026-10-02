@@ -33,6 +33,8 @@ import { KeuanganAdmin } from "../components/screens/KeuanganAdmin";
 import { DetailPembayaran } from "../components/screens/DetailPembayaran";
 import { SlipGajiScreen } from "../components/screens/SlipGajiScreen";
 import { NilaiRaportAdminScreen } from "../components/screens/NilaiRaportAdminScreen";
+import { NilaiGuruScreen } from "../components/screens/NilaiGuruScreen";
+import { NilaiAnakScreen } from "../components/screens/NilaiAnakScreen";
 import { BeritaAcaraAdmin } from "../components/screens/BeritaAcaraAdmin";
 import { StatistikKontenScreen } from "../components/screens/StatistikKontenScreen";
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
@@ -435,6 +437,8 @@ export function RootNavigator() {
             <Stack.Screen name="detail-pembayaran" options={{ headerShown: true, title: "Rincian Biaya" }} component={DetailPembayaran} />
             <Stack.Screen name="slip-gaji" options={{ headerShown: true, title: "Slip Gaji" }} component={SlipGajiScreen} />
             <Stack.Screen name="nilai-raport" options={{ headerShown: true, title: "Nilai Raport" }} component={NilaiRaportAdminScreen} />
+            <Stack.Screen name="nilai-guru" options={{ headerShown: true, title: "Nilai Raport" }} component={NilaiGuruScreen} />
+            <Stack.Screen name="nilai-anak" options={{ headerShown: true, title: "Nilai Anak" }} component={NilaiAnakScreen} />
             <Stack.Screen name="statistik-konten" options={{ headerShown: true, title: "Statistik Konten" }}>
               {({ navigation }) => <StatistikKontenScreen onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
