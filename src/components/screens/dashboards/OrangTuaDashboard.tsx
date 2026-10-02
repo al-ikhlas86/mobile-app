@@ -1,6 +1,6 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable } from "react-native";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "@react-navigation/native";
 import { Clock, User, FileText, CheckCircle, AlertCircle, Info, ScanFace, BookOpen, ClipboardList, MessageSquareWarning, CreditCard, Shirt, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
@@ -13,6 +13,7 @@ import { api } from "../../../services/api";
 import { getActiveSession } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
+import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -29,7 +30,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [showAllMenu, setShowAllMenu] = useState(false);
   const { prefs: berandaPrefs } = useBerandaPreferensi();
-  // Dibaca dalam useFocusEffect (deps [], jangan re-jalan tiap ganti anak) -
+  // Dibaca dalam effect muat pertama & penyegaran otomatis (deps tetap, jangan re-jalan tiap ganti anak) -
   // ref supaya nilai TERBARU terbaca tanpa membuat effect fetch ulang tiap
   // switch anak.
   const activeChildIdRef = useRef<number | null>(null);
@@ -57,24 +58,36 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       const nextActiveId = keepActive ? activeChildIdRef.current : (childrenRes.data[0]?.id ?? null);
       activeChildIdRef.current = nextActiveId;
       setActiveChildId(nextActiveId);
-    } else setError(childrenRes.message ?? "Gagal memuat data anak.");
+      setError("");
+    } else if (activeChildIdRef.current === null) {
+      // Galat HANYA ditampilkan bila belum ada data anak sama sekali - kegagalan jaringan sesaat pada penyegaran otomatis
+      // tidak boleh mengganti layar yang sudah terisi dengan pesan galat.
+      setError(childrenRes.message ?? "Gagal memuat data anak.");
+    }
     if (attendanceRes.success) setAttendance(attendanceRes.data);
   }
 
-  // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
-  // presensi basi krn tab tidak pernah unmount saat pindah tab).
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      (async () => {
-        setLoading(true);
-        const [childrenRes, attendanceRes] = await fetchChildrenData();
-        if (active) applyChildrenData(childrenRes, attendanceRes);
-        if (active) setLoading(false);
-      })();
-      return () => { active = false; };
-    }, [fetchChildrenData])
-  );
+  // Muat pertama (dengan spinner) saat layar dibuat; sisanya (kembali fokus / aplikasi aktif lagi / tiap 30 dtk) lewat
+  // useAutoRefresh yang SENYAP - lihat catatan di PegawaiDashboard.tsx. Dulu useFocusEffect memuat ulang dengan
+  // setLoading(true) tiap fokus, yang mengganti seluruh layar dengan spinner. Anak terpilih dipertahankan lewat
+  // activeChildIdRef di applyChildrenData, jadi penyegaran tidak mereset pilihan anak.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const [childrenRes, attendanceRes] = await fetchChildrenData();
+      if (active) applyChildrenData(childrenRes, attendanceRes);
+      if (active) setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [fetchChildrenData]);
+
+  // Presensi anak dari kiosk wajah ikut segar sendiri - lihat hooks/useAutoRefresh.ts.
+  const muatAnakSenyap = useCallback(async () => {
+    const [childrenRes, attendanceRes] = await fetchChildrenData();
+    applyChildrenData(childrenRes, attendanceRes);
+  }, [fetchChildrenData]);
+  useAutoRefresh(muatAnakSenyap, 30000);
 
   // Pull-to-refresh Beranda (2026-09-05, W5) - lihat DashboardLayout::onRefresh.
   const handleRefresh = useCallback(async () => {

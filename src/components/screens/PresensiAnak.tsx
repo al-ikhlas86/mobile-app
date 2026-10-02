@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -13,6 +13,7 @@ import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
+import { useAutoRefresh } from "../../hooks/useAutoRefresh";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null; }
 interface AttendanceRow { student_cache_id: number; tanggal: string; check_in_time: string | null; check_out_time: string | null; status: string; }
@@ -55,35 +56,51 @@ export function PresensiAnak() {
   const [izinBusy, setIzinBusy] = useState(false);
   const [izinMessage, setIzinMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const load = async () => {
-    setLoading(true);
+  // Anak terpilih dibaca dari ref (bukan state di closure) supaya penyegaran otomatis yang berangkat sebelum pengguna
+  // mengganti anak TIDAK mengembalikan pilihan ke anak lama saat jawabannya tiba.
+  const activeChildIdRef = useRef<number | null>(null);
+
+  // senyap=true: penyegaran otomatis tanpa spinner penuh (presensi anak dari kiosk wajah langsung tampil, anak
+  // terpilih/tab/form izin/posisi scroll tidak berubah).
+  const load = async (senyap = false) => {
+    if (!senyap) setLoading(true);
     const [childrenRes, attendanceRes] = await Promise.all([api.myChildren(), api.attendanceMyChildren()]);
     if (childrenRes.success) {
       setChildren(childrenRes.data);
-      const keepActive = activeChildId !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildId);
-      const nextActiveId = keepActive ? activeChildId : (childrenRes.data[0]?.id ?? null);
+      const cur = activeChildIdRef.current;
+      const keepActive = cur !== null && childrenRes.data.some((c: ChildData) => c.id === cur);
+      const nextActiveId = keepActive ? cur : (childrenRes.data[0]?.id ?? null);
+      activeChildIdRef.current = nextActiveId;
       setActiveChildId(nextActiveId);
       if (nextActiveId) {
         const statRes = await api.attendanceStatistikAnak(nextActiveId);
-        if (statRes.success) setStatistik(statRes.data);
+        // Lewati bila pengguna keburu mengganti anak selama menunggu - statistik anak lain jangan tertimpa.
+        if (statRes.success && activeChildIdRef.current === nextActiveId) setStatistik(statRes.data);
       }
-    } else setError(childrenRes.message ?? "Gagal memuat data anak.");
+      setError("");
+    } else if (activeChildIdRef.current === null) {
+      // Galat HANYA ditampilkan bila belum ada data anak sama sekali - kegagalan jaringan sesaat pada penyegaran otomatis
+      // tidak boleh mengganti layar yang sudah terisi dengan pesan galat.
+      setError(childrenRes.message ?? "Gagal memuat data anak.");
+    }
     if (attendanceRes.success) setRecords(attendanceRes.data);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+  useAutoRefresh(() => load(true), 20000);
 
   // Ganti anak aktif - reset form Izin/Sakit sekalian (cegah keterangan yang
   // sudah diketik utk anak A tidak sengaja ikut terkirim atas nama anak B).
   async function handleSelectChild(id: number) {
+    activeChildIdRef.current = id;
     setActiveChildId(id);
     setStatistik(null);
     setIzinKeterangan("");
     setIzinFoto(null);
     setIzinMessage(null);
     const statRes = await api.attendanceStatistikAnak(id);
-    if (statRes.success) setStatistik(statRes.data);
+    if (statRes.success && activeChildIdRef.current === id) setStatistik(statRes.data);
   }
 
   const child = children.find((c) => c.id === activeChildId) ?? null;

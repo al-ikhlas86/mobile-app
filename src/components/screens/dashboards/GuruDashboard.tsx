@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "@react-navigation/native";
 import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
@@ -11,6 +11,7 @@ import { api } from "../../../services/api";
 import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick, type RoleName } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
+import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -71,21 +72,28 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // itu (RefreshControl cuma aktif selagi layar ini kelihatan).
   const fetchAttendanceData = useCallback(() => Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]), []);
 
-  // useFocusEffect - lihat catatan di PegawaiDashboard.tsx (fix bug angka
-  // presensi basi krn tab tidak pernah unmount saat pindah tab).
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      (async () => {
-        setLoading(true);
-        const [res, statRes] = await fetchAttendanceData();
-        if (active && res.success) setRecords(res.data);
-        if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
-        if (active) setLoading(false);
-      })();
-      return () => { active = false; };
-    }, [fetchAttendanceData])
-  );
+  // Muat pertama (dengan flag loading) saat layar dibuat. Angka presensi TIDAK basi lagi saat pindah tab karena
+  // useAutoRefresh di bawah memuat ulang SENYAP (kembali fokus / aplikasi aktif lagi / tiap 30 dtk) - lihat catatan di
+  // PegawaiDashboard.tsx. Menggantikan useFocusEffect lama yang memuat ulang tiap fokus.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const [res, statRes] = await fetchAttendanceData();
+      if (active && res.success) setRecords(res.data);
+      if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
+      if (active) setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [fetchAttendanceData]);
+
+  // Presensi hari ini ikut segar sendiri (kiosk wajah / HP lain) - lihat hooks/useAutoRefresh.ts.
+  const muatAbsenSenyap = useCallback(async () => {
+    const [res, statRes] = await fetchAttendanceData();
+    if (res.success) setRecords(res.data);
+    if (statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
+  }, [fetchAttendanceData]);
+  useAutoRefresh(muatAbsenSenyap, 30000);
 
   // Pull-to-refresh Beranda (2026-09-05, W5) - lihat DashboardLayout::onRefresh.
   const handleRefresh = useCallback(async () => {

@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "@react-navigation/native";
 import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart, MessageSquareWarning, UserPlus, Search, Ban, CreditCard, ClipboardList } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
@@ -9,6 +9,7 @@ import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
+import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
 import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick } from "../../../services/authService";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
@@ -53,24 +54,30 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   // GuruDashboard.tsx (pola identik).
   const fetchAttendanceData = useCallback(() => Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]), []);
 
-  // useFocusEffect (bukan useEffect biasa) - bottom-tabs TIDAK unmount
-  // layar saat pindah tab, jadi data absen di sini akan basi kalau cuma
-  // fetch sekali saat mount: user checkin di tab Presensi lalu balik ke tab
-  // Beranda, angka "Presensi Bulan Ini" di sini tetap angka LAMA krn effect
-  // mount-nya tidak pernah terpanggil ulang (laporan bug user, root cause).
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      (async () => {
-        setLoading(true);
-        const [res, statRes] = await fetchAttendanceData();
-        if (active && res.success) setRecords(res.data);
-        if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
-        if (active) setLoading(false);
-      })();
-      return () => { active = false; };
-    }, [fetchAttendanceData])
-  );
+  // bottom-tabs TIDAK unmount layar saat pindah tab, jadi data absen di sini akan basi kalau cuma fetch sekali saat
+  // mount: user checkin di tab Presensi lalu balik ke tab Beranda, angka "Presensi Bulan Ini" tetap angka LAMA
+  // (laporan bug user, root cause). Dulu diatasi useFocusEffect yang memuat ulang DENGAN flag loading tiap fokus; sekarang
+  // muat pertama saja di sini, sisanya (kembali fokus / aplikasi aktif lagi / tiap 30 dtk) ditangani useAutoRefresh yang
+  // SENYAP.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const [res, statRes] = await fetchAttendanceData();
+      if (active && res.success) setRecords(res.data);
+      if (active && statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
+      if (active) setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [fetchAttendanceData]);
+
+  // Presensi hari ini ikut segar sendiri (kiosk wajah / HP lain) - lihat hooks/useAutoRefresh.ts.
+  const muatAbsenSenyap = useCallback(async () => {
+    const [res, statRes] = await fetchAttendanceData();
+    if (res.success) setRecords(res.data);
+    if (statRes.success && statRes.data) setDaysPresent(statRes.data.days_present);
+  }, [fetchAttendanceData]);
+  useAutoRefresh(muatAbsenSenyap, 30000);
 
   // Pull-to-refresh Beranda (2026-09-05, W5) - tarik ke bawah refetch data
   // absen HARI INI + berita (news.refresh), lihat DashboardLayout::onRefresh.

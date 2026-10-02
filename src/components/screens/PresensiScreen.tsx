@@ -1,7 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { MapPin, LogIn, LogOut, ClipboardList, ChevronRight, CalendarCheck, FileWarning, Send, Paperclip } from "lucide-react-native";
@@ -14,6 +13,7 @@ import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
+import { useAutoRefresh } from "../../hooks/useAutoRefresh";
 
 interface Props {
   role: string;
@@ -118,7 +118,10 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
   const [izinBusy, setIzinBusy] = useState(false);
   const [izinMessage, setIzinMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const load = async () => {
+  // senyap=true: penyegaran otomatis (tanpa spinner "Memuat..." supaya layar tidak berkedip / daftar tidak diganti
+  // teks, dan posisi scroll tidak berubah).
+  const load = async (senyap = false) => {
+    if (!senyap) setLoading(true);
     const [res, statRes] = await Promise.all([api.attendanceMe(), api.attendanceStatistikMe()]);
     if (res.success) setRecords(res.data);
     if (statRes.success) setStatistik(statRes.data);
@@ -126,7 +129,11 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
     setRefreshing(false);
   };
 
-  useFocusEffect(useCallback(() => { setLoading(true); load(); }, []));
+  useEffect(() => { load(); }, []);
+  // Presensi yang tercatat di tempat lain (kiosk wajah, HP lain) langsung tampil tanpa tarik-refresh manual: tab
+  // bottom-tabs tidak di-unmount saat pindah tab, jadi tanpa ini datanya hanya dimuat sekali. Menggantikan
+  // useFocusEffect lama yang memuat DENGAN spinner tiap fokus - sekarang kembali-fokus/aplikasi-aktif/interval semuanya senyap.
+  useAutoRefresh(() => load(true), 20000);
 
   async function handleCheckin(type: "masuk" | "pulang") {
     setCheckinBusy(type);
@@ -155,7 +162,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
       const res = await api.attendanceCheckin(type, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? undefined, pos.mocked === true, pos.timestamp);
       setCheckinBusy(null);
       setCheckinMessage({ text: res.message ?? (res.success ? "Presensi berhasil." : "Presensi gagal."), kind: res.success ? "ok" : "error" });
-      if (res.success) load();
+      if (res.success) load(true);
     } catch {
       setCheckinBusy(null);
       setCheckinMessage({ text: "Gagal mendapatkan lokasi GPS. Pastikan GPS aktif dan coba lagi.", kind: "error" });
@@ -248,7 +255,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
         <ScrollView
           className="flex-1 px-4 pt-4"
           contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 20 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}
         >
           <Card padding="md">
             <View className="flex-row items-center gap-1.5 mb-2">
@@ -284,7 +291,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-foreground">Rekap Kehadiran</Text>
-                <Text className="text-xs text-muted-foreground">{isWaliKelas ? "Kehadiran Anda & siswa kelas Anda" : "Kehadiran Anda"}</Text>
+                <Text className="text-xs text-muted-foreground">{isWaliKelas ? "Kehadiran siswa kelas Anda" : "Kehadiran Anda"}</Text>
               </View>
               <ChevronRight size={16} color={colors.mutedForeground} />
             </View>

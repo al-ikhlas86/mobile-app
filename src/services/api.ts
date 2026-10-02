@@ -394,6 +394,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ type, lat, lng, accuracy, is_mocked: isMocked ?? false, location_timestamp: locationTimestamp }),
     }),
+  // Hak lihat presensi ditentukan SERVER (2026-10-02, backend services/attendanceAkses.js) - klien TIDAK boleh lagi
+  // menebak dari nama role/capability. Dipakai PresensiAdminTU & RekapitulasiKehadiranScreen.
+  attendanceAkses: () => authedFetch("/api/attendance/akses"),
   attendanceClasses: () => authedFetch("/api/attendance/classes"),
   attendanceAllFiltered: (entityType: "siswa" | "guru" | "karyawan", date: string, tingkat?: string, kelas?: string) => {
     const params = new URLSearchParams({ entity_type: entityType, date });

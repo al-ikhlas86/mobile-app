@@ -5,7 +5,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
 import { api, API_URL } from "../../services/api";
-import { getActiveSession, type RoleName } from "../../services/authService";
+import type { RoleName } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ClassOption { tingkat: string; kelas: string; label: string; }
@@ -22,36 +22,22 @@ const CELL_W = 28;
 const NAME_W = 130;
 const NO_W = 28;
 
-// Cakupan per-role (spesifikasi eksplisit user, 2026-09-21) - Admin IT/
-// Supervisor/Kepala Sekolah -> Siswa+Guru+Pegawai; Admin TU/Keuangan ->
-// Guru+Pegawai SAJA (bukan urusan mereka lihat siswa) - port 1:1 dari
-// perbaikan webview. admin_tu_sd/tk DIGABUNG jadi generik (2026-09-14,
-// Sistem Katalog) - nama lama TETAP dicek (pola "legacy names") jaga2
-// sesi lama.
-const FULL_ACCESS_ROLES: RoleName[] = ["Admin IT", "Supervisor"];
-const STAFF_ONLY_ROLES: RoleName[] = ["Admin TU", "Admin TU (SD)", "Admin TU (TK & Playground)"];
+// Hak lihat ditentukan SERVER (GET /api/attendance/akses, backend services/attendanceAkses.js) - port 1:1 dari webview
+// (2026-10-02), bukan lagi tebakan dari nama role/capability di klien. Sebelumnya wali kelas terjebak scope "pegawai" ->
+// selalu error, dan guru yang kebetulan punya kapasitas lain salah mendapat daftar seluruh pegawai.
+interface Akses {
+  siswa: "semua" | "unit" | "kelas" | "tidak";
+  scopeBulanan: ("kelas" | "pegawai")[];
+  kelasSendiri: { tingkat: string; kelas: string; label: string } | null;
+}
 
-// isKepalaSekolah (2026-09-04) - FLAG di atas role dasar, BUKAN lagi role
-// "Kepala Sekolah (SD/TK)" terpisah.
-export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
+// `role` tidak dipakai lagi - dipertahankan supaya pemanggil lama (RootNavigator) tidak perlu diubah.
+export function RekapitulasiKehadiranScreen(_props: { role?: RoleName }) {
   const colors = useThemeColors();
-  // isKeuanganCap (2026-09-21) - port 1:1 dari perbaikan webview - Keuangan
-  // via capability (role dasar tetap Guru/Pegawai) luput dari cek literal
-  // role di bawah, jadi terjebak scope=kelas tanpa picker (403). Disamakan
-  // dgn Admin TU (Guru+Pegawai, tanpa Siswa).
-  // isSupervisorCap (2026-09-21) - BUG NYATA ke-2 (laporan user: akun
-  // Reinaldy, Pegawai+Supervisor-capability, cuma dapat scope Guru &
-  // Pegawai, tanpa Siswa) - fix Keuangan sebelumnya tidak menyertakan
-  // Supervisor. Supervisor = FULL_ACCESS (canViewSiswa SAMA Admin IT).
-  // isAdminTuCap (2026-09-21) - Admin TU JUGA salah satu dari 4 capability -
-  // diperbaiki proaktif dgn pola sama, port 1:1 dari webview.
-  const isKeuanganCap = (getActiveSession()?.capabilities ?? []).includes("keuangan");
-  const isSupervisorCap = (getActiveSession()?.capabilities ?? []).includes("supervisor");
-  const isAdminTuCap = (getActiveSession()?.capabilities ?? []).includes("admin_tu");
-  const isKepalaSekolah = getActiveSession()?.isKepalaSekolah === true;
-  const canViewSiswa = !role || isKepalaSekolah || isSupervisorCap || (!!role && FULL_ACCESS_ROLES.includes(role));
-  const canViewStaff = canViewSiswa || isKeuanganCap || isAdminTuCap || (!!role && STAFF_ONLY_ROLES.includes(role));
-  const [scope, setScope] = useState<"kelas" | "pegawai">(canViewSiswa ? "kelas" : "pegawai");
+  const [akses, setAkses] = useState<Akses | null>(null);
+  const [aksesError, setAksesError] = useState("");
+  const [scope, setScope] = useState<"kelas" | "pegawai">("kelas");
+  const bolehPilihKelas = akses?.siswa === "semua" || akses?.siswa === "unit";
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [now] = useState(new Date());
@@ -65,7 +51,14 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    if (canViewSiswa) {
+    api.attendanceAkses().then((res: any) => {
+      if (res.success) { setAkses(res.data); setScope(res.data.scopeBulanan[0] ?? "kelas"); }
+      else { setAksesError(res.message ?? "Gagal memuat hak akses presensi."); setLoading(false); }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (bolehPilihKelas) {
       api.attendanceClasses().then((res) => {
         if (res.success) {
           setClassOptions(res.data);
@@ -73,11 +66,13 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
         }
       });
     }
-  }, [canViewSiswa]);
+  }, [bolehPilihKelas]);
 
   useEffect(() => {
     (async () => {
-      if (scope === "kelas" && canViewSiswa && !selectedClass) return;
+      if (!akses) return;
+      if (akses.scopeBulanan.length === 0) { setLoading(false); return; }
+      if (scope === "kelas" && bolehPilihKelas && !selectedClass) return;
       setLoading(true);
       setError("");
       const [tingkat, kelas] = selectedClass ? selectedClass.split("|") : [undefined, undefined];
@@ -92,7 +87,8 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
       }
       setLoading(false);
     })();
-  }, [scope, selectedClass, bulan, tahun, canViewSiswa]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [akses, scope, selectedClass, bulan, tahun]);
 
   function changeMonth(delta: number) {
     let m = bulan + delta;
@@ -130,12 +126,12 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
           </Button>
         </View>
 
-        {canViewStaff && (
+        {akses && akses.scopeBulanan.length > 0 && (
           <View className="gap-2">
-            {canViewSiswa && (
+            {akses.scopeBulanan.length > 1 && (
               <SimplePicker value={scope} options={scopeOptions} onChange={(v) => { setScope(v as "kelas" | "pegawai"); setSelectedClass(""); }} />
             )}
-            {scope === "kelas" && canViewSiswa && classPickerOptions.length > 0 && (
+            {scope === "kelas" && bolehPilihKelas && classPickerOptions.length > 0 && (
               <SimplePicker value={selectedClass} options={classPickerOptions} onChange={setSelectedClass} />
             )}
           </View>
@@ -144,7 +140,11 @@ export function RekapitulasiKehadiranScreen({ role }: { role?: RoleName }) {
         {!!judul && <Text className="text-sm font-semibold text-foreground">{judul}</Text>}
       </View>
 
-      {loading ? (
+      {aksesError ? (
+        <Text className="text-sm text-red-500 text-center py-6">{aksesError}</Text>
+      ) : akses && akses.scopeBulanan.length === 0 ? (
+        <Text className="text-sm text-muted-foreground text-center py-6">Akun ini tidak punya akses melihat rekapitulasi kehadiran.</Text>
+      ) : loading ? (
         <Text className="text-sm text-muted-foreground text-center py-6">Memuat...</Text>
       ) : error ? (
         <Text className="text-sm text-red-500 text-center py-6">{error}</Text>
