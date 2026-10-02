@@ -7,7 +7,7 @@
 import { DeviceEventEmitter } from "react-native";
 import Constants from "expo-constants";
 import {
-  saveSession, addLinkedAccount, getActiveToken, logout,
+  saveSession, addLinkedAccount, getActiveToken, getLinkedParentAccount, logout,
   refreshActiveSessionCapabilities, getRealActiveSession,
   type RoleName, type SavedAccount,
 } from "./authService";
@@ -187,8 +187,33 @@ export async function verifyOtp(
 // terpanggil. 15 detik dianggap wajar utk request JSON biasa (jauh lebih
 // pendek dari upload 30 detik - respons JSON normal harusnya cepat).
 const FETCH_TIMEOUT_MS = 15000;
+// Jalur API milik ORANG TUA. Bila sesi aktif adalah STAF (guru/pegawai) yang nomor HP-nya juga punya akun Orang Tua
+// tertaut (login 1x menyimpan keduanya), permintaan ke jalur ini otomatis memakai token akun Orang Tua itu - jadi
+// guru/pegawai yang juga orang tua murid melihat anak2nya dari DALAM sesi stafnya, tanpa Ganti Akun. Server tetap
+// memeriksa hak per anak (parent_students). Jalur lain (presensi diri, jadwal mengajar, dst) tetap memakai token staf.
+// Token orang tua kedaluwarsa (401) TIDAK ikut me-logout sesi staf (lihat pengecekan getActiveToken()===token).
+const JALUR_ORANG_TUA: RegExp[] = [
+  /^\/api\/students\/my-children/,
+  /^\/api\/attendance\/my-children/,
+  /^\/api\/attendance\/statistik\/anak\//,
+  /^\/api\/schedule\/anak\//,
+  /^\/api\/raport\/anak\//,
+  /^\/api\/tugas\/anak/,
+  /^\/api\/tugas\/\d+\/(tandai-selesai|kumpulkan-jawaban)/,
+  /^\/api\/aduan\/(submit|mine)/,
+  /^\/api\/face\/child\//,
+  /^\/api\/keuangan-saya\/anak/,
+];
+function pilihToken(path: string, paksaOrangTua = false): string | null {
+  if (paksaOrangTua || JALUR_ORANG_TUA.some((r) => r.test(path))) {
+    const ortu = getLinkedParentAccount();
+    if (ortu) return ortu.token;
+  }
+  return getActiveToken();
+}
+
 async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: number = FETCH_TIMEOUT_MS) {
-  const token = getActiveToken();
+  const token = pilihToken(path);
   // X-Viewing-Tahun-Ajaran (2026-09-04, Fase 4) - dipasang di SETIAP request
   // HANYA kalau popup "Ganti Tahun Ajaran" sedang aktif memilih tahun BUKAN
   // aktif (getViewingYear() null = default, backend otomatis pakai tahun
@@ -229,8 +254,8 @@ async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: n
 // sharp, lihat imageProcessing.js). AbortController didukung fetch RN
 // bawaan, TIDAK nambah dependency baru.
 const UPLOAD_TIMEOUT_MS = 30000;
-async function authedUpload(path: string, formData: FormData, method: string = "POST") {
-  const token = getActiveToken();
+async function authedUpload(path: string, formData: FormData, method: string = "POST", paksaOrangTua = false) {
+  const token = pilihToken(path, paksaOrangTua);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
   try {
@@ -327,6 +352,14 @@ export const api = {
   notifications: () => authedFetch("/api/notifications"),
   notificationsUnreadCount: () => authedFetch("/api/notifications/unread-count"),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
+  // Akun Orang Tua tertaut (guru/pegawai yang juga orang tua): daftarkan token push perangkat ini ke akun itu juga,
+  // supaya notifikasi anak (nilai terbit, presensi, tagihan) sampai walau sesi aktifnya staf.
+  registerFcmTokenOrangTuaTertaut: (token: string) => {
+    const ortu = getLinkedParentAccount();
+    if (!ortu) return Promise.resolve({ success: true });
+    return fetch(`${API_URL}/api/auth/fcm-token`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${ortu.token}` }, body: JSON.stringify({ token }) })
+      .then((r) => r.json()).catch(() => ({ success: false }));
+  },
   markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
   deleteNotification: (id: number) => authedFetch(`/api/notifications/${id}`, { method: "DELETE" }),
   notificationPreferences: () => authedFetch("/api/notifications/preferences"),
@@ -389,7 +422,7 @@ export const api = {
     if (data.buktiFotoUri) {
       form.append("bukti_foto", fileFromUri(data.buktiFotoUri, `bukti.${(data.buktiFotoMime ?? "image/jpeg").split("/")[1] ?? "jpg"}`, data.buktiFotoMime ?? "image/jpeg"));
     }
-    return authedUpload("/api/leave/submit", form);
+    return authedUpload("/api/leave/submit", form, "POST", data.studentCacheId != null); // izin ANAK = token akun orang tua tertaut (bila ada)
   },
   leavePending: () => authedFetch("/api/leave/pending"),
   leaveApprove: (id: number) => authedFetch(`/api/leave/${id}/approve`, { method: "POST", body: JSON.stringify({}) }),

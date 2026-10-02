@@ -8,7 +8,7 @@ import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
-import { getActiveSession, useSessionRefreshTick, type RoleName } from "../../../services/authService";
+import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick, type RoleName } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { getTodayLocal } from "../../../utils/formatters";
@@ -60,6 +60,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // 1x per buka dashboard) drpd angkat state ini lewat context/prop-drilling
   // ke 9+ file dashboard, pola sama persis useBerandaPreferensi (QuickMenuGrid.tsx).
   const { akademik: akademikBadge } = useUnreadNotificationCount();
+  const punyaAkunOrangTua = getLinkedParentAccount() !== null; // guru yang juga orang tua murid -> kategori "Anak Saya"
   const tampilNilai = useRaportAktif(); // menu Nilai Raport hanya muncul bila fitur dinyalakan Admin IT (mode demo selalu)
 
   // fetchAttendanceData murni fetch (TIDAK setState sendiri) - dipakai 2
@@ -160,6 +161,13 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
       ...(tampilNilai ? [{ label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-guru") }] : []),
     ] },
+    ...(punyaAkunOrangTua ? [{ title: "Anak Saya", items: [
+      { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("presensi-anak") },
+      { label: "Akademik Anak", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("akademik-anak") },
+      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak") }] : []),
+      { label: "Rincian Biaya", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("detail-pembayaran") },
+      { label: "Kirim Aduan Sekolah", icon: <MessageSquareWarning size={20} color="#b91c1c" />, colorScheme: "red" as const, onPress: () => onNavigate("kirim-aduan") },
+    ] }] : []),
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },
     ] },

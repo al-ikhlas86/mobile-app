@@ -115,11 +115,15 @@ export async function initPushNotifications(navigate: NavigateFn): Promise<() =>
 
     const messaging = getMessaging();
     const token = await getToken(messaging);
-    if (token) await api.registerFcmToken(token).catch(() => {});
+    if (token) {
+      await api.registerFcmToken(token).catch(() => {});
+      await api.registerFcmTokenOrangTuaTertaut(token).catch(() => {});
+    }
 
     cleanups.push(
       onTokenRefresh(messaging, (newToken: string) => {
         api.registerFcmToken(newToken).catch(() => {});
+        api.registerFcmTokenOrangTuaTertaut(newToken).catch(() => {});
       })
     );
 

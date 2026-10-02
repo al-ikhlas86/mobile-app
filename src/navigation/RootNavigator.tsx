@@ -48,6 +48,7 @@ import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
 import { KalenderKegiatanScreen } from "../components/screens/KalenderKegiatanScreen";
 import { AkademikGuruScreen } from "../components/screens/AkademikGuruScreen";
 import { AkademikSiswaScreen } from "../components/screens/AkademikSiswaScreen";
+import { PresensiAnak } from "../components/screens/PresensiAnak";
 import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
 import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PersetujuanPsbScreen } from "../components/screens/PersetujuanPsbScreen";
@@ -465,6 +466,9 @@ export function RootNavigator() {
                 HARUS tetap resolve ke layar yg benar, tidak boleh mati
                 begitu rute lama dihapus dari menu. */}
             <Stack.Screen name="tugas-anak" options={{ headerShown: true, title: "Akademik" }} component={AkademikSiswaScreen} />
+            {/* Menu "Anak Saya" di beranda guru/pegawai yang juga orang tua murid (2026-10-02) - layar2 orang tua dipakai dari sesi staf. */}
+            <Stack.Screen name="akademik-anak" options={{ headerShown: true, title: "Akademik Anak" }} component={AkademikSiswaScreen} />
+            <Stack.Screen name="presensi-anak" options={{ headerShown: true, title: "Kehadiran Anak" }} component={PresensiAnak} />
             <Stack.Screen name="jadwal-kerja" options={{ headerShown: true, title: "Jadwal Kerja" }} component={JadwalKerjaScreen} />
             <Stack.Screen name="cari-siswa-guru" options={{ headerShown: true, title: "Cari Siswa & Guru" }} component={CariSiswaGuruScreen} />
             <Stack.Screen name="persetujuan-psb" options={{ headerShown: true, title: "Persetujuan PSB" }} component={PersetujuanPsbScreen} />

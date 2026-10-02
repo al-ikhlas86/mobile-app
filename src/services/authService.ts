@@ -300,6 +300,19 @@ export function getSavedAccounts(): SavedAccount[] {
   return cachedAccounts;
 }
 
+/**
+ * Akun Orang Tua TERTAUT (nomor HP sama) bagi sesi STAF - dipakai agar guru/pegawai yang juga orang tua murid
+ * melihat anak2nya dari dalam sesi stafnya tanpa Ganti Akun. null bila sesi aktif sudah Orang Tua, sedang Mode
+ * Demo, atau tidak ada akun Orang Tua tersimpan dgn nomor yang sama.
+ */
+export function getLinkedParentAccount(): SavedAccount | null {
+  if (getActiveDemoAccount()) return null;
+  const sesi = getRealActiveSession();
+  if (!sesi || sesi.role === "Orang Tua") return null;
+  assertLoaded();
+  return cachedAccounts.find((a) => a.role === "Orang Tua" && a.username === sesi.username) ?? null;
+}
+
 export async function switchAccount(accountId: string): Promise<ActiveSession | null> {
   assertLoaded();
   const saved = cachedAccounts.find((a) => a.id === accountId);
