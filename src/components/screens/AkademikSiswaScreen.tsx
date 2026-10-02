@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CalendarDays, BookOpen, ClipboardList, AlertCircle } from "lucide-react-native";
+import { CalendarDays, BookOpen, ClipboardList, AlertCircle, Award } from "lucide-react-native";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { JadwalPelajaranScreen } from "./JadwalPelajaranScreen";
 import { SiswaMateriScreen } from "./SiswaMateriScreen";
 import { SiswaTugasScreen } from "./SiswaTugasScreen";
+import { SiswaNilaiScreen } from "./SiswaNilaiScreen";
+import { useRaportAktif } from "../../hooks/useRaportAktif";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -15,27 +17,39 @@ interface ChildData {
   kelas_nama: string | null;
 }
 
-type Tab = "jadwal" | "materi" | "tugas";
+type Tab = "jadwal" | "materi" | "tugas" | "nilai";
 
 // Tab bar - gaya SAMA dgn TabBar internal JadwalPelajaranScreen.tsx (file
 // itu tidak mengekspor TabBar-nya, jadi disalin di sini), tapi 3 tombol
-// bukan 2.
-function TabBar({ activeTab, onChange, colors }: { activeTab: Tab; onChange: (t: Tab) => void; colors: ReturnType<typeof useThemeColors> }) {
+// bukan 2. Tab 4 "Nilai" (2026-10-02) muncul HANYA bila fitur Nilai Raport sudah dinyalakan
+// Admin IT (useRaportAktif); dgn 4 tab di layar sempit (HP), label "Jadwal & Kalender"
+// dipersingkat jadi "Jadwal" (di web: breakpoint sm = 640 dp).
+function TabBar({ activeTab, onChange, colors, tampilNilai }: { activeTab: Tab; onChange: (t: Tab) => void; colors: ReturnType<typeof useThemeColors>; tampilNilai: boolean }) {
+  const { width } = useWindowDimensions();
+  const sempit = width < 640;
+  const gaya = (aktif: boolean) => `flex-1 min-w-0 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${aktif ? "bg-card" : ""}`;
+  const teks = (aktif: boolean) => `text-sm font-medium ${aktif ? "text-foreground" : "text-muted-foreground"}`;
   return (
     <View className="px-4 pt-5">
-      <View className="flex-row gap-2 p-1 bg-muted rounded-xl">
-        <Pressable onPress={() => onChange("jadwal")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "jadwal" ? "bg-card" : ""}`}>
+      <View className="flex-row gap-1.5 p-1 bg-muted rounded-xl">
+        <Pressable onPress={() => onChange("jadwal")} className={gaya(activeTab === "jadwal")}>
           <CalendarDays size={15} color={activeTab === "jadwal" ? colors.primary : colors.mutedForeground} />
-          <Text className={`text-sm font-medium ${activeTab === "jadwal" ? "text-foreground" : "text-muted-foreground"}`}>Jadwal & Kalender</Text>
+          <Text numberOfLines={1} className={teks(activeTab === "jadwal")}>{tampilNilai && sempit ? "Jadwal" : "Jadwal & Kalender"}</Text>
         </Pressable>
-        <Pressable onPress={() => onChange("materi")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "materi" ? "bg-card" : ""}`}>
+        <Pressable onPress={() => onChange("materi")} className={gaya(activeTab === "materi")}>
           <BookOpen size={15} color={activeTab === "materi" ? colors.primary : colors.mutedForeground} />
-          <Text className={`text-sm font-medium ${activeTab === "materi" ? "text-foreground" : "text-muted-foreground"}`}>Materi</Text>
+          <Text numberOfLines={1} className={teks(activeTab === "materi")}>Materi</Text>
         </Pressable>
-        <Pressable onPress={() => onChange("tugas")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "tugas" ? "bg-card" : ""}`}>
+        <Pressable onPress={() => onChange("tugas")} className={gaya(activeTab === "tugas")}>
           <ClipboardList size={15} color={activeTab === "tugas" ? colors.primary : colors.mutedForeground} />
-          <Text className={`text-sm font-medium ${activeTab === "tugas" ? "text-foreground" : "text-muted-foreground"}`}>Tugas</Text>
+          <Text numberOfLines={1} className={teks(activeTab === "tugas")}>Tugas</Text>
         </Pressable>
+        {tampilNilai && (
+          <Pressable onPress={() => onChange("nilai")} className={gaya(activeTab === "nilai")}>
+            <Award size={15} color={activeTab === "nilai" ? colors.primary : colors.mutedForeground} />
+            <Text numberOfLines={1} className={teks(activeTab === "nilai")}>Nilai</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -54,6 +68,7 @@ export function AkademikSiswaScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<Tab>("jadwal");
+  const tampilNilai = useRaportAktif();
   const [children, setChildren] = useState<ChildData[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,7 +118,7 @@ export function AkademikSiswaScreen() {
   if (activeTab === "jadwal") {
     return (
       <View className="flex-1 bg-background">
-        <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />
+        <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} tampilNilai={tampilNilai} />
         <JadwalPelajaranScreen mode="anak" />
       </View>
     );
@@ -111,12 +126,13 @@ export function AkademikSiswaScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} />
+      <TabBar activeTab={activeTab} onChange={setActiveTab} colors={colors} tampilNilai={tampilNilai} />
       <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
         <ChildSwitcher children={children} activeId={activeChildId} onChange={handleSelectChild} />
 
         {activeTab === "materi" && <SiswaMateriScreen studentCacheId={child.id} studentNama={child.nama} kelasNama={child.kelas_nama} />}
         {activeTab === "tugas" && <SiswaTugasScreen studentCacheId={child.id} studentNama={child.nama} kelasNama={child.kelas_nama} />}
+        {activeTab === "nilai" && tampilNilai && <SiswaNilaiScreen studentCacheId={child.id} studentNama={child.nama} />}
       </ScrollView>
     </View>
   );

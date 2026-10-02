@@ -438,6 +438,29 @@ export const api = {
   // kelasOptions di atas utk layar baru: kombinasi kelas+mapel yang BENERAN
   // diampu guru. kelasOptions TETAP dipertahankan apa adanya.
   tugasPengajaranOptions: () => authedFetch("/api/tugas/pengajaran-options"),
+  // Nilai Raport (2026-10-02) - lihat backend/src/routes/raport.js. Aturan akses &
+  // nilai akhir SELALU diputuskan server; klien cuma menampilkan & mengirim isian.
+  raportStatus: () => authedFetch("/api/raport/status"),
+  raportSetAktif: (aktif: boolean) => authedFetch("/api/raport/status-fitur", { method: "PUT", body: JSON.stringify({ aktif }) }),
+  raportOpsi: () => authedFetch("/api/raport/opsi"),
+  raportLembar: (q: { kelasId: number; mapelSourceId: number; semester: string }) =>
+    authedFetch(`/api/raport/lembar?kelasId=${q.kelasId}&mapelSourceId=${q.mapelSourceId}&semester=${q.semester}`),
+  raportSimpanNilai: (body: { kelasId: number; mapelSourceId: number; semester: string; sumber?: "app" | "excel"; perubahan: { studentId: number; kode: string; nilai: string | number | null }[] }) =>
+    authedFetch("/api/raport/lembar/nilai", { method: "PUT", body: JSON.stringify(body) }),
+  raportUbahStatus: (body: { kelasId: number; mapelSourceId: number; semester: string; status: "draf" | "dijadwalkan" | "terbit"; terbitPada?: string; paksa?: boolean }) =>
+    authedFetch("/api/raport/lembar/status", { method: "PUT", body: JSON.stringify(body) }),
+  raportSikap: (q: { kelasId: number; semester: string }) => authedFetch(`/api/raport/sikap?kelasId=${q.kelasId}&semester=${q.semester}`),
+  raportSimpanSikap: (body: { kelasId: number; semester: string; sumber?: "app" | "excel"; perubahan: { studentId: number; grade: string | null; catatan?: string | null }[] }) =>
+    authedFetch("/api/raport/sikap", { method: "PUT", body: JSON.stringify(body) }),
+  raportRiwayat: (q: { kelasId: number; mapelSourceId: number; semester: string; studentId?: number }) =>
+    authedFetch(`/api/raport/riwayat?kelasId=${q.kelasId}&mapelSourceId=${q.mapelSourceId}&semester=${q.semester}${q.studentId ? `&studentId=${q.studentId}` : ""}`),
+  raportKonfigurasi: (unitId?: number) => authedFetch(`/api/raport/konfigurasi${unitId ? `?unitId=${unitId}` : ""}`),
+  raportSimpanKonfigurasi: (body: { unitId: number; mapelSourceId: number; kkm: number; komponen: { kode?: string; nama: string; bobot: number }[] }) =>
+    authedFetch("/api/raport/konfigurasi", { method: "PUT", body: JSON.stringify(body) }),
+  raportHapusKonfigurasi: (unitId: number, mapelSourceId: number) =>
+    authedFetch(`/api/raport/konfigurasi?unitId=${unitId}&mapelSourceId=${mapelSourceId}`, { method: "DELETE" }),
+  raportAnak: (studentId: number, tahun?: number, semester?: string) =>
+    authedFetch(`/api/raport/anak/${studentId}${tahun && semester ? `?tahun=${tahun}&semester=${semester}` : ""}`),
   // SELALU FormData (bukan cabang JSON vs FormData terpisah) - konsisten
   // dgn berapa pun jumlah field, dan backend (multer .single()) mengurai
   // field teks dari multipart sama baiknya dgn tanpa file sama sekali.

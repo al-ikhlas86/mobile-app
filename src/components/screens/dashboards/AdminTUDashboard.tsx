@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search, UserPlus, MapPin } from "lucide-react-native";
+import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search, UserPlus, MapPin, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -36,6 +36,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
     { title: "Operasional", items: [
       { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Berita Acara", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
+      { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
       { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },

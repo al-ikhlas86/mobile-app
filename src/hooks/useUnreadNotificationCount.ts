@@ -42,6 +42,10 @@ const POLL_INTERVAL_MS = 15000;
  * `count`/total tidak berubah). Digabung ke hook YANG SAMA (bukan hook
  * poll terpisah) supaya tidak dobel panggilan API tiap 15 detik - HANYA 1
  * pemanggil (DashboardLayout.tsx) jadi aman diubah bentuk return-nya.
+ * Nilai Raport (2026-10-02): notifikasi `type === "raport"` (nilai diterbitkan, actionScreen
+ * "akademik") ikut dihitung ke lencana Akademik orang tua, sama dgn webview OrangTuaDashboard.
+ * CATATAN: angka ini baru terisi bila backend (routes/notifications.js GET /unread-count)
+ * menyertakan `raport` di byType - sampai itu ditambahkan nilainya 0 (aman, tidak merusak).
  */
 export interface UnreadNotificationCount {
   total: number;
@@ -58,7 +62,7 @@ export function useUnreadNotificationCount(): UnreadNotificationCount {
       const res = await api.notificationsUnreadCount();
       if (cancelled) return;
       if (res.success) {
-        setState({ total: res.count, akademik: (res.byType?.tugas_baru ?? 0) + (res.byType?.materi_baru ?? 0) });
+        setState({ total: res.count, akademik: (res.byType?.tugas_baru ?? 0) + (res.byType?.materi_baru ?? 0) + (res.byType?.raport ?? 0) });
         Notifications.setBadgeCountAsync(res.count).catch(() => {});
       }
     }
