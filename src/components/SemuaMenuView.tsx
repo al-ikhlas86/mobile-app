@@ -162,7 +162,7 @@ export function SemuaMenuView({ categories, onBack, hasBerita = false }: { categ
         filtered.map((cat) => (
           <View key={cat.title}>
             <Text className="text-base font-bold text-foreground mb-3">{cat.title}</Text>
-            <View className="flex-row flex-wrap gap-2.5">
+            <View className="flex-row flex-wrap">
               {cat.items.map((item, idx) => (
                 <QuickMenuButton key={idx} item={item} />
               ))}

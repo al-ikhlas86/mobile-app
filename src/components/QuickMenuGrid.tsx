@@ -66,32 +66,29 @@ export const MENU_BG_COLORS: Record<string, string> = {
   pink: "bg-pink-50 dark:bg-pink-950/45",
 };
 
+// Tombol menu BESAR gaya referensi (2026-10-04): ubin ikon 72dp + label di bawah, 3 kolom (tiap tombol = 1/3 lebar baris).
 export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
   const iconSource = iconSourceUntukLabel(item.label);
+  const ikonCadangan = React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number }>, { size: 30 }) : item.icon;
   return (
-    <Pressable
-      onPress={item.onPress}
-      className="flex-row items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-2 min-h-[58px] active:opacity-70"
-      style={{ width: "48%" }}
-    >
+    <Pressable onPress={item.onPress} className="items-center active:opacity-70" style={{ width: "33.3333%", paddingVertical: 6, paddingHorizontal: 2 }}>
       <View className="relative">
         {iconSource ? (
-          // Ikon ilustrasi (set ikon-dashboard, 2026-10-04) di ubin lembut; tanpa label yang cocok -> ikon garis lama.
-          <View className="w-10 h-10 rounded-xl items-center justify-center bg-muted">
-            <Image source={iconSource} style={{ width: 32, height: 32 }} resizeMode="contain" />
+          <View className="w-[72px] h-[72px] rounded-2xl items-center justify-center bg-muted">
+            <Image source={iconSource} style={{ width: 58, height: 58 }} resizeMode="contain" />
           </View>
         ) : (
-          <View className={`w-9 h-9 rounded-full items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
-            {item.icon}
+          <View className={`w-[72px] h-[72px] rounded-2xl items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
+            {ikonCadangan}
           </View>
         )}
         {!!item.badgeCount && (
-          <View className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 items-center justify-center px-1">
-            <Text className="text-white text-[9px] font-bold">{item.badgeCount > 9 ? "9+" : item.badgeCount}</Text>
+          <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 items-center justify-center px-1">
+            <Text className="text-white text-[10px] font-bold">{item.badgeCount > 9 ? "9+" : item.badgeCount}</Text>
           </View>
         )}
       </View>
-      <Text numberOfLines={2} className="flex-1 text-[10.5px] font-semibold text-foreground">{item.label}</Text>
+      <Text numberOfLines={2} className="mt-1.5 text-center text-[11.5px] font-medium text-foreground" style={{ width: "100%" }}>{item.label}</Text>
     </Pressable>
   );
 }
@@ -99,21 +96,17 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
 export function QuickMenuGrid({ items, onSeeAll }: { items: QuickMenuItem[]; onSeeAll: () => void }) {
   const colors = useThemeColors();
   const { prefs } = useBerandaPreferensi();
-  const preview = terapkanUrutanMenu(items, prefs).slice(0, 7);
+  const preview = terapkanUrutanMenu(items, prefs).slice(0, 8); // 8 menu + "Semua Menu" = kisi 3x3 penuh
   return (
-    <View className="flex-row flex-wrap gap-2">
+    <View className="flex-row flex-wrap">
       {preview.map((item, idx) => (
         <QuickMenuButton key={idx} item={item} />
       ))}
-      <Pressable
-        onPress={onSeeAll}
-        className="flex-row items-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-secondary/60 px-2.5 py-2 min-h-[58px] active:opacity-70"
-        style={{ width: "48%" }}
-      >
-        <View className="w-9 h-9 rounded-full items-center justify-center bg-card">
-          <Grid3x3 size={18} color={colors.primary} />
+      <Pressable onPress={onSeeAll} className="items-center active:opacity-70" style={{ width: "33.3333%", paddingVertical: 6, paddingHorizontal: 2 }}>
+        <View className="w-[72px] h-[72px] rounded-2xl items-center justify-center bg-secondary/60 border border-dashed border-primary/40">
+          <Grid3x3 size={30} color={colors.primary} />
         </View>
-        <Text className="flex-1 text-[10.5px] font-semibold text-foreground">Semua Menu</Text>
+        <Text className="mt-1.5 text-center text-[11.5px] font-medium text-foreground">Semua Menu</Text>
       </Pressable>
     </View>
   );
