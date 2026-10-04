@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
+import { iconSourceUntukLabel } from "../utils/menuIcons";
 import { Grid3x3 } from "lucide-react-native";
 import { useThemeColors } from "../context/ThemeContext";
 import { api, type BerandaPreferensi } from "../services/api";
@@ -66,6 +67,7 @@ export const MENU_BG_COLORS: Record<string, string> = {
 };
 
 export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
+  const iconSource = iconSourceUntukLabel(item.label);
   return (
     <Pressable
       onPress={item.onPress}
@@ -73,9 +75,16 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
       style={{ width: "48%" }}
     >
       <View className="relative">
-        <View className={`w-9 h-9 rounded-full items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
-          {item.icon}
-        </View>
+        {iconSource ? (
+          // Ikon ilustrasi (set ikon-dashboard, 2026-10-04) di ubin lembut; tanpa label yang cocok -> ikon garis lama.
+          <View className="w-10 h-10 rounded-xl items-center justify-center bg-muted">
+            <Image source={iconSource} style={{ width: 32, height: 32 }} resizeMode="contain" />
+          </View>
+        ) : (
+          <View className={`w-9 h-9 rounded-full items-center justify-center ${MENU_BG_COLORS[item.colorScheme]}`}>
+            {item.icon}
+          </View>
+        )}
         {!!item.badgeCount && (
           <View className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 items-center justify-center px-1">
             <Text className="text-white text-[9px] font-bold">{item.badgeCount > 9 ? "9+" : item.badgeCount}</Text>
