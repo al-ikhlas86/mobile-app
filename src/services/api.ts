@@ -686,7 +686,21 @@ export const api = {
   adminKeuanganSetCatalogs: (id: number, catalogIds: number[]) =>
     authedFetch(`/api/admin/keuangan-installations/${id}/catalogs`, { method: "PUT", body: JSON.stringify({ catalogIds }) }),
   adminKeuanganRevoke: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}/revoke`, { method: "POST" }),
-  adminKeuanganDelete: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}`, { method: "DELETE" }),
+  // Instalasi yang sudah punya data dibalas 409 { code: 'BUTUH_KONFIRMASI', jumlahItem } -
+  // ulangi dengan konfirmasi=true (?konfirmasi=1) setelah user setuju.
+  adminKeuanganDelete: (id: number, konfirmasi = false) =>
+    authedFetch(`/api/admin/keuangan-installations/${id}${konfirmasi ? "?konfirmasi=1" : ""}`, { method: "DELETE" }),
+  // Perangkat Kiosk Presensi (khusus Admin IT). Token asli hanya dikembalikan SEKALI oleh POST.
+  adminKioskDevices: () => authedFetch("/api/admin/kiosk-devices"),
+  adminCreateKioskDevice: (data: { nama: string; catalog_id?: number }) =>
+    authedFetch("/api/admin/kiosk-devices", { method: "POST", body: JSON.stringify(data) }),
+  adminSetKioskDeviceActive: (id: number, is_active: boolean) =>
+    authedFetch(`/api/admin/kiosk-devices/${id}`, { method: "PATCH", body: JSON.stringify({ is_active }) }),
+  adminDeleteKioskDevice: (id: number) => authedFetch(`/api/admin/kiosk-devices/${id}`, { method: "DELETE" }),
+  adminSetKioskTokenLama: (aktif: boolean) =>
+    authedFetch("/api/admin/kiosk-token-lama", { method: "PUT", body: JSON.stringify({ aktif }) }),
+  // Masalah data dari Data Master (no HP tidak valid, dst) - khusus Admin IT.
+  adminDataIssues: () => authedFetch("/api/admin/data-issues"),
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),
   adminCreateAnnouncement: (data: { title: string; message: string; target_role: string; catalog_id?: number }) =>
     authedFetch("/api/admin/announcements", { method: "POST", body: JSON.stringify(data) }),

@@ -8,6 +8,8 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 import { KeuanganInstallationsSection, type KeuanganInstallation } from "./KeuanganInstallationsSection";
+import { MasalahDataSection } from "./MasalahDataSection";
+import { KioskPerangkatSection } from "./KioskPerangkatSection";
 
 const POLL_MS = 10000;
 interface SourceStatus { lastSuccessAt: string | null; lastAttemptAt: string | null; failStreak: number; lastError: string | null; healthy: boolean; }
@@ -327,6 +329,8 @@ export function SyncStatusScreen() {
         <SourceCard title="Hub API (Data Master Siswa/Guru/Pegawai)" status={data.hubApi} />
       )}
       {units && <HubUnitsSection units={units} onChanged={muatUnits} />}
+      <MasalahDataSection />
+      <KioskPerangkatSection />
       </>
       )}
       {lastCheck ? (

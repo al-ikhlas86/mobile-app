@@ -100,6 +100,34 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
           setBusyId(inst.id);
           try {
             const res = aksi === "revoke" ? await api.adminKeuanganRevoke(inst.id) : await api.adminKeuanganDelete(inst.id);
+            if (!res.success && aksi === "delete" && res.code === "BUTUH_KONFIRMASI") {
+              // Instalasi sudah punya data keuangan: minta konfirmasi kedua, baru kirim ulang dengan konfirmasi=1.
+              setBusyId(null);
+              Alert.alert(
+                "Hapus Beserta Datanya?",
+                `Instalasi ini sudah mengirim ${res.jumlahItem ?? 0} data keuangan; menghapusnya ikut menghapus semua data itu. Untuk sekadar menghentikan akses gunakan Cabut.`,
+                [
+                  { text: "Batal", style: "cancel" },
+                  {
+                    text: "Hapus Semua",
+                    style: "destructive",
+                    onPress: async () => {
+                      setBusyId(inst.id);
+                      try {
+                        const res2 = await api.adminKeuanganDelete(inst.id, true);
+                        if (!res2.success) Alert.alert("Gagal", res2.message || "Gagal memproses.");
+                        onChanged();
+                      } catch {
+                        Alert.alert("Gagal", "Gagal menghubungi server - cek koneksi internet.");
+                      } finally {
+                        setBusyId(null);
+                      }
+                    },
+                  },
+                ],
+              );
+              return;
+            }
             if (!res.success) Alert.alert("Gagal", res.message || "Gagal memproses.");
             onChanged();
           } catch {
