@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X, Trash2 } from "lucide-react-native";
 import { api } from "../../services/api";
+import { getLinkedParentAccount } from "../../services/authService";
 import { resolveNavScreen } from "../../utils/navAlias";
 import { useThemeColors } from "../../context/ThemeContext";
 
 export interface NotifItem {
   id: number; type: string; title: string; message: string; is_read: 0 | 1;
   action_screen: string | null; action_params: Record<string, unknown> | null; created_at: string;
+  // "anak" = notifikasi milik akun Orang Tua tertaut (guru/pegawai yang juga orang tua) yang digabung ke daftar ini.
+  sumber?: "anak";
 }
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -56,7 +59,20 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
 
   const load = useCallback(async () => {
     const res = await api.notifications();
-    if (res.success) setItems(res.data ?? []);
+    if (res.success) {
+      // Satu daftar: notifikasi akun Orang Tua tertaut (nomor HP sama) digabung & diberi label. ID notifikasi unik
+      // se-tabel, jadi tidak bertabrakan. Gagal mengambil sisi anak TIDAK boleh menggagalkan notifikasi utama.
+      let data: NotifItem[] = res.data ?? [];
+      if (getLinkedParentAccount()) {
+        const resAnak = await api.notifications(true).catch(() => null);
+        if (resAnak?.success) {
+          const anak = ((resAnak.data ?? []) as NotifItem[]).map((n) => ({ ...n, sumber: "anak" as const }));
+          const sudah = new Set(data.map((n) => n.id));
+          data = [...data, ...anak.filter((n) => !sudah.has(n.id))].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+        }
+      }
+      setItems(data);
+    }
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -68,23 +84,26 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
   const unreadPengumuman = pengumuman.filter((n) => !n.is_read).length;
   const current = tab === "pemberitahuan" ? pemberitahuan : pengumuman;
 
-  const markRead = (id: number) => {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n)));
-    api.markNotificationRead(id).catch(() => {});
+  // Menerima item (bukan cuma id) supaya request memakai token akun yang benar: sumber "anak" -> token Orang Tua tertaut.
+  const markRead = (item: NotifItem) => {
+    setItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, is_read: 1 } : n)));
+    api.markNotificationRead(item.id, item.sumber === "anak").catch(() => {});
   };
   const handleOpen = (item: NotifItem) => {
-    if (!item.is_read) markRead(item.id);
+    if (!item.is_read) markRead(item);
     if (item.type === "pengumuman") { setOpenLetter(item); return; }
-    if (item.action_screen) onNavigate(resolveNavScreen(item.action_screen), item.action_params ?? undefined);
+    // Notifikasi sisi anak tetap membuka layar ANAK walau sesi aktifnya staf (di sesi staf, "akademik" = menu mengajar).
+    const tujuan = item.sumber === "anak" && (item.action_screen === "akademik" || item.action_screen === "tugas-anak") ? "akademik-anak" : item.action_screen;
+    if (tujuan) onNavigate(resolveNavScreen(tujuan), item.action_params ?? undefined);
   };
   const handleMarkAllRead = () => {
     const unread = current.filter((n) => !n.is_read);
-    unread.forEach((n) => markRead(n.id));
+    unread.forEach((n) => markRead(n));
   };
 
-  const deleteOne = (id: number) => {
-    setItems((prev) => prev.filter((n) => n.id !== id));
-    api.deleteNotification(id).catch(() => {});
+  const deleteOne = (item: NotifItem) => {
+    setItems((prev) => prev.filter((n) => n.id !== item.id));
+    api.deleteNotification(item.id, item.sumber === "anak").catch(() => {});
   };
 
   // Per-grup (tab) - "Hapus Semua" di Pengumuman tidak boleh diam-diam ikut
@@ -97,7 +116,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
       "Tindakan ini tidak bisa dibatalkan.",
       [
         { text: "Batal", style: "cancel" },
-        { text: "Hapus", style: "destructive", onPress: () => current.forEach((n) => deleteOne(n.id)) },
+        { text: "Hapus", style: "destructive", onPress: () => current.forEach((n) => deleteOne(n)) },
       ]
     );
   };
@@ -147,6 +166,12 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
                 {TYPE_ICON[item.type] ?? <Bell size={20} color={colors.mutedForeground} />}
               </View>
               <View className="flex-1">
+                {/* Chip kecil: notifikasi ini milik akun Orang Tua tertaut (bukan akun staf yang sedang aktif). */}
+                {item.sumber === "anak" && (
+                  <View className="self-start rounded-full bg-primary/10 px-1.5 py-0.5 mb-1">
+                    <Text className="text-[10px] font-semibold text-primary">Orang Tua</Text>
+                  </View>
+                )}
                 <View className="flex-row items-start justify-between gap-2">
                   <Text className={`text-sm flex-1 ${!item.is_read ? "font-bold" : "font-semibold"} text-foreground`}>{item.title}</Text>
                   {!item.is_read && <View className="w-2 h-2 rounded-full bg-primary mt-1.5" />}
@@ -154,7 +179,7 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
                 <Text numberOfLines={2} className="text-xs text-muted-foreground mt-1">{item.message}</Text>
                 <Text className="text-xs text-muted-foreground mt-1.5">{timeAgo(item.created_at)}</Text>
               </View>
-              <Pressable onPress={() => deleteOne(item.id)} hitSlop={8} className="p-1">
+              <Pressable onPress={() => deleteOne(item)} hitSlop={8} className="p-1">
                 <Trash2 size={16} color={colors.mutedForeground} />
               </Pressable>
             </View>

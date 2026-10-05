@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Pressable, BackHandler } from "react-native";
+import { View, Pressable, BackHandler, DeviceEventEmitter } from "react-native";
 import { X } from "lucide-react-native";
 import { NavigationContainer, DefaultTheme, DarkTheme, type NavigationContainerRef } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -53,7 +53,7 @@ import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
 import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PersetujuanPsbScreen } from "../components/screens/PersetujuanPsbScreen";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
-import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
+import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, saringAkunGanda, idAkunSeorang, GANTI_AKUN_EVENT, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
 import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, type DemoRoleOption } from "../services/demoService";
 import { useTheme } from "../context/ThemeContext";
 import { AccountSwitcherProvider } from "../context/AccountSwitcherContext";
@@ -232,13 +232,23 @@ export function RootNavigator() {
     await refreshSessionFromServer();
   };
 
+  // Tombol "Tampilan Orang Tua" (kategori Anak Saya di beranda guru/pegawai) memancarkan event ini - pindah ke akun
+  // Orang Tua tertaut tanpa membuka Ganti Akun. Kembali ke akun staf lewat Ganti Akun (entri staf tampil saat akun
+  // orang tua aktif). handleSwitchAccount hanya memakai setter state & fungsi modul, jadi listener cukup dipasang 1x.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(GANTI_AKUN_EVENT, (id?: string) => { if (id) void handleSwitchAccount(id); });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleAddAccount = () => {
     setShowSwitcher(false);
     setShowAddAccount(true);
   };
 
   const handleRemoveLinkedAccount = async (accountId: string) => {
-    await removeAccount(accountId);
+    // Satu orang = satu akun: hapus SEMUA akun milik orang yang sama (lihat handleLogout).
+    for (const id of idAkunSeorang(accountId)) await removeAccount(id);
     setSavedAccounts(getSavedAccounts());
   };
 
@@ -270,11 +280,15 @@ export function RootNavigator() {
   const handleLogout = async () => {
     if (!session) return;
     resetViewingYear(); // Fase 4 - akun baru (walau otomatis gaya Instagram) = mulai dari tahun aktif.
-    await removeAccount(session.accountId);
+    // Satu orang = satu akun: keluar dari akun staf juga mengeluarkan akun Orang Tua tertaut (nomor sama), kalau tidak
+    // pengguna malah "jatuh" ke akun Orang Tua-nya setelah menekan Keluar.
+    for (const id of idAkunSeorang(session.accountId)) await removeAccount(id);
     const remaining = getSavedAccounts();
     setSavedAccounts(remaining);
-    if (remaining.length > 0) {
-      const s = await switchAccount(remaining[0].id);
+    // Akun tujuan berikutnya: lewati akun Orang Tua tersembunyi milik orang lain yang punya akun staf (lihat saringAkunGanda).
+    const berikut = saringAkunGanda(remaining, "")[0] ?? remaining[0];
+    if (berikut) {
+      const s = await switchAccount(berikut.id);
       if (s) { applySession(s); return; }
     }
     setSession(null);
@@ -390,6 +404,12 @@ export function RootNavigator() {
                   />
                 )
               )}
+            </Stack.Screen>
+            {/* Pengenalan Wajah ANAK dari beranda guru/pegawai yang juga orang tua murid (kategori Anak Saya). Memakai
+                layar yang sama dgn orang tua (FaceEnrollmentScreen target="child"); jalur /api/face/child/ otomatis
+                memakai token akun Orang Tua tertaut (JALUR_ORANG_TUA di api.ts). */}
+            <Stack.Screen name="pengenalan-wajah-anak" options={{ headerShown: true, title: "Pengenalan Wajah Anak" }}>
+              {({ navigation }) => <FaceEnrollmentScreen onNavigate={(screen) => navigateTo(navigation, screen)} target="child" />}
             </Stack.Screen>
             <Stack.Screen name="ubah-password" options={{ headerShown: true, title: "Ubah Kata Sandi" }}>
               {({ navigation }) => <UbahPasswordScreen onNavigate={(screen) => navigateTo(navigation, screen)} />}

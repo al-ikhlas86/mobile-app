@@ -1,16 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, DeviceEventEmitter } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart, MessageSquareWarning, UserPlus, Search, Ban, CreditCard, ClipboardList } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart, MessageSquareWarning, UserPlus, Search, Ban, CreditCard, ClipboardList, ScanFace } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
+import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
-import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick } from "../../../services/authService";
+import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick, GANTI_AKUN_EVENT } from "../../../services/authService";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
@@ -22,6 +23,8 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   const colors = useThemeColors();
   const punyaAkunOrangTua = getLinkedParentAccount() !== null; // pegawai yang juga orang tua murid -> kategori "Anak Saya"
   const tampilNilai = useRaportAktif();
+  // Lencana kartu sisi anak (kategori Anak Saya) - hitungan akun Orang Tua tertaut.
+  const { akademikAnak: akademikAnakBadge, raportAnak: nilaiAnakBadge } = useUnreadNotificationCount();
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [daysPresent, setDaysPresent] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -138,10 +141,14 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     ] },
     ...(punyaAkunOrangTua ? [{ title: "Anak Saya", items: [
       { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("presensi-anak") },
-      { label: "Akademik Anak", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("akademik-anak") },
-      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak") }] : []),
+      { label: "Akademik Anak", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("akademik-anak"), badgeCount: akademikAnakBadge },
+      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak"), badgeCount: nilaiAnakBadge }] : []),
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("detail-pembayaran") },
+      { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("pengenalan-wajah-anak") },
       { label: "Kirim Aduan Sekolah", icon: <MessageSquareWarning size={20} color="#b91c1c" />, colorScheme: "red" as const, onPress: () => onNavigate("kirim-aduan") },
+      // Pindah ke akun Orang Tua tertaut (satu orang = satu akun): RootNavigator mendengarkan event ini & memanggil
+      // handleSwitchAccount. Kembali ke akun staf lewat Ganti Akun (entri staf tampil saat akun orang tua aktif).
+      { label: "Tampilan Orang Tua", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => { const o = getLinkedParentAccount(); if (o) DeviceEventEmitter.emit(GANTI_AKUN_EVENT, o.id); } },
     ] }] : []),
     { title: "Informasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },

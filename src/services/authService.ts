@@ -313,6 +313,30 @@ export function getLinkedParentAccount(): SavedAccount | null {
   return cachedAccounts.find((a) => a.role === "Orang Tua" && a.username === sesi.username) ?? null;
 }
 
+// Nama event (DeviceEventEmitter) tombol "Tampilan Orang Tua" di beranda guru/pegawai -> RootNavigator pindah akun.
+// detail = id akun tujuan. Padanan window.dispatchEvent "alikhlas:ganti-akun" di webview.
+export const GANTI_AKUN_EVENT = "alikhlas:ganti-akun";
+
+/**
+ * Ganti Akun: SATU ENTRI PER ORANG (nomor HP). Akun Orang Tua milik pegawai/guru yang SAMA (username sama, ada akun staf)
+ * disembunyikan - ia tetap tersimpan dan dipakai menu "Anak Saya" di belakang layar. Pengecualian: saat akun Orang Tua itu
+ * sedang AKTIF (pengguna membuka "Tampilan Orang Tua"), ia tampil agar bisa kembali ke akun stafnya.
+ */
+export function saringAkunGanda(accounts: SavedAccount[], currentId: string): SavedAccount[] {
+  return accounts.filter((a) => {
+    if (a.role !== "Orang Tua" || a.id === currentId) return true;
+    return !accounts.some((x) => x.username === a.username && x.role !== "Orang Tua");
+  });
+}
+
+/** Semua id akun milik orang yang sama (username sama) - dipakai Keluar/Hapus supaya satu orang keluar sekaligus. */
+export function idAkunSeorang(accountId: string): string[] {
+  assertLoaded();
+  const dia = cachedAccounts.find((a) => a.id === accountId);
+  if (!dia) return [accountId];
+  return cachedAccounts.filter((a) => a.username === dia.username).map((a) => a.id);
+}
+
 export async function switchAccount(accountId: string): Promise<ActiveSession | null> {
   assertLoaded();
   const saved = cachedAccounts.find((a) => a.id === accountId);

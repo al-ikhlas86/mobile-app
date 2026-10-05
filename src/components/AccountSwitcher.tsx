@@ -3,7 +3,7 @@ import { View, Text, Image, Pressable, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, Check, X, Trash2 } from "lucide-react-native";
 import { resolveAvatarUrl } from "../services/api";
-import type { SavedAccount } from "../services/authService";
+import { saringAkunGanda, type SavedAccount } from "../services/authService";
 import { useThemeColors } from "../context/ThemeContext";
 
 interface Props {
@@ -44,7 +44,8 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
             <Pressable onPress={onClose}><X size={20} color={colors.mutedForeground} /></Pressable>
           </View>
           <FlatList
-            data={savedAccounts}
+            // Satu entri per orang: akun Orang Tua milik guru/pegawai yang sama disembunyikan (lihat saringAkunGanda).
+            data={saringAkunGanda(savedAccounts, currentAccountId)}
             keyExtractor={(a) => a.id}
             contentContainerStyle={{ padding: 12, gap: 4 }}
             renderItem={({ item }) => {

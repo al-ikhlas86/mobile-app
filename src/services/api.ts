@@ -212,8 +212,9 @@ function pilihToken(path: string, paksaOrangTua = false): string | null {
   return getActiveToken();
 }
 
-async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: number = FETCH_TIMEOUT_MS) {
-  const token = pilihToken(path);
+// paksaOrangTua = true -> pakai token akun Orang Tua tertaut walau path-nya bukan jalur orang tua (notifikasi sisi anak).
+async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: number = FETCH_TIMEOUT_MS, paksaOrangTua = false) {
+  const token = pilihToken(path, paksaOrangTua);
   // X-Viewing-Tahun-Ajaran (2026-09-04, Fase 4) - dipasang di SETIAP request
   // HANYA kalau popup "Ganti Tahun Ajaran" sedang aktif memilih tahun BUKAN
   // aktif (getViewingYear() null = default, backend otomatis pakai tahun
@@ -349,8 +350,9 @@ export const api = {
   psbKelas: () => authedFetch("/api/psb/kelas"),
   psbKeputusan: (hubId: number, body: { keputusan: "terima" | "tolak"; nis?: string; kelasSourceId?: number; catatan?: string }) =>
     authedFetch(`/api/psb/${hubId}/keputusan`, { method: "POST", body: JSON.stringify(body) }),
-  notifications: () => authedFetch("/api/notifications"),
-  notificationsUnreadCount: () => authedFetch("/api/notifications/unread-count"),
+  // anak=true -> pakai token akun Orang Tua tertaut (notifikasi sisi anak, digabung ke daftar/lencana notifikasi staf).
+  notifications: (anak = false) => authedFetch("/api/notifications", {}, FETCH_TIMEOUT_MS, anak),
+  notificationsUnreadCount: (anak = false) => authedFetch("/api/notifications/unread-count", {}, FETCH_TIMEOUT_MS, anak),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   // Akun Orang Tua tertaut (guru/pegawai yang juga orang tua): daftarkan token push perangkat ini ke akun itu juga,
   // supaya notifikasi anak (nilai terbit, presensi, tagihan) sampai walau sesi aktifnya staf.
@@ -360,8 +362,8 @@ export const api = {
     return fetch(`${API_URL}/api/auth/fcm-token`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${ortu.token}` }, body: JSON.stringify({ token }) })
       .then((r) => r.json()).catch(() => ({ success: false }));
   },
-  markNotificationRead: (id: number) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
-  deleteNotification: (id: number) => authedFetch(`/api/notifications/${id}`, { method: "DELETE" }),
+  markNotificationRead: (id: number, anak = false) => authedFetch(`/api/notifications/${id}/read`, { method: "PATCH" }, FETCH_TIMEOUT_MS, anak),
+  deleteNotification: (id: number, anak = false) => authedFetch(`/api/notifications/${id}`, { method: "DELETE" }, FETCH_TIMEOUT_MS, anak),
   notificationPreferences: () => authedFetch("/api/notifications/preferences"),
   updateNotificationPreferences: (prefs: Partial<Record<"notif_komentar" | "notif_like" | "notif_presensi" | "notif_bayaran" | "notif_tagihan", boolean>>) =>
     authedFetch("/api/notifications/preferences", { method: "PUT", body: JSON.stringify(prefs) }),

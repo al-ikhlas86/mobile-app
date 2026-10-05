@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import { api } from "../services/api";
+import { getLinkedParentAccount } from "../services/authService";
 
 // Badge angka notifikasi (2026-08-31, spt WA/Line) - dipoll tiap 15 detik,
 // sama cadence-nya dgn NotificationsContext versi webview. Dipakai utk (1)
@@ -44,25 +45,43 @@ const POLL_INTERVAL_MS = 15000;
  * pemanggil (DashboardLayout.tsx) jadi aman diubah bentuk return-nya.
  * `raport` (2026-10-02): notifikasi `type === "raport"` (nilai diterbitkan, actionScreen "nilai-anak") -
  * lencana kartu "Nilai Anak" orang tua; TERPISAH dari `akademik` (Nilai punya menu sendiri, bukan tab Akademik).
+ *
+ * Satu orang = satu akun: sesi STAF (guru/pegawai) yang punya akun Orang Tua tertaut (nomor HP sama) ikut menghitung
+ * lencana akun Orang Tua itu - `total` = hitungan staf + hitungan orang tua (sama dgn daftar Notifikasi yang
+ * digabung). `akademik`/`raport` tetap milik akun SESI AKTIF (di sesi staf = menu mengajar), sedangkan sisi anak
+ * dipisah ke `akademikAnak`/`raportAnak` (kartu "Akademik Anak"/"Nilai Anak" di kategori Anak Saya) - agar tugas/nilai
+ * anak tidak nyasar ke lencana kartu "Akademik" guru. Di sesi Orang Tua kedua field anak = 0 (tak ada akun tertaut).
  */
 export interface UnreadNotificationCount {
   total: number;
   akademik: number;
   raport: number;
+  akademikAnak: number;
+  raportAnak: number;
 }
 
 export function useUnreadNotificationCount(): UnreadNotificationCount {
-  const [state, setState] = useState<UnreadNotificationCount>({ total: 0, akademik: 0, raport: 0 });
+  const [state, setState] = useState<UnreadNotificationCount>({ total: 0, akademik: 0, raport: 0, akademikAnak: 0, raportAnak: 0 });
 
   useEffect(() => {
     let cancelled = false;
 
     async function poll() {
       const res = await api.notificationsUnreadCount();
+      // Akun Orang Tua tertaut (bila ada) dihitung terpisah; gagal di sisi anak TIDAK boleh menggagalkan hitungan utama.
+      const resAnak = getLinkedParentAccount() ? await api.notificationsUnreadCount(true).catch(() => null) : null;
       if (cancelled) return;
       if (res.success) {
-        setState({ total: res.count, akademik: (res.byType?.tugas_baru ?? 0) + (res.byType?.materi_baru ?? 0), raport: res.byType?.raport ?? 0 });
-        Notifications.setBadgeCountAsync(res.count).catch(() => {});
+        const anak = resAnak?.success ? resAnak : null;
+        const total = res.count + (anak?.count ?? 0);
+        setState({
+          total,
+          akademik: (res.byType?.tugas_baru ?? 0) + (res.byType?.materi_baru ?? 0),
+          raport: res.byType?.raport ?? 0,
+          akademikAnak: (anak?.byType?.tugas_baru ?? 0) + (anak?.byType?.materi_baru ?? 0),
+          raportAnak: anak?.byType?.raport ?? 0,
+        });
+        Notifications.setBadgeCountAsync(total).catch(() => {});
       }
     }
 

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, DeviceEventEmitter } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin, ScanFace } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
-import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick, type RoleName } from "../../../services/authService";
+import { getActiveSession, getLinkedParentAccount, useSessionRefreshTick, GANTI_AKUN_EVENT, type RoleName } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
@@ -60,7 +60,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // poll terpisah tiap 15 detik) - trade-off SENGAJA diambil (JSON singkat,
   // 1x per buka dashboard) drpd angkat state ini lewat context/prop-drilling
   // ke 9+ file dashboard, pola sama persis useBerandaPreferensi (QuickMenuGrid.tsx).
-  const { akademik: akademikBadge } = useUnreadNotificationCount();
+  const { akademik: akademikBadge, akademikAnak: akademikAnakBadge, raportAnak: nilaiAnakBadge } = useUnreadNotificationCount();
   const punyaAkunOrangTua = getLinkedParentAccount() !== null; // guru yang juga orang tua murid -> kategori "Anak Saya"
   const tampilNilai = useRaportAktif(); // menu Nilai Raport hanya muncul bila fitur dinyalakan Admin IT (mode demo selalu)
 
@@ -171,10 +171,14 @@ export function GuruDashboard({ onNavigate, role }: Props) {
     ] },
     ...(punyaAkunOrangTua ? [{ title: "Anak Saya", items: [
       { label: "Kehadiran Anak", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("presensi-anak") },
-      { label: "Akademik Anak", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("akademik-anak") },
-      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak") }] : []),
+      { label: "Akademik Anak", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("akademik-anak"), badgeCount: akademikAnakBadge },
+      ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak"), badgeCount: nilaiAnakBadge }] : []),
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("detail-pembayaran") },
+      { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("pengenalan-wajah-anak") },
       { label: "Kirim Aduan Sekolah", icon: <MessageSquareWarning size={20} color="#b91c1c" />, colorScheme: "red" as const, onPress: () => onNavigate("kirim-aduan") },
+      // Pindah ke akun Orang Tua tertaut (satu orang = satu akun): RootNavigator mendengarkan event ini & memanggil
+      // handleSwitchAccount. Kembali ke akun staf lewat Ganti Akun (entri staf tampil saat akun orang tua aktif).
+      { label: "Tampilan Orang Tua", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => { const o = getLinkedParentAccount(); if (o) DeviceEventEmitter.emit(GANTI_AKUN_EVENT, o.id); } },
     ] }] : []),
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },

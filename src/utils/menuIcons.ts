@@ -57,7 +57,8 @@ const PETA: Record<string, string> = {
   "Status Sinkronisasi": "status-sinkronisasi",
   "Log Aktivitas": "log-aktivitas",
   "Kondisi VPS": "kondisi-vps",
-  "Profil": "profil"
+  "Profil": "profil",
+  "Tampilan Orang Tua": "profil"
 };
 
 // require() harus statis (aturan Metro bundler) - makanya daftar berkas ditulis eksplisit.
