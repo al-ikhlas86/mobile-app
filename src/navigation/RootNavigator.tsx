@@ -306,9 +306,15 @@ export function RootNavigator() {
     setShowAddAccount(true);
   };
 
+  // Lepas token push akun yang dikeluarkan (fire-and-forget; token dibaca SEBELUM akun dihapus dari daftar tersimpan).
+  const lepasPush = (id: string) => {
+    const tokenAkun = getSavedAccounts().find((a) => a.id === id)?.token;
+    if (tokenAkun) void api.lepasFcmToken(tokenAkun);
+  };
+
   const handleRemoveLinkedAccount = async (accountId: string) => {
     // Satu orang = satu akun: hapus SEMUA akun milik orang yang sama (lihat handleLogout).
-    for (const id of idAkunSeorang(accountId)) await removeAccount(id);
+    for (const id of idAkunSeorang(accountId)) { lepasPush(id); await removeAccount(id); }
     setSavedAccounts(getSavedAccounts());
   };
 
@@ -343,7 +349,7 @@ export function RootNavigator() {
     resetViewingYear(); // Fase 4 - akun baru (walau otomatis gaya Instagram) = mulai dari tahun aktif.
     // Satu orang = satu akun: keluar dari akun staf juga mengeluarkan akun Orang Tua tertaut (nomor sama), kalau tidak
     // pengguna malah "jatuh" ke akun Orang Tua-nya setelah menekan Keluar.
-    for (const id of idAkunSeorang(session.accountId)) await removeAccount(id);
+    for (const id of idAkunSeorang(session.accountId)) { lepasPush(id); await removeAccount(id); }
     const remaining = getSavedAccounts();
     setSavedAccounts(remaining);
     // Akun tujuan berikutnya: lewati akun Orang Tua tersembunyi milik orang lain yang punya akun staf (lihat saringAkunGanda).

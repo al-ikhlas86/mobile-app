@@ -358,6 +358,8 @@ export const api = {
   // anak=true -> pakai token akun Orang Tua tertaut (notifikasi sisi anak, digabung ke daftar/lencana notifikasi staf).
   notifications: (anak = false) => authedFetch("/api/notifications", {}, FETCH_TIMEOUT_MS, anak),
   notificationsUnreadCount: (anak = false) => authedFetch("/api/notifications/unread-count", {}, FETCH_TIMEOUT_MS, anak),
+  // Dipanggil saat Keluar/Hapus akun: lepas token push perangkat dari akun itu (best-effort, tidak boleh menghalangi logout).
+  lepasFcmToken: (tokenAkun: string) => fetch(`${API_URL}/api/auth/fcm-token`, { method: "DELETE", headers: { Authorization: `Bearer ${tokenAkun}` } }).catch(() => {}),
   registerFcmToken: (token: string) => authedFetch("/api/auth/fcm-token", { method: "POST", body: JSON.stringify({ token }) }),
   // Akun Orang Tua tertaut (guru/pegawai yang juga orang tua): daftarkan token push perangkat ini ke akun itu juga,
   // supaya notifikasi anak (nilai terbit, presensi, tagihan) sampai walau sesi aktifnya staf.
