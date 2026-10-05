@@ -10,7 +10,7 @@ import { Card } from "../../ui/Card";
 import { ChildSwitcher } from "../../ChildSwitcher";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
-import { getActiveSession } from "../../../services/authService";
+import { getActiveSession, useSessionRefreshTick } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
 import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
@@ -40,7 +40,11 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   const isFocused = useIsFocused();
   useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
   const colors = useThemeColors();
+  useSessionRefreshTick(); // render ulang saat sesi disegarkan dari server (isAlumni bisa berubah)
   const session = getActiveSession();
+  // Status Akun Alumni - akun ortu yang semua anaknya sudah lulus tetap login dgn akses terbatas (berita + rekap
+  // view-only). Menu aksi tulis (lapor, daftarkan wajah) disembunyikan; backend (blockAlumni) tetap penjaga utama.
+  const isAlumni = session?.isAlumni === true;
   const news = useNewsList();
   // Badge notifikasi menu Akademik - lihat catatan sama di GuruDashboard.tsx.
   const { akademik: akademikBadge, raport: nilaiBadge } = useUnreadNotificationCount();
@@ -134,8 +138,10 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       // OrangTuaDashboard.tsx.
       { label: "Akademik", icon: <ClipboardList size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("akademik"), badgeCount: akademikBadge },
       ...(tampilNilai ? [{ label: "Nilai Anak", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-anak"), badgeCount: nilaiBadge }] : []),
-      { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
-      { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("kirim-aduan") },
+      ...(isAlumni ? [] : [
+        { label: "Pengenalan Wajah Anak", icon: <ScanFace size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("pengenalan-wajah") },
+        { label: "Kirim Aduan", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("kirim-aduan") },
+      ]),
       { label: "Rincian Biaya", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("detail-pembayaran") },
       // Placeholder - tombol saja dulu (2026-09-11, poin #9) - lihat catatan
       // lengkap di versi webview OrangTuaDashboard.tsx.

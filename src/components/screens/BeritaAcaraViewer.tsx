@@ -31,6 +31,9 @@ interface CommentItem {
 // admin_media_sd/tk DIGABUNG jadi generik (2026-09-14, Sistem Katalog) -
 // nama lama TETAP dicek (pola "legacy names") jaga2 sesi lama.
 const CAN_MODERATE_ROLES = ["Admin IT", "Supervisor", "Admin Media", "Admin Media (SD)", "Admin Media (TK & Playground)"];
+// Guru/Pegawai pemegang capability admin_media/supervisor juga lolos requireManage di backend
+// (routes/beritaAcara.js) - role literal saja tidak cukup.
+const CAN_MODERATE_CAPS = ["admin_media", "supervisor"];
 function formatDate(iso: string) { return new Date(iso).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
 function initials(name: string) { return name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join(""); }
 
@@ -110,7 +113,9 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
   const [moderationMessage, setModerationMessage] = useState("");
   const session = getActiveSession();
   const myUserId = Number(session?.accountId.replace("USR", ""));
-  const canModerate = session ? CAN_MODERATE_ROLES.includes(session.role) : false;
+  const canModerate = session
+    ? CAN_MODERATE_ROLES.includes(session.role) || (session.capabilities ?? []).some((c) => CAN_MODERATE_CAPS.includes(c))
+    : false;
   // Reload gambar otomatis begitu online kembali (2026-09-05, W4E) - lihat
   // catatan lengkap di services/networkService.ts.
   const reloadGen = useImageReloadGeneration();

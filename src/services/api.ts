@@ -292,9 +292,14 @@ export function fileFromUri(uri: string, name: string, mimeType: string) {
 // pernah muncul) di authService.ts::refreshActiveSessionCapabilities.
 export async function refreshSessionFromServer() {
   if (isDemoActive()) return;
-  if (!getRealActiveSession()) return;
+  const sesiAwal = getRealActiveSession();
+  if (!sesiAwal) return;
+  // Simpan akun yang diminta SEBELUM fetch: kalau pengguna ganti akun saat
+  // request jalan, hasil /me milik akun LAMA tidak boleh menimpa sesi akun BARU.
+  const accountId = sesiAwal.accountId;
   const res = await authedFetch("/api/auth/me");
-  if (!res.success) return;
+  if (!res.success || !res.user) return;
+  if (isDemoActive() || getRealActiveSession()?.accountId !== accountId) return;
   await refreshActiveSessionCapabilities({
     role: (ROLE_MAP[res.user.role] ?? res.user.role) as RoleName,
     fullName: res.user.full_name,
@@ -305,7 +310,7 @@ export async function refreshSessionFromServer() {
     catalogRoles: res.user.catalog_roles ?? [],
     isWaliKelas: Number(res.user.is_wali_kelas) === 1,
     isAlumni: Number(res.user.is_alumni) === 1,
-  });
+  }, accountId);
 }
 
 export const api = {

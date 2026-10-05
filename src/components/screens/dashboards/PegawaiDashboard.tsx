@@ -48,7 +48,10 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   // admin_tu_sd/tk & admin_media_sd/tk DIGABUNG jadi generik (2026-09-14,
   // Sistem Katalog) - lihat catatan sama di GuruDashboard.tsx.
   const isTuLike = hasCap("admin_tu") || hasCap("supervisor");
-  const isMediaLike = hasCap("admin_media");
+  // Supervisor (capability) juga lolos requireManage di backend routes/beritaAcara.js - lihat GuruDashboard.tsx.
+  const isMediaLike = hasCap("admin_media") || hasCap("supervisor");
+  // Pengaturan Nilai Raport: backend (routes/raport.js) hanya admin_it/admin_tu - supervisor TIDAK termasuk.
+  const isAdminTuCap = hasCap("admin_tu");
   const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
 
@@ -122,6 +125,9 @@ export function PegawaiDashboard({ onNavigate }: Props) {
         { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
       ] : []),
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04).
+      ...(isAdminTuCap && tampilNilai ? [
+        { label: "Pengaturan Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-raport") },
+      ] : []),
       ...(isTuLike ? [
         { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Pressable, BackHandler, DeviceEventEmitter } from "react-native";
+import { View, Pressable, BackHandler, DeviceEventEmitter, AppState } from "react-native";
 import { X } from "lucide-react-native";
 import { NavigationContainer, DefaultTheme, DarkTheme, type NavigationContainerRef } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -53,8 +53,8 @@ import { JadwalKerjaScreen } from "../components/screens/JadwalKerjaScreen";
 import { CariSiswaGuruScreen } from "../components/screens/CariSiswaGuruScreen";
 import { PersetujuanPsbScreen } from "../components/screens/PersetujuanPsbScreen";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
-import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, saringAkunGanda, idAkunSeorang, GANTI_AKUN_EVENT, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
-import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, type DemoRoleOption } from "../services/demoService";
+import { getActiveSession, getActiveToken, getRealActiveSession, getSavedAccounts, saringAkunGanda, idAkunSeorang, GANTI_AKUN_EVENT, useSessionRefreshTick, switchAccount, removeAccount, updateAccountAvatar, logout as authLogout, type ActiveSession, type SavedAccount, type RoleName } from "../services/authService";
+import { fetchDemoRoles, startDemoSession, exitDemoMode, isDemoActive, getActiveDemoAccount, type DemoRoleOption } from "../services/demoService";
 import { useTheme } from "../context/ThemeContext";
 import { AccountSwitcherProvider } from "../context/AccountSwitcherContext";
 import { AccountSwitcher } from "../components/AccountSwitcher";
@@ -62,7 +62,7 @@ import { DemoModeSwitcher } from "../components/DemoModeSwitcher";
 import { DemoModeBanner } from "../components/DemoModeBanner";
 import { GantiTahunAjaranSwitcher } from "../components/GantiTahunAjaranSwitcher";
 import { getViewingYear, setViewingYear, resetViewingYear, useViewingYearTick, type TahunAjaranOption } from "../services/viewingYearService";
-import { api, refreshSessionFromServer } from "../services/api";
+import { api, refreshSessionFromServer, SESSION_EXPIRED_EVENT } from "../services/api";
 import { initPushNotifications } from "../services/pushNotifications";
 import { resolveNavScreen } from "../utils/navAlias";
 
@@ -97,6 +97,8 @@ export function RootNavigator() {
   const { isDark } = useTheme();
   const [session, setSession] = useState<ActiveSession | null>(() => getActiveSession());
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
+  // true setelah server membalas 401 utk token sesi aktif (kedaluwarsa/dicabut) - LoginScreen menampilkan pesannya.
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
@@ -149,8 +151,14 @@ export function RootNavigator() {
     if (demoRoles.length > 0) return;
     const token = getActiveToken();
     if (!token) return;
-    const roles = await fetchDemoRoles(token);
-    setDemoRoles(roles);
+    setDemoError(null);
+    try {
+      const roles = await fetchDemoRoles(token);
+      setDemoRoles(roles);
+      if (roles.length === 0) setDemoError("Daftar role Mode Demo tidak dapat dimuat. Coba lagi.");
+    } catch {
+      setDemoError("Tidak dapat memuat daftar role Mode Demo. Cek koneksi internet Anda.");
+    }
   };
 
   const handlePickDemoRole = async (roleValue: string) => {
@@ -190,6 +198,10 @@ export function RootNavigator() {
   // dicek DULUAN di sini sebelum navigasi stack biasa.
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (showDemoSwitcher) {
+        setShowDemoSwitcher(false);
+        return true;
+      }
       if (showAddAccount) {
         setShowAddAccount(false);
         return true;
@@ -209,12 +221,60 @@ export function RootNavigator() {
       return false;
     });
     return () => sub.remove();
-  }, [showSwitcher, showAddAccount, showTahunAjaranSwitcher]);
+  }, [showSwitcher, showAddAccount, showTahunAjaranSwitcher, showDemoSwitcher]);
 
   const applySession = (s: ActiveSession) => {
     setSession(s);
     setSavedAccounts(getSavedAccounts());
   };
+
+  // Sesi disegarkan dari server (refreshSessionFromServer -> notifySessionListeners): state `session` di sini
+  // adalah SALINAN, jadi tanpa ini role/isWaliKelas yang diteruskan ke MainTabs/rute tetap basi. Dibaca ulang dari
+  // sumbernya (getActiveSession, sadar-demo). Tick 0 = render awal, dilewati.
+  const sessionTick = useSessionRefreshTick();
+  useEffect(() => {
+    if (sessionTick === 0) return;
+    const s = getActiveSession();
+    if (s) setSession(s);
+  }, [sessionTick]);
+
+  // Mode Demo hilang (token demo 8 jam kedaluwarsa / dibersihkan) padahal demoActive masih true -> keluar dari mode
+  // demo & kembali ke sesi asli. Dicek tiap app kembali aktif + berkala selagi demo menyala.
+  useEffect(() => {
+    if (!demoActive) return;
+    const cek = () => {
+      if (getActiveDemoAccount()) return;
+      setDemoActive(false);
+      setShowDemoSwitcher(false);
+      setSession(getActiveSession());
+    };
+    const timer = setInterval(cek, 30000);
+    const sub = AppState.addEventListener("change", (state) => { if (state === "active") cek(); });
+    return () => { clearInterval(timer); sub.remove(); };
+  }, [demoActive]);
+
+  // api.ts (authedFetch/authedUpload) memancarkan event ini begitu server membalas 401 utk token yang SEDANG aktif
+  // (sudah memanggil logout() sebelumnya). 401 token akun Orang Tua tertaut TIDAK sampai sini - api.ts hanya emit
+  // bila getActiveToken()===token, jadi sesi staf tidak ikut ter-logout (desain). Bila yang 401 token DEMO, logout()
+  // hanya keluar dari demo -> kembali ke sesi asli tanpa pesan; selain itu kembali ke Login dengan pesan.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(SESSION_EXPIRED_EVENT, () => {
+      setDemoActive(isDemoActive());
+      setShowDemoSwitcher(false);
+      setShowSwitcher(false);
+      setShowAddAccount(false);
+      setShowTahunAjaranSwitcher(false);
+      const s = getActiveSession();
+      if (s) {
+        setSession(s);
+        setSavedAccounts(getSavedAccounts());
+      } else {
+        setSession(null);
+        setSessionExpired(true);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   const handleSwitchAccount = async (accountId: string) => {
     resetViewingYear(); // Fase 4 - "reset ke tahun aktif tiap login" berlaku juga tiap ganti akun.
@@ -261,6 +321,7 @@ export function RootNavigator() {
 
   const handleLogin = (role: RoleName, fullName: string, avatarInitials: string, accountId: string) => {
     resetViewingYear(); // Fase 4 - "reset ke tahun aktif tiap login".
+    setSessionExpired(false);
     const s = getActiveSession();
     if (s) applySession(s);
   };
@@ -310,7 +371,7 @@ export function RootNavigator() {
     let cancelled = false;
     let disposePush: (() => void) | null = null;
     initPushNotifications((screen, params) => {
-      navigateTo(navigationRef.current as any, resolveNavScreen(screen), params);
+      navigateTo(navigationRef.current as any, resolveNavScreen(screen, getActiveSession()?.role), params);
     }).then((dispose) => {
       if (cancelled) dispose();
       else disposePush = dispose;
@@ -350,7 +411,7 @@ export function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false, animation: "none" }}>
         {!session ? (
           <Stack.Screen name="login">
-            {() => <LoginScreen onLogin={handleLogin} />}
+            {() => <LoginScreen onLogin={handleLogin} notice={sessionExpired ? "Sesi Anda berakhir - silakan masuk kembali." : undefined} />}
           </Stack.Screen>
         ) : (
           <>

@@ -158,18 +158,29 @@ async function purgeAdminItOnColdStart(
 }
 
 export async function loadAuthState(): Promise<void> {
-  const [accountsRaw, sessionRaw] = await Promise.all([
-    AsyncStorage.getItem(KEYS.savedAccounts),
-    AsyncStorage.getItem(KEYS.activeSession),
-  ]);
+  // AsyncStorage gagal dibaca -> mulai dari cache KOSONG (tampil Login) & tetap tandai loaded, supaya
+  // getActiveSession()/assertLoaded() tidak melempar galat dan layar tidak putih.
+  let accountsRaw: string | null = null;
+  let sessionRaw: string | null = null;
+  try {
+    [accountsRaw, sessionRaw] = await Promise.all([
+      AsyncStorage.getItem(KEYS.savedAccounts),
+      AsyncStorage.getItem(KEYS.activeSession),
+    ]);
+  } catch { /* cache kosong */ }
   let accounts: SavedAccount[] = [];
   let session: ActiveSession | null = null;
   try { accounts = accountsRaw ? JSON.parse(accountsRaw) : []; } catch { accounts = []; }
   try { session = sessionRaw ? JSON.parse(sessionRaw) : null; } catch { session = null; }
 
-  const result = accounts.some((a) => a.role === "Admin IT")
-    ? await purgeAdminItOnColdStart(accounts, session)
-    : { accounts, session };
+  let result: { accounts: SavedAccount[]; session: ActiveSession | null } = { accounts, session };
+  try {
+    if (accounts.some((a) => a.role === "Admin IT")) result = await purgeAdminItOnColdStart(accounts, session);
+  } catch {
+    // Gagal menulis pembersihan Admin IT: akun Admin IT tetap tidak dimuat sebagai sesi aktif (aman).
+    const withoutAdminIt = accounts.filter((a) => a.role !== "Admin IT");
+    result = { accounts: withoutAdminIt, session: session?.role === "Admin IT" ? null : session };
+  }
 
   cachedAccounts = result.accounts;
   cachedSession = result.session;
@@ -238,9 +249,11 @@ export async function refreshActiveSessionCapabilities(fresh: {
   isWaliKelas?: boolean;
   isAlumni?: boolean;
   catalogRoles?: { roleType: string; catalogId: number }[];
-}): Promise<ActiveSession | null> {
+}, expectedAccountId?: string): Promise<ActiveSession | null> {
   assertLoaded();
   if (!cachedSession) return null;
+  // Akun aktif sudah berganti sejak data ini diminta - buang (cegah race ganti akun).
+  if (expectedAccountId && cachedSession.accountId !== expectedAccountId) return null;
 
   const merged: ActiveSession = { ...cachedSession, ...fresh };
   cachedSession = merged;

@@ -56,7 +56,9 @@ export default function App() {
     // login" (diminta eksplisit user) - app-start adalah salah satu titiknya
     // (2 lainnya: handleLogin/handleSwitchAccount di RootNavigator.tsx).
     resetViewingYear();
-    Promise.all([loadAuthState(), loadDemoState()]).finally(() => {
+    // .catch tiap pemuatan: kegagalan storage tidak boleh membuat layar putih (loadAuthState sendiri sudah jatuh ke
+    // cache kosong; catch ini jaring pengaman terakhir) - app tetap lanjut ke layar Login.
+    Promise.all([loadAuthState().catch(() => {}), loadDemoState().catch(() => {})]).finally(() => {
       setReady(true);
       refreshSessionFromServer();
     });

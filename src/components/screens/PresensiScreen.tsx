@@ -11,6 +11,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { api } from "../../services/api";
+import { getActiveSession } from "../../services/authService";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
 import { useAutoRefresh } from "../../hooks/useAutoRefresh";
@@ -104,6 +105,9 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [activeTab, setActiveTab] = useState<"hadir" | "izin">("hadir");
+  // Status Akun Alumni - pegawai purna-bakti tetap login, TAPI presensi masuk/pulang & pengajuan izin sudah tidak
+  // relevan (backend blockAlumni menolak keduanya) - sembunyikan UI-nya. Rekap kehadiran (tab Hadir) TETAP tampil.
+  const isAlumni = getActiveSession()?.isAlumni === true;
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -210,14 +214,16 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
             <CalendarCheck size={15} color={activeTab === "hadir" ? colors.primary : colors.mutedForeground} />
             <Text className={`text-sm font-medium ${activeTab === "hadir" ? "text-foreground" : "text-muted-foreground"}`}>Hadir</Text>
           </Pressable>
-          <Pressable onPress={() => setActiveTab("izin")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "izin" ? "bg-card" : ""}`}>
-            <FileWarning size={15} color={activeTab === "izin" ? colors.primary : colors.mutedForeground} />
-            <Text className={`text-sm font-medium ${activeTab === "izin" ? "text-foreground" : "text-muted-foreground"}`}>Izin / Sakit</Text>
-          </Pressable>
+          {!isAlumni && (
+            <Pressable onPress={() => setActiveTab("izin")} className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === "izin" ? "bg-card" : ""}`}>
+              <FileWarning size={15} color={activeTab === "izin" ? colors.primary : colors.mutedForeground} />
+              <Text className={`text-sm font-medium ${activeTab === "izin" ? "text-foreground" : "text-muted-foreground"}`}>Izin / Sakit</Text>
+            </Pressable>
+          )}
         </View>
       </View>
 
-      {activeTab === "izin" ? (
+      {activeTab === "izin" && !isAlumni ? (
         <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
           <Card padding="lg">
             <Text className="text-sm font-semibold text-foreground mb-1">Ajukan Izin / Sakit / Terlambat</Text>
@@ -262,6 +268,9 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
               <MapPin size={14} color={colors.primary} />
               <Text className="text-xs font-semibold text-foreground">Presensi via Aplikasi</Text>
             </View>
+            {isAlumni ? (
+              <Text className="text-xs text-muted-foreground">Akun alumni tidak lagi bisa presensi masuk/pulang - riwayat kehadiran lama tetap bisa dilihat di bawah.</Text>
+            ) : (<>
             <Text className="text-xs text-muted-foreground mb-2.5">Lokasi GPS wajib berada di area Yayasan.</Text>
             <View className="flex-row gap-2">
               <Button size="sm" className="flex-1" onPress={() => handleCheckin("masuk")} disabled={checkinBusy !== null}>
@@ -282,6 +291,7 @@ export function PresensiScreen({ role, isWaliKelas, onNavigate }: Props) {
                 {checkinMessage.text}
               </Text>
             )}
+            </>)}
           </Card>
 
           <Card padding="sm" onPress={() => onNavigate("presensi-admin-tu")}>

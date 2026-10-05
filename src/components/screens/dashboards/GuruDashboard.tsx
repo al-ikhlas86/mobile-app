@@ -52,7 +52,11 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   // dipakai gating menu, bukan filter data - filter datanya sendiri sudah
   // benar di server berdasar catalog_id).
   const isTuLike = hasCap("admin_tu") || hasCap("supervisor");
-  const isMediaLike = hasCap("admin_media");
+  // Supervisor (capability) juga lolos requireManage di backend routes/beritaAcara.js (CAN_MANAGE_GLOBAL) -
+  // menu Kelola Berita Acara/Statistik/Blokir konsisten dgn BeritaAcaraAdmin.isGlobalBeritaAdmin & BeritaAcaraViewer.
+  const isMediaLike = hasCap("admin_media") || hasCap("supervisor");
+  // Pengaturan Nilai Raport: backend (routes/raport.js) hanya admin_it/admin_tu - supervisor TIDAK termasuk.
+  const isAdminTuCap = hasCap("admin_tu");
   const isKeuangan = hasCap("keuangan");
   const news = useNewsList();
   // Badge notifikasi menu Akademik (2026-09-24, Poin 3 Fase 2) - hook yang
@@ -134,17 +138,25 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       // Pegawai ada, 2026-09-14) - blok isWaliKelas/isTuLike SUDAH
       // menyertakan "Aduan Masuk" utk kombinasi itu, di sini KHUSUS kepsek
       // murni supaya tidak dobel.
+      // Kepsek (bukan wali kelas, bukan TU) juga butuh Kehadiran Siswa/Rekapitulasi/Ringkasan - pola sama
+      // PegawaiDashboard (isTuLike || isKepalaSekolah); wali kelas & TU sudah dapat lewat blok masing-masing.
       ...(isKepalaSekolah && !isWaliKelas && !isTuLike ? [
+        { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
+        { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+        { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04, capability jamak) -
       // lihat catatan lengkap di webview GuruDashboard.tsx.
-      ...(isTuLike && !isWaliKelas && !isKepalaSekolah ? [
+      ...(isTuLike && !isWaliKelas ? [
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
         { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
         { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
+      ...(isAdminTuCap && tampilNilai ? [
+        { label: "Pengaturan Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-raport") },
       ] : []),
       ...(isTuLike ? [
         { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-psb") },
