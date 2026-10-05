@@ -6,6 +6,7 @@ import { Lock, Eye, EyeOff } from "lucide-react-native";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
+import { updateAccountTokens } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string) => void }) {
@@ -26,8 +27,10 @@ export function UbahPasswordScreen({ onNavigate }: { onNavigate: (screen: string
     setError(""); setLoading(true);
     const res = await api.changePassword({ old_password: oldPassword, new_password: newPassword });
     setLoading(false);
-    if (res.success) setSuccess(true);
-    else setError(res.message ?? "Gagal mengubah kata sandi.");
+    if (res.success) {
+      await updateAccountTokens((res as { tokens?: Record<string, string> }).tokens); // sesi lama dicabut server; perangkat ini pakai token baru
+      setSuccess(true);
+    } else setError(res.message ?? "Gagal mengubah kata sandi.");
   };
 
   return (

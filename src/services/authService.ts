@@ -374,6 +374,23 @@ export async function switchAccount(accountId: string): Promise<ActiveSession | 
   return session;
 }
 
+/**
+ * Ganti password menaikkan versi sesi di server (semua token lama tidak berlaku). Respons berisi token baru per akun
+ * ({ <id user server>: token }) - simpan ke akun-akun tersimpan supaya perangkat INI tetap login.
+ */
+export async function updateAccountTokens(tokens: Record<string, string> | undefined | null): Promise<void> {
+  if (!tokens) return;
+  assertLoaded();
+  let berubah = false;
+  cachedAccounts = cachedAccounts.map((a) => {
+    const baru = tokens[a.id.replace(/^USR/, "")];
+    if (!baru) return a;
+    berubah = true;
+    return { ...a, token: baru };
+  });
+  if (berubah) await persistAccounts();
+}
+
 export async function updateAccountAvatar(accountId: string, avatarUrl: string | null): Promise<void> {
   assertLoaded();
   const idx = cachedAccounts.findIndex((a) => a.id === accountId);
