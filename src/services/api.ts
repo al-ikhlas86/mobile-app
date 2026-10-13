@@ -637,6 +637,8 @@ export const api = {
   // Katalog (2026-09-14, Sistem Katalog) - kelola daftar unit sekolah
   // (SD/TK/dst), PENGGANTI env var UNIT_SCOPE_MAP lama.
   adminCatalogs: () => authedFetch("/api/admin/catalogs"),
+  // Katalog untuk editor Berita Acara: terbuka utk semua pengelola berita (Admin Media dst), bukan hanya Admin IT.
+  beritaAcaraCatalogs: () => authedFetch("/api/berita-acara/catalogs"),
   adminCreateCatalog: (data: { kode: string; nama: string }) =>
     authedFetch("/api/admin/catalogs", { method: "POST", body: JSON.stringify(data) }),
   adminUpdateCatalog: (id: number, data: { kode?: string; nama?: string }) =>

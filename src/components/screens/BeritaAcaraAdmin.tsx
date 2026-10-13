@@ -91,7 +91,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
   const [uploadingActivity, setUploadingActivity] = useState(false);
 
   const load = async () => { setLoading(true); const res = await api.beritaAcaraList(); if (res.success) setItems(res.data); setLoading(false); };
-  useEffect(() => { load(); api.adminCatalogs().then((res) => { if (res.success) setCatalogs(res.data); }); }, []);
+  useEffect(() => { load(); api.beritaAcaraCatalogs().then((res) => { if (res.success) setCatalogs(res.data); }); }, []);
 
   function resetForm() {
     setEditingId(null); setEditingMedia([]); setEditingLinks([]); setNewLinkUrl("");
