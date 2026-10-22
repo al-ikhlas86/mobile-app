@@ -24,6 +24,7 @@ import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { api } from "./api";
+import { isDemoActive } from "./demoService";
 
 // @react-native-firebase/messaging BUKAN modul yang tersedia di Expo Go
 // (cuma ada di custom dev-client/APK asli yang sudah di-prebuild) - import
@@ -87,6 +88,10 @@ export async function initPushNotifications(navigate: NavigateFn): Promise<() =>
     }
   };
   if (isExpoGo) return cleanup; // Push native tidak tersedia di Expo Go - lihat catatan di atas.
+  // Mode Demo TIDAK mendaftarkan token push (audit isolasi 2026-10-22): token perangkat ini milik HP Admin IT asli, dan
+  // pendaftaran dari sesi demo (ditolak juga di server) bisa memutus push akun aslinya. Efek ini dijalankan ulang saat sesi
+  // berganti, jadi begitu keluar dari demo token didaftarkan lagi ke akun asli.
+  if (isDemoActive()) return cleanup;
   try {
     const {
       getMessaging, getToken, onTokenRefresh, onMessage,
