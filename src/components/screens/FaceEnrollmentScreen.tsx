@@ -22,6 +22,7 @@ import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { ChildSwitcher, type ChildOption } from "../ChildSwitcher";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
 import { geometriOval } from "../../utils/faceOverlay";
 
@@ -136,7 +137,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
         const childrenRes = await api.myChildren();
         if (childrenRes.success) {
           setChildren(childrenRes.data);
-          const firstId = childrenRes.data[0]?.id ?? null;
+          const firstId = pilihAnak(childrenRes.data, null);
           setActiveChildId(firstId);
           if (firstId) await loadStatus(firstId);
           else setLoading(false);
@@ -162,6 +163,14 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     setError("");
     await loadStatus(id);
   }
+
+  // Anak dipilih di layar lain / lewat notifikasi -> pendaftaran wajah ikut anak yang sama.
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (!isChild || anakTerpilih === null || anakTerpilih === activeChildId) return;
+    if (children.some((c) => c.id === anakTerpilih)) void handleSelectChild(anakTerpilih);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anakTerpilih, children]);
 
   const nextStep = STEPS.find((s) => !doneAngles.has(s.angle));
 

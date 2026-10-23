@@ -64,7 +64,8 @@ import { GantiTahunAjaranSwitcher } from "../components/GantiTahunAjaranSwitcher
 import { getViewingYear, setViewingYear, resetViewingYear, useViewingYearTick, type TahunAjaranOption } from "../services/viewingYearService";
 import { api, refreshSessionFromServer, SESSION_EXPIRED_EVENT } from "../services/api";
 import { initPushNotifications } from "../services/pushNotifications";
-import { resolveNavScreen } from "../utils/navAlias";
+import { resolveNavScreen, layarMilikStaf } from "../utils/navAlias";
+import { tangkapAnakDariParams } from "../services/anakTerpilihService";
 
 const Stack = createNativeStackNavigator();
 
@@ -86,6 +87,7 @@ const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "chatbot",
 
 function navigateTo(navigation: { navigate: (name: string, params?: unknown) => void } | null | undefined, screen: string, params?: Record<string, unknown>) {
   if (!navigation) return;
+  tangkapAnakDariParams(params); // notifikasi/menu untuk anak ke-2 membuka layar untuk anak ke-2, bukan anak pertama
   if (TAB_SCREENS.has(screen)) {
     navigation.navigate("main", { screen, params });
   } else {
@@ -171,6 +173,7 @@ export function RootNavigator() {
       setDemoError(result.message);
       return;
     }
+    resetViewingYear(); // tahun yang dilihat milik identitas lama (unit lain) - jangan terbawa ke sesi demo
     setDemoActive(true);
     setShowDemoSwitcher(false);
     const s = getActiveSession();
@@ -179,6 +182,7 @@ export function RootNavigator() {
 
   const handleExitDemo = async () => {
     await exitDemoMode();
+    resetViewingYear();
     setDemoActive(false);
     setShowDemoSwitcher(false);
     const s = getActiveSession();
@@ -244,6 +248,7 @@ export function RootNavigator() {
     if (!demoActive) return;
     const cek = () => {
       if (getActiveDemoAccount()) return;
+      resetViewingYear();
       setDemoActive(false);
       setShowDemoSwitcher(false);
       setSession(getActiveSession());
@@ -259,7 +264,9 @@ export function RootNavigator() {
   // hanya keluar dari demo -> kembali ke sesi asli tanpa pesan; selain itu kembali ke Login dengan pesan.
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener(SESSION_EXPIRED_EVENT, () => {
-      setDemoActive(isDemoActive());
+      const demoMasihAda = isDemoActive();
+      if (!demoMasihAda) resetViewingYear();
+      setDemoActive(demoMasihAda);
       setShowDemoSwitcher(false);
       setShowSwitcher(false);
       setShowAddAccount(false);
@@ -377,7 +384,21 @@ export function RootNavigator() {
     let cancelled = false;
     let disposePush: (() => void) | null = null;
     initPushNotifications((screen, params) => {
-      navigateTo(navigationRef.current as any, resolveNavScreen(screen, getActiveSession()?.role), params);
+      const aktif = getActiveSession();
+      if (aktif?.role === "Orang Tua" && !isDemoActive() && layarMilikStaf(screen)) {
+        // Push milik akun staf tertaut sementara Tampilan Orang Tua aktif: pindah ke akun staf (satu orang), buang tumpukan
+        // layar akun Orang Tua, baru buka layar tujuan - bukan membuka layar staf dengan token Orang Tua.
+        const staf = getSavedAccounts().find((a) => a.username === aktif.username && a.role !== "Orang Tua");
+        if (staf) {
+          void (async () => {
+            (navigationRef.current as any)?.resetRoot({ index: 0, routes: [{ name: "main" }] });
+            await handleSwitchAccount(staf.id);
+            navigateTo(navigationRef.current as any, resolveNavScreen(screen, getActiveSession()?.role), params);
+          })();
+          return;
+        }
+      }
+      navigateTo(navigationRef.current as any, resolveNavScreen(screen, aktif?.role), params);
     }).then((dispose) => {
       if (cancelled) dispose();
       else disposePush = dispose;
@@ -538,6 +559,7 @@ export function RootNavigator() {
               {({ navigation, route }) => (
                 <BeritaAcaraViewer
                   newsId={(route.params as { newsId?: string } | undefined)?.newsId}
+                  sebagaiOrtu={(route.params as { sebagaiOrtu?: boolean } | undefined)?.sebagaiOrtu === true}
                   onNavigate={(screen, params) => navigateTo(navigation, screen, params)}
                 />
               )}

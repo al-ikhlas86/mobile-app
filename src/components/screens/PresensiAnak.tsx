@@ -11,6 +11,7 @@ import { SimplePicker } from "../ui/SimplePicker";
 import { SimpleCalendarPicker } from "../ui/SimpleCalendarPicker";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { getActiveSession } from "../../services/authService";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -71,9 +72,7 @@ export function PresensiAnak() {
     const [childrenRes, attendanceRes] = await Promise.all([api.myChildren(), api.attendanceMyChildren()]);
     if (childrenRes.success) {
       setChildren(childrenRes.data);
-      const cur = activeChildIdRef.current;
-      const keepActive = cur !== null && childrenRes.data.some((c: ChildData) => c.id === cur);
-      const nextActiveId = keepActive ? cur : (childrenRes.data[0]?.id ?? null);
+      const nextActiveId = pilihAnak(childrenRes.data, activeChildIdRef.current); // anak dari ChildSwitcher/notifikasi, bukan selalu anak pertama
       activeChildIdRef.current = nextActiveId;
       setActiveChildId(nextActiveId);
       if (nextActiveId) {
@@ -106,6 +105,13 @@ export function PresensiAnak() {
     const statRes = await api.attendanceStatistikAnak(id);
     if (statRes.success && activeChildIdRef.current === id) setStatistik(statRes.data);
   }
+
+  // Anak dipilih di layar lain / lewat ketukan notifikasi (action_params.studentCacheId) -> layar ini ikut anak itu.
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (anakTerpilih !== null && anakTerpilih !== activeChildIdRef.current && children.some((c) => c.id === anakTerpilih)) void handleSelectChild(anakTerpilih);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anakTerpilih, children]);
 
   const child = children.find((c) => c.id === activeChildId) ?? null;
 

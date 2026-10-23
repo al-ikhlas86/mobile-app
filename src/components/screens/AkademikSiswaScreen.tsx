@@ -7,6 +7,7 @@ import { JadwalPelajaranScreen } from "./JadwalPelajaranScreen";
 import { SiswaMateriScreen } from "./SiswaMateriScreen";
 import { SiswaTugasScreen } from "./SiswaTugasScreen";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData {
@@ -66,13 +67,18 @@ export function AkademikSiswaScreen() {
       const res = await api.myChildren();
       if (res.success) {
         setChildren(res.data);
-        setActiveChildId(res.data[0]?.id ?? null);
+        setActiveChildId(pilihAnak(res.data, null));
       } else {
         setError(res.message ?? "Gagal memuat data anak.");
       }
       setLoading(false);
     })();
   }, []);
+
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (anakTerpilih !== null && children.some((c) => c.id === anakTerpilih)) setActiveChildId(anakTerpilih);
+  }, [anakTerpilih, children]);
 
   function handleSelectChild(id: number) {
     setActiveChildId(id);

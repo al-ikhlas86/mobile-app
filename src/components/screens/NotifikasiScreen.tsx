@@ -5,7 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { AlertCircle, CheckCircle, FileText, Clock, Bell, Heart, MessageCircle, Reply, Megaphone, X, Trash2 } from "lucide-react-native";
 import { api } from "../../services/api";
 import { getLinkedParentAccount, getActiveSession } from "../../services/authService";
-import { resolveNavScreen } from "../../utils/navAlias";
+import { resolveNavScreen, tujuanNotifikasi } from "../../utils/navAlias";
 import { useThemeColors } from "../../context/ThemeContext";
 
 export interface NotifItem {
@@ -93,8 +93,8 @@ export function NotifikasiScreen({ onNavigate }: { onNavigate: (screen: string, 
     if (!item.is_read) markRead(item);
     if (item.type === "pengumuman") { setOpenLetter(item); return; }
     // Notifikasi sisi anak tetap membuka layar ANAK walau sesi aktifnya staf (di sesi staf, "akademik" = menu mengajar).
-    const tujuan = item.sumber === "anak" && (item.action_screen === "akademik" || item.action_screen === "tugas-anak") ? "akademik-anak" : item.action_screen;
-    if (tujuan) onNavigate(resolveNavScreen(tujuan, getActiveSession()?.role), item.action_params ?? undefined);
+    const { screen, params } = tujuanNotifikasi(item);
+    if (screen) onNavigate(resolveNavScreen(screen, getActiveSession()?.role), params);
   };
   const handleMarkAllRead = () => {
     const unread = current.filter((n) => !n.is_read);

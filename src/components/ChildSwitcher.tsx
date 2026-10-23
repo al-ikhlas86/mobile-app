@@ -1,6 +1,7 @@
 import React from "react";
 import { ScrollView, Pressable, Text, View } from "react-native";
 import { useThemeColors } from "../context/ThemeContext";
+import { setAnakTerpilih } from "../services/anakTerpilihService";
 
 export interface ChildOption {
   id: number;
@@ -45,7 +46,7 @@ export function ChildSwitcher({ children, activeId, onChange }: Props) {
         return (
           <Pressable
             key={c.id}
-            onPress={() => onChange(c.id)}
+            onPress={() => { setAnakTerpilih(c.id); onChange(c.id); }}
             className={`px-3.5 py-2 rounded-xl border ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
           >
             <Text className={`text-sm font-medium ${active ? "text-primary-foreground" : "text-foreground"}`}>{c.nama}</Text>

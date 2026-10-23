@@ -220,7 +220,9 @@ async function authedFetch(path: string, options: RequestInit = {}, timeoutMs: n
   // aktif (getViewingYear() null = default, backend otomatis pakai tahun
   // aktif spt sebelum Fase 4 ada - lihat middleware/auth.js). Sama persis
   // pola webview api.ts.
-  const viewingYear = getViewingYear();
+  // Tahun ajaran dilihat milik akun AKTIF (unit akun itu): jangan ikut terkirim bersama token akun Orang Tua tertaut
+  // (unit anak bisa lain - source_id tahun bisa bertabrakan antar-unit sehingga jadwal/nilai anak salah tahun atau kosong).
+  const viewingYear = token === getActiveToken() ? getViewingYear() : null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -386,8 +388,10 @@ export const api = {
   scheduleMe: (semester?: "ganjil" | "genap") => authedFetch(`/api/schedule/me${semester ? `?semester=${semester}` : ""}`),
   scheduleAnak: (studentCacheId: number, semester?: "ganjil" | "genap") =>
     authedFetch(`/api/schedule/anak/${studentCacheId}${semester ? `?semester=${semester}` : ""}`),
-  scheduleKalender: (from?: string, to?: string) =>
-    authedFetch(`/api/schedule/kalender${from && to ? `?from=${from}&to=${to}` : ""}`),
+  // paksaOrangTua=true: mode "anak" di sesi STAF yg juga orang tua - kalender HARUS unit sekolah ANAK (server menentukan
+  // unit dari akun yg dipakai), jadi pakai token akun Orang Tua tertaut (lihat pilihToken), bukan token staf.
+  scheduleKalender: (from?: string, to?: string, paksaOrangTua = false) =>
+    authedFetch(`/api/schedule/kalender${from && to ? `?from=${from}&to=${to}` : ""}`, {}, FETCH_TIMEOUT_MS, paksaOrangTua),
   // Catatan/Pengingat pribadi Jadwal Kerja (2026-09-15) - BEDA dari
   // scheduleKalender di atas (kalender BERSAMA 1 unit): ini catatan MILIK
   // SENDIRI, tidak pernah kelihatan orang lain.
@@ -709,7 +713,7 @@ export const api = {
   backupStatus: () => authedFetch("/api/admin/backup/status"),
 
   beritaAcaraList: () => authedFetch("/api/berita-acara"),
-  beritaAcaraDetail: (id: number) => authedFetch(`/api/berita-acara/${id}`),
+  beritaAcaraDetail: (id: number, ortu = false) => authedFetch(`/api/berita-acara/${id}`, {}, FETCH_TIMEOUT_MS, ortu),
   // catalog_id (2026-09-14, Sistem Katalog) - PENGGANTI unit_scope (string
   // SD/TK_PLAYGROUND/ALL lama) - null = ALL (semua katalog).
   beritaAcaraCreate: (data: { title: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null }) =>
@@ -727,15 +731,15 @@ export const api = {
   beritaAcaraDeleteMedia: (id: number, mediaId: number) => authedFetch(`/api/berita-acara/${id}/media/${mediaId}`, { method: "DELETE" }),
   beritaAcaraAddLink: (id: number, url: string) => authedFetch(`/api/berita-acara/${id}/links`, { method: "POST", body: JSON.stringify({ url }) }),
   beritaAcaraDeleteLink: (id: number, linkId: number) => authedFetch(`/api/berita-acara/${id}/links/${linkId}`, { method: "DELETE" }),
-  beritaAcaraToggleLike: (id: number) => authedFetch(`/api/berita-acara/${id}/like`, { method: "POST" }),
-  beritaAcaraComments: (id: number) => authedFetch(`/api/berita-acara/${id}/comments`),
-  beritaAcaraAddComment: (id: number, comment: string, parentCommentId?: number) =>
-    authedFetch(`/api/berita-acara/${id}/comments`, { method: "POST", body: JSON.stringify({ comment, parent_comment_id: parentCommentId }) }),
-  beritaAcaraDeleteComment: (id: number, commentId: number) => authedFetch(`/api/berita-acara/${id}/comments/${commentId}`, { method: "DELETE" }),
-  beritaAcaraEditComment: (id: number, commentId: number, comment: string) =>
-    authedFetch(`/api/berita-acara/${id}/comments/${commentId}`, { method: "PATCH", body: JSON.stringify({ comment }) }),
-  beritaAcaraToggleCommentLike: (id: number, commentId: number) =>
-    authedFetch(`/api/berita-acara/${id}/comments/${commentId}/like`, { method: "POST" }),
+  beritaAcaraToggleLike: (id: number, ortu = false) => authedFetch(`/api/berita-acara/${id}/like`, { method: "POST" }, FETCH_TIMEOUT_MS, ortu),
+  beritaAcaraComments: (id: number, ortu = false) => authedFetch(`/api/berita-acara/${id}/comments`, {}, FETCH_TIMEOUT_MS, ortu),
+  beritaAcaraAddComment: (id: number, comment: string, parentCommentId?: number, ortu = false) =>
+    authedFetch(`/api/berita-acara/${id}/comments`, { method: "POST", body: JSON.stringify({ comment, parent_comment_id: parentCommentId }) }, FETCH_TIMEOUT_MS, ortu),
+  beritaAcaraDeleteComment: (id: number, commentId: number, ortu = false) => authedFetch(`/api/berita-acara/${id}/comments/${commentId}`, { method: "DELETE" }, FETCH_TIMEOUT_MS, ortu),
+  beritaAcaraEditComment: (id: number, commentId: number, comment: string, ortu = false) =>
+    authedFetch(`/api/berita-acara/${id}/comments/${commentId}`, { method: "PATCH", body: JSON.stringify({ comment }) }, FETCH_TIMEOUT_MS, ortu),
+  beritaAcaraToggleCommentLike: (id: number, commentId: number, ortu = false) =>
+    authedFetch(`/api/berita-acara/${id}/comments/${commentId}/like`, { method: "POST" }, FETCH_TIMEOUT_MS, ortu),
   beritaAcaraBlockCommenter: (id: number, commentId: number) => authedFetch(`/api/berita-acara/${id}/comments/${commentId}/block`, { method: "POST" }),
   beritaAcaraBlockedCommenters: () => authedFetch("/api/berita-acara/blocked-commenters"),
   beritaAcaraUnblockCommenter: (userId: number) => authedFetch(`/api/berita-acara/blocked-commenters/${userId}`, { method: "DELETE" }),

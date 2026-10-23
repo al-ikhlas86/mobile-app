@@ -10,6 +10,7 @@ import { Input } from "../ui/Input";
 import { SimplePicker } from "../ui/SimplePicker";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { getTodayLocal } from "../../utils/formatters";
 import { useThemeColors } from "../../context/ThemeContext";
 
@@ -56,13 +57,18 @@ export function KirimAduanScreen() {
     const [childrenRes, mineRes] = await Promise.all([api.myChildren(), api.aduanMine()]);
     if (childrenRes.success) {
       setChildren(childrenRes.data);
-      setActiveChildId((prev) => (prev !== null && childrenRes.data.some((c: ChildData) => c.id === prev) ? prev : childrenRes.data[0]?.id ?? null));
+      setActiveChildId((prev) => pilihAnak(childrenRes.data, prev));
     }
     if (mineRes.success) setRiwayat(mineRes.data);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
+
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (anakTerpilih !== null && children.some((c) => c.id === anakTerpilih)) setActiveChildId(anakTerpilih);
+  }, [anakTerpilih, children]);
 
   const child = children.find((c) => c.id === activeChildId) ?? null;
 

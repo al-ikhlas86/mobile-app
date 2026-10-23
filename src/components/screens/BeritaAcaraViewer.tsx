@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Calendar, User, ImageIcon, Tag, Link2, X, Heart, MessageCircle, Send, Ban } from "lucide-react-native";
 import { api, resolveAvatarUrl } from "../../services/api";
-import { getActiveSession } from "../../services/authService";
+import { getActiveSession, getLinkedParentAccount } from "../../services/authService";
 import { useThemeColors } from "../../context/ThemeContext";
 import { useImageReloadGeneration } from "../../services/networkService";
 
@@ -98,7 +98,8 @@ function CommentRow({ comment, canModerate, isMine, onReply, onLike, onDelete, o
   );
 }
 
-export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
+// sebagaiOrtu: dibuka dari notifikasi sisi anak (akun Orang Tua tertaut) - seluruh permintaan & identitas komentar memakai akun itu.
+export function BeritaAcaraViewer({ newsId, onNavigate, sebagaiOrtu = false }: { newsId?: string; onNavigate: (screen: string, params?: Record<string, unknown>) => void; sebagaiOrtu?: boolean }) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [post, setPost] = useState<BeritaDetail | null>(null);
@@ -112,8 +113,10 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
   const [replyingTo, setReplyingTo] = useState<{ id: number; full_name: string } | null>(null);
   const [moderationMessage, setModerationMessage] = useState("");
   const session = getActiveSession();
-  const myUserId = Number(session?.accountId.replace("USR", ""));
-  const canModerate = session
+  const akunOrtu = sebagaiOrtu ? getLinkedParentAccount() : null; // null = tak ada akun Orang Tua tertaut -> pakai akun aktif
+  const ortu = akunOrtu !== null;
+  const myUserId = Number((akunOrtu?.id ?? session?.accountId ?? "").replace("USR", ""));
+  const canModerate = ortu ? false : session
     ? CAN_MODERATE_ROLES.includes(session.role) || (session.capabilities ?? []).some((c) => CAN_MODERATE_CAPS.includes(c))
     : false;
   // Reload gambar otomatis begitu online kembali (2026-09-05, W4E) - lihat
@@ -128,45 +131,45 @@ export function BeritaAcaraViewer({ newsId, onNavigate }: { newsId?: string; onN
     (async () => {
       setLoading(true);
       setError("");
-      const res = await api.beritaAcaraDetail(Number(newsId));
+      const res = await api.beritaAcaraDetail(Number(newsId), ortu);
       if (res.success) {
         setPost(res.data);
-        const commentsRes = await api.beritaAcaraComments(Number(newsId));
+        const commentsRes = await api.beritaAcaraComments(Number(newsId), ortu);
         if (commentsRes.success) setComments(commentsRes.data);
       } else setError(res.message ?? "Berita tidak ditemukan.");
       setLoading(false);
     })();
-  }, [newsId, reloadGen]);
+  }, [newsId, reloadGen, ortu]);
 
   async function handleToggleLike() {
     if (!post || likeBusy) return;
     setLikeBusy(true);
-    const res = await api.beritaAcaraToggleLike(post.id);
+    const res = await api.beritaAcaraToggleLike(post.id, ortu);
     setLikeBusy(false);
     if (res.success) setPost({ ...post, liked_by_me: res.data.liked, likes_count: res.data.likes_count });
   }
   async function handleAddComment() {
     if (!post || !newComment.trim()) return;
     setCommentSaving(true);
-    const res = await api.beritaAcaraAddComment(post.id, newComment.trim(), replyingTo?.id);
+    const res = await api.beritaAcaraAddComment(post.id, newComment.trim(), replyingTo?.id, ortu);
     setCommentSaving(false);
     if (res.success) { setComments((prev) => [...prev, res.data]); setNewComment(""); setReplyingTo(null); }
   }
   async function handleDeleteComment(commentId: number) {
     if (!post) return;
-    const res = await api.beritaAcaraDeleteComment(post.id, commentId);
+    const res = await api.beritaAcaraDeleteComment(post.id, commentId, ortu);
     if (res.success) setComments((prev) => prev.filter((c) => c.id !== commentId && c.parent_comment_id !== commentId));
   }
   async function handleEditComment(commentId: number, newText: string) {
     if (!post) return;
-    const res = await api.beritaAcaraEditComment(post.id, commentId, newText);
+    const res = await api.beritaAcaraEditComment(post.id, commentId, newText, ortu);
     if (res.success) {
       setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, comment: newText, is_edited: true } : c)));
     }
   }
   async function handleLikeComment(commentId: number) {
     if (!post) return;
-    const res = await api.beritaAcaraToggleCommentLike(post.id, commentId);
+    const res = await api.beritaAcaraToggleCommentLike(post.id, commentId, ortu);
     if (res.success) {
       setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, liked_by_me: res.data.liked, likes_count: res.data.likes_count } : c)));
     }

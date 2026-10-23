@@ -10,6 +10,7 @@ import { Card } from "../../ui/Card";
 import { ChildSwitcher } from "../../ChildSwitcher";
 import { NewsCarousel, useNewsList } from "../../NewsCarousel";
 import { api } from "../../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../../services/anakTerpilihService";
 import { getActiveSession, useSessionRefreshTick } from "../../../services/authService";
 import { useUnreadNotificationCount } from "../../../hooks/useUnreadNotificationCount";
 import { useRaportAktif } from "../../../hooks/useRaportAktif";
@@ -49,6 +50,11 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   // Badge notifikasi menu Akademik - lihat catatan sama di GuruDashboard.tsx.
   const { akademik: akademikBadge, raport: nilaiBadge } = useUnreadNotificationCount();
   const tampilNilai = useRaportAktif(); // menu Nilai Anak hanya muncul bila fitur dinyalakan Admin IT (mode demo selalu)
+  // Anak dipilih di layar lain / lewat notifikasi -> kartu Beranda ikut anak yang sama.
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (anakTerpilih !== null && children.some((c) => c.id === anakTerpilih)) { activeChildIdRef.current = anakTerpilih; setActiveChildId(anakTerpilih); }
+  }, [anakTerpilih, children]);
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   // fetchChildrenData murni fetch (TIDAK setState sendiri) - dipakai 2
@@ -58,8 +64,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
   function applyChildrenData(childrenRes: Awaited<ReturnType<typeof api.myChildren>>, attendanceRes: Awaited<ReturnType<typeof api.attendanceMyChildren>>) {
     if (childrenRes.success) {
       setChildren(childrenRes.data);
-      const keepActive = activeChildIdRef.current !== null && childrenRes.data.some((c: ChildData) => c.id === activeChildIdRef.current);
-      const nextActiveId = keepActive ? activeChildIdRef.current : (childrenRes.data[0]?.id ?? null);
+      const nextActiveId = pilihAnak(childrenRes.data, activeChildIdRef.current);
       activeChildIdRef.current = nextActiveId;
       setActiveChildId(nextActiveId);
       setError("");

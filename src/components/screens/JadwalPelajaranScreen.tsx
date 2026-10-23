@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, AlertCircle, User, PartyPopper } from "lucide-react-native";
@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface Slot { hari: string; jam_ke: number | null; jam_mulai: string; jam_selesai: string; mata_pelajaran_nama: string; jenis?: "pelajaran" | "kegiatan"; kelas_nama?: string; guru_nama?: string | null; }
@@ -171,12 +172,13 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
   useEffect(() => {
     (async () => {
       setLoading(true); setError("");
-      const kalenderPromise = api.scheduleKalender().catch(() => null);
+      const kalenderPromise = api.scheduleKalender(undefined, undefined, mode === "anak").catch(() => null);
       if (mode === "anak") {
         const childrenRes = await api.myChildren();
         if (!childrenRes.success) { setError(childrenRes.message ?? "Gagal memuat data anak."); setLoading(false); return; }
         setChildren(childrenRes.data);
-        const firstChild = childrenRes.data[0] ?? null;
+        const firstChildId = pilihAnak(childrenRes.data, null);
+        const firstChild = childrenRes.data.find((c: { id: number }) => c.id === firstChildId) ?? null;
         setActiveChildId(firstChild?.id ?? null);
         if (!firstChild) { setLoading(false); return; }
         const res = await api.scheduleAnak(firstChild.id);
@@ -194,16 +196,28 @@ export function JadwalPelajaranScreen({ mode }: { mode: "guru" | "anak" }) {
     })();
   }, [mode]);
 
+  // Permintaan jadwal anak terakhir - jawaban anak yang sudah ditinggalkan tidak boleh menimpa tampilan.
+  const anakReqRef = useRef(0);
   async function handleSelectChild(id: number) {
+    const req = ++anakReqRef.current;
     setActiveChildId(id);
     setLoading(true);
     setError("");
     const res = await api.scheduleAnak(id);
+    if (req !== anakReqRef.current) return;
     if (res.success) { setSlots(res.data); setMeta(res.meta ?? null); } else setError(res.message ?? "Gagal memuat jadwal pelajaran.");
     setLoading(false);
   }
 
   const child = children.find((c) => c.id === activeChildId) ?? null;
+
+  // Anak dipilih di layar lain / lewat notifikasi -> jadwal ikut anak yang sama.
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (mode !== "anak" || anakTerpilih === null || anakTerpilih === activeChildId) return;
+    if (children.some((c) => c.id === anakTerpilih)) void handleSelectChild(anakTerpilih);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anakTerpilih, children]);
 
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
   if (error) return <View className="flex-1 items-center justify-center bg-background gap-3 px-8"><AlertCircle size={32} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground text-center">{error}</Text></View>;

@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react-native";
 import { ChildSwitcher } from "../ChildSwitcher";
 import { SiswaNilaiScreen } from "./SiswaNilaiScreen";
 import { api } from "../../services/api";
+import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
 
 interface ChildData { id: number; nama: string; kelas_nama: string | null }
@@ -24,13 +25,18 @@ export function NilaiAnakScreen() {
       const res = await api.myChildren();
       if (res.success) {
         setChildren(res.data);
-        setActiveChildId(res.data[0]?.id ?? null);
+        setActiveChildId(pilihAnak(res.data, null));
       } else {
         setError(res.message ?? "Gagal memuat data anak.");
       }
       setLoading(false);
     })();
   }, []);
+
+  const anakTerpilih = useAnakTerpilih();
+  useEffect(() => {
+    if (anakTerpilih !== null && children.some((c) => c.id === anakTerpilih)) setActiveChildId(anakTerpilih);
+  }, [anakTerpilih, children]);
 
   const child = children.find((c) => c.id === activeChildId) ?? null;
   if (loading) {
