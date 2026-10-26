@@ -27,6 +27,7 @@ interface Isi {
   contact: { address: string; phone: string; email: string; whatsapp: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
   socials: { label: string; url: string }[];
   faq: { q: string; a: string }[];
+  pengurus: { id: string; nama: string; jabatan: string; deskripsi: string; foto: string }[];
   teks: {
     hero: { eyebrow: string; slides: { judul: string; paragraf: string }[]; levels: string[]; captionJudul: string; captionLokasi: string };
     tentang: { judul: string; subjudul: string; paragraf: string[]; ribbonJudul: string; ribbonTeks: string };
@@ -90,6 +91,7 @@ function ringkasanPerubahan(a: Isi, d: Isi): string[] {
   if (beda(a.contact, d.contact) || beda(a.socials, d.socials)) h.push("Kontak & media sosial");
   if (beda(a.teks.banner, d.teks.banner) || beda(a.teks.berita, d.teks.berita) || beda(a.teks.footer, d.teks.footer)) h.push("Spanduk, Info Terbaru & footer");
   if (beda(a.faq, d.faq) || beda(a.teks.faq, d.teks.faq)) h.push("Tanya jawab (FAQ)");
+  if (beda(a.pengurus, d.pengurus)) h.push("Pengurus yayasan");
   return h;
 }
 
@@ -336,6 +338,57 @@ function PanelPengelola() {
   );
 }
 
+// ---------- panel Persetujuan kartu guru/pegawai ----------
+interface Antrian { employeeId: number; nama: string; katalog: { kode: string; nama: string } | null; status: string[]; mapel: string[]; deskripsi: string; foto: string | null; sudahTayang: boolean }
+
+function PanelPersetujuan({ antrian, onUbah }: { antrian: Antrian[] | null; onUbah: () => void }) {
+  const [sibuk, setSibuk] = useState<number | null>(null);
+  const [pesan, setPesan] = useState("");
+  const [tolak, setTolak] = useState<{ a: Antrian; alasan: string } | null>(null);
+  const kirim = async (a: Antrian, aksi: "setujui" | "tolak", catatan?: string) => {
+    setSibuk(a.employeeId); setPesan("");
+    const res = await api.profilTimKeputusan(a.employeeId, aksi, catatan);
+    setSibuk(null); setTolak(null);
+    if (!res.success) setPesan(res.message || "Gagal memproses.");
+    onUbah();
+  };
+  const setujui = async (a: Antrian) => { if (await konfirmasi("Tayangkan kartu", `Tayangkan kartu ${a.nama} di website?`, "Setujui")) void kirim(a, "setujui"); };
+  if (antrian === null) return <Text className="text-sm text-muted-foreground">Memuat...</Text>;
+  return (
+    <View className="gap-3">
+      <Text className="text-sm text-foreground">Guru/pegawai yang memilih tampil di halaman Profil Yayasan menunggu persetujuan Anda di sini. Periksa foto dan tulisannya, lalu setujui atau tolak dengan alasan. Kartu baru tayang di website dalam sekitar 30 menit setelah disetujui.</Text>
+      {pesan ? <Text className="text-sm text-red-600">{pesan}</Text> : null}
+      {antrian.length === 0 ? <Text className="text-sm text-muted-foreground">Tidak ada kartu yang menunggu persetujuan.</Text> : antrian.map((a) => (
+        <View key={a.employeeId} className="border border-border rounded-xl p-3 gap-2">
+          <View className="flex-row gap-3">
+            {a.foto ? <Image source={{ uri: a.foto }} className="w-20 h-28 rounded-lg bg-muted" resizeMode="cover" /> : <View className="w-20 h-28 rounded-lg border border-dashed border-border bg-muted items-center justify-center"><ImageIcon size={20} color="#9ca3af" /></View>}
+            <View className="flex-1 gap-1.5">
+              <Text className="text-sm font-semibold text-foreground">{a.nama} <Text className="text-xs font-normal text-muted-foreground">· {a.katalog?.nama ?? "Yayasan"}{a.sudahTayang ? " · perubahan" : " · baru"}</Text></Text>
+              <View className="flex-row flex-wrap gap-1.5">{a.status.map((s) => <View key={s} className="bg-muted rounded-full px-2 py-0.5"><Text className="text-[11px] text-foreground">{s}</Text></View>)}</View>
+              {a.mapel.length > 0 ? <Text className="text-xs text-muted-foreground">Mapel: {a.mapel.join(", ")}</Text> : null}
+              <Text className="text-sm text-foreground">{a.deskripsi || "(tanpa deskripsi)"}</Text>
+            </View>
+          </View>
+          {tolak?.a.employeeId === a.employeeId ? (
+            <View className="gap-2">
+              <TextInput value={tolak.alasan} onChangeText={(v) => setTolak({ a, alasan: v })} placeholder="Alasan menolak (akan dibaca guru)" maxLength={200} multiline className={inputCls} />
+              <View className="flex-row gap-2">
+                <TombolKecil onPress={() => setTolak(null)}>Batal</TombolKecil>
+                <Pressable disabled={sibuk !== null || tolak.alasan.trim().length < 3} onPress={() => void kirim(a, "tolak", tolak.alasan.trim())} className={`px-4 py-2 rounded-xl bg-red-600 ${sibuk !== null || tolak.alasan.trim().length < 3 ? "opacity-50" : ""}`}><Text className="text-sm font-semibold text-white">Kirim penolakan</Text></Pressable>
+              </View>
+            </View>
+          ) : (
+            <View className="flex-row gap-2">
+              <TombolKecil disabled={sibuk !== null} icon={<X size={14} color="#dc2626" />} onPress={() => setTolak({ a, alasan: "" })}>Tolak</TombolKecil>
+              <Pressable disabled={sibuk !== null} onPress={() => void setujui(a)} className={`flex-row items-center gap-1.5 px-4 py-2 rounded-xl bg-primary ${sibuk !== null ? "opacity-50" : ""}`}>{sibuk === a.employeeId ? <ActivityIndicator size="small" color="#fff" /> : <CheckCircle size={14} color="#fff" />}<Text className="text-sm font-semibold text-primary-foreground">Setujui</Text></Pressable>
+            </View>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ---------- layar ----------
 export function KelolaWebsiteScreen() {
   const colors = useThemeColors();
@@ -356,6 +409,8 @@ export function KelolaWebsiteScreen() {
   const [riwayat, setRiwayat] = useState<Riwayat[] | null>(null);
   const [previewLokal, setPreviewLokal] = useState<Record<string, string>>({});
   const penayanganRef = useRef(0);
+  const [antrian, setAntrian] = useState<Antrian[] | null>(null);
+  const muatAntrian = useCallback(async () => { const res = await api.profilTimAntrian(); setAntrian(res.success ? (res.data as Antrian[]) : []); }, []);
 
   const muat = useCallback(async () => {
     setFase("muat");
@@ -366,6 +421,7 @@ export function KelolaWebsiteScreen() {
     setFase("ok");
   }, []);
   useEffect(() => { void muat(); }, [muat]);
+  useEffect(() => { void muatAntrian(); }, [muatAntrian]);
   useEffect(() => () => { penayanganRef.current += 1; }, []);
 
   const dirty = useMemo(() => draft !== null && asli !== null && JSON.stringify(draft) !== JSON.stringify(asli), [draft, asli]);
@@ -704,6 +760,21 @@ export function KelolaWebsiteScreen() {
           <Area label="Footer: slogan" rows={2} max={300} ro={g} hint="Enter = baris baru." value={t.footer.slogan} onChange={(v) => ubah((d) => { d.teks.footer.slogan = v; })} />
         </Bagian>
 
+        <Bagian judul="Pengurus yayasan" info="Daftar pengurus/petinggi yayasan di halaman Profil Yayasan (diisi manual). Guru dan pegawai mengisi kartunya sendiri lewat akunnya." ringkas={`${draft.pengurus.length} orang`} terbuka={buka === "pengurus"} sembunyi={sembunyi("pengurus")} onToggle={() => toggle("pengurus")} kunci={g}>
+          {g ? <CatatanKunci /> : null}
+          {draft.pengurus.map((p, i) => (
+            <KartuItem key={p.id} judul={p.nama} {...kartuProps("")} bisaHapus={!g}
+              onNaik={() => ubah((d) => geser(d.pengurus, i, -1))} onTurun={() => ubah((d) => geser(d.pengurus, i, 1))}
+              onHapus={() => void hapusDgnKonfirmasi(`${p.nama} dari pengurus`, () => ubah((d) => { d.pengurus.splice(i, 1); }))}>
+              <Foto label="Foto" saran="Foto berdiri/setengah badan, latar sederhana." value={p.foto} ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.pengurus[i].foto = v; })} />
+              <Teks label="Nama lengkap" value={p.nama} max={100} ro={g} onChange={(v) => ubah((d) => { d.pengurus[i].nama = v; })} />
+              <Teks label="Jabatan (mis. Ketua Yayasan)" value={p.jabatan} ro={g} onChange={(v) => ubah((d) => { d.pengurus[i].jabatan = v; })} />
+              <Area label="Deskripsi singkat (opsional)" rows={3} max={600} ro={g} value={p.deskripsi} onChange={(v) => ubah((d) => { d.pengurus[i].deskripsi = v; })} />
+            </KartuItem>
+          ))}
+          {!g && draft.pengurus.length < 20 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.pengurus.push({ id: idBaru("pg"), nama: "Nama pengurus", jabatan: "Jabatan", deskripsi: "", foto: "" }); })}>Tambah pengurus</TombolKecil> : null}
+        </Bagian>
+
         <Bagian judul="Tanya jawab (FAQ)" info="Pertanyaan yang sering diajukan. Membantu pengunjung, dan membuat sekolah lebih mudah ditemukan di Google dan asisten AI." ringkas={`${draft.faq.length} pertanyaan`} terbuka={buka === "faq"} sembunyi={sembunyi("faq")} onToggle={() => toggle("faq")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Teks label="Judul bagian" value={t.faq.judul} ro={g} onChange={(v) => ubah((d) => { d.teks.faq.judul = v; })} />
@@ -718,6 +789,10 @@ export function KelolaWebsiteScreen() {
           ))}
           {!g && draft.faq.length < 12 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.faq.push({ q: "Pertanyaan baru?", a: "Jawaban singkat dan faktual." }); })}>Tambah pertanyaan</TombolKecil> : null}
           {!g ? <Text className="text-xs text-muted-foreground">Tulis jawaban yang singkat dan benar (alamat, jenjang, cara mendaftar, jam layanan). Jangan memuat data pribadi.</Text> : null}
+        </Bagian>
+
+        <Bagian judul="Persetujuan kartu guru" info="Kartu profil guru/pegawai yang menunggu persetujuan sebelum tayang di halaman Profil Yayasan." ringkas={antrian === null ? "Memuat..." : antrian.length ? `${antrian.length} kartu menunggu persetujuan` : "Tidak ada yang menunggu"} terbuka={buka === "setuju"} sembunyi={sembunyi("setuju")} onToggle={() => toggle("setuju")}>
+          <PanelPersetujuan antrian={antrian} onUbah={() => void muatAntrian()} />
         </Bagian>
 
         {izin.global ? (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
-import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check, CalendarClock } from "lucide-react-native";
+import { User, Mail, Phone, Lock, LogOut, ChevronRight, Shield, Camera, X, ScanFace, Bell, Sun, Moon, Users, MessageCircle, Heart, Clock, Wallet, Receipt, FlaskConical, Pencil, Check, CalendarClock, Globe } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -244,6 +244,17 @@ export function ProfilScreen({ role, onLogout, onNavigate, onAvatarChanged, onOp
           <ActivityIndicator color={colors.primary} />
         )}
       </Card>
+
+      {STAFF_ROLES.includes(role) && (
+        <Card padding="md">
+          <Text className="text-sm font-semibold text-foreground mb-3">Website</Text>
+          <Pressable onPress={() => onNavigate("kartu-profil")} className="flex-row items-center gap-3 py-1">
+            <View className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/10 items-center justify-center"><Globe size={16} color="#0f766e" /></View>
+            <Text className="text-sm font-medium text-foreground flex-1">Kartu Profil di Website</Text>
+            <ChevronRight size={16} color={colors.mutedForeground} />
+          </Pressable>
+        </Card>
+      )}
 
       {STAFF_ROLES.includes(role) && (
         <Card padding="md">

@@ -37,6 +37,7 @@ import { NilaiGuruScreen } from "../components/screens/NilaiGuruScreen";
 import { NilaiAnakScreen } from "../components/screens/NilaiAnakScreen";
 import { BeritaAcaraAdmin } from "../components/screens/BeritaAcaraAdmin";
 import { KelolaWebsiteScreen } from "../components/screens/KelolaWebsiteScreen";
+import { KartuProfilScreen } from "../components/screens/KartuProfilScreen";
 import { StatistikKontenScreen } from "../components/screens/StatistikKontenScreen";
 import { BlokiranKomentarScreen } from "../components/screens/BlokiranKomentarScreen";
 import { BeritaAcaraViewer } from "../components/screens/BeritaAcaraViewer";
@@ -554,6 +555,7 @@ export function RootNavigator() {
             </Stack.Screen>
             <Stack.Screen name="blokiran-komentar" options={{ headerShown: true, title: "Pengguna Diblokir" }} component={BlokiranKomentarScreen} />
             <Stack.Screen name="kelola-website" options={{ headerShown: true, title: "Kelola Website" }} component={KelolaWebsiteScreen} />
+            <Stack.Screen name="kartu-profil" options={{ headerShown: true, title: "Kartu Profil Website" }} component={KartuProfilScreen} />
             <Stack.Screen name="berita-acara-admin" options={{ headerShown: true, title: "Kelola Berita Acara" }}>
               {({ navigation }) => <BeritaAcaraAdmin role={session.role} onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
