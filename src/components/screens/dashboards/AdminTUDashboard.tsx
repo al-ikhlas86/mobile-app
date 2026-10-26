@@ -8,6 +8,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useAksesWebsite, dgnMenuWebsite } from "../../MenuKelolaWebsite";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 interface Stats { totalSiswaAktif: number; totalPegawaiAktif: number; }
@@ -32,7 +33,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
     })();
   }, []);
 
-  const menuCategories: MenuCategory[] = [
+  const menuDasar: MenuCategory[] = [
     { title: "Operasional", items: [
       { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Berita Acara", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
@@ -47,6 +48,9 @@ export function AdminTUDashboard({ onNavigate }: Props) {
       { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("cari-siswa-guru") },
     ] },
   ];
+
+  const bolehWebsite = useAksesWebsite();
+  const menuCategories = dgnMenuWebsite(menuDasar, bolehWebsite, onNavigate);
 
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
 

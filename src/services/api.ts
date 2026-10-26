@@ -732,6 +732,10 @@ export const api = {
   websiteRiwayat: () => authedFetch("/api/website/riwayat"),
   websiteKembalikan: (commit: string, sha: string) => authedFetch("/api/website/kembalikan", { method: "POST", body: JSON.stringify({ commit, sha }) }, 45000),
   websiteStatus: () => authedFetch("/api/website/status"),
+  websiteAkses: () => authedFetch("/api/website/akses"),
+  websitePengelola: () => authedFetch("/api/website/pengelola"),
+  websiteCariAkun: (q: string) => authedFetch(`/api/website/pengelola/cari?q=${encodeURIComponent(q)}`),
+  websiteSetPengelola: (userId: number, scopes: string[]) => authedFetch(`/api/website/pengelola/${userId}`, { method: "PUT", body: JSON.stringify({ scopes }) }),
   beritaAcaraDelete: (id: number) => authedFetch(`/api/berita-acara/${id}`, { method: "DELETE" }),
   beritaAcaraUploadMedia: (id: number, uri: string, mimeType: string, type: "thumbnail" | "activity") => {
     const form = new FormData();

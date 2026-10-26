@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, DeviceEventEmitter } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin, ScanFace, Globe } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, Users, CheckCircle, BookOpen, ClipboardCheck, ClipboardList, BarChart3, MessageSquareWarning, Award, PieChart, UserPlus, Search, Ban, CreditCard, MapPin, ScanFace } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, useBerandaPreferensi, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -15,6 +15,7 @@ import { useAutoRefresh } from "../../../hooks/useAutoRefresh";
 import { getTodayLocal } from "../../../utils/formatters";
 import { DashboardLayout } from "../../DashboardLayout";
 import { useThemeColors } from "../../../context/ThemeContext";
+import { useAksesWebsite, dgnMenuWebsite } from "../../MenuKelolaWebsite";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; role: RoleName; }
 interface AttendanceRow { tanggal: string; status: string; }
@@ -114,7 +115,7 @@ export function GuruDashboard({ onNavigate, role }: Props) {
   const hadirBulanIni = daysPresent;
   const todayLabel = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  const menuCategories: MenuCategory[] = [
+  const menuDasar: MenuCategory[] = [
     { title: "Presensi & Wajah", items: [
       { label: isWaliKelas ? "Kehadiran Diri" : "Presensi Guru", icon: <Clock size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
@@ -165,7 +166,6 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       // Kapasitas Admin Media SD/TK (2026-09-04).
       ...(isMediaLike ? [
         { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
-        { label: "Kelola Website", icon: <Globe size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("kelola-website") },
         { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") },
         { label: "Pengguna Diblokir", icon: <Ban size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("blokiran-komentar") },
       ] : []),
@@ -203,6 +203,9 @@ export function GuruDashboard({ onNavigate, role }: Props) {
       { label: "Profil", icon: <User size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("profil") },
     ] },
   ];
+
+  const bolehWebsite = useAksesWebsite();
+  const menuCategories = dgnMenuWebsite(menuDasar, bolehWebsite, onNavigate);
 
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} hasBerita />;
 

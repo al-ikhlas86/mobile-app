@@ -8,6 +8,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { api } from "../../../services/api";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useAksesWebsite, dgnMenuWebsite } from "../../MenuKelolaWebsite";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 interface Stats { totalSiswaAktif: number; totalPenggunaAktif: number; totalPegawaiAktif: number; lastSyncAt: string | null; }
@@ -38,7 +39,7 @@ export function SupervisorDashboard({ onNavigate }: Props) {
     })();
   }, []);
 
-  const menuCategories: MenuCategory[] = [
+  const menuDasar: MenuCategory[] = [
     { title: "Keuangan", items: [
       { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("keuangan-admin") },
       { label: "Tagihan", icon: <FileText size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Tagihan" }) },
@@ -59,6 +60,9 @@ export function SupervisorDashboard({ onNavigate }: Props) {
       { label: "Profil", icon: <User size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },
     ] },
   ];
+
+  const bolehWebsite = useAksesWebsite();
+  const menuCategories = dgnMenuWebsite(menuDasar, bolehWebsite, onNavigate);
 
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
 

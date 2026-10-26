@@ -6,6 +6,7 @@ import { SemuaMenuView } from "../../SemuaMenuView";
 import { useIsFocused } from "@react-navigation/native";
 import { useBackWhen } from "../../../hooks/useBackWhen";
 import { DashboardLayout } from "../../DashboardLayout";
+import { useAksesWebsite, dgnMenuWebsite } from "../../MenuKelolaWebsite";
 
 interface Props { onNavigate: (screen: string, params?: Record<string, unknown>) => void; }
 
@@ -18,7 +19,7 @@ export function KeuanganDashboard({ onNavigate }: Props) {
   const isFocused = useIsFocused();
   useBackWhen(showAllMenu && isFocused, () => setShowAllMenu(false));
 
-  const menuCategories: MenuCategory[] = [
+  const menuDasar: MenuCategory[] = [
     { title: "Keuangan", items: [
       { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("keuangan-admin") },
       // Placeholder - port dari webview (Projek.md 2026-08-13, dipasang
@@ -36,6 +37,9 @@ export function KeuanganDashboard({ onNavigate }: Props) {
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },
   ];
+
+  const bolehWebsite = useAksesWebsite();
+  const menuCategories = dgnMenuWebsite(menuDasar, bolehWebsite, onNavigate);
 
   if (showAllMenu) return <SemuaMenuView categories={menuCategories} onBack={() => setShowAllMenu(false)} />;
 
