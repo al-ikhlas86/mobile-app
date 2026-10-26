@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Image, ActivityIndicator, AppState } from "react-native";
+import { View, Text, Image, ActivityIndicator, AppState, useWindowDimensions } from "react-native";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -31,6 +31,8 @@ interface WaStatusBody {
 
 export function WaBotConnectionScreen() {
   const colors = useThemeColors();
+  const { width: lebarLayar } = useWindowDimensions();
+  const ukuranQr = Math.max(200, Math.min(320, lebarLayar - 112)); // muat di dalam kartu pada HP kecil, tetap besar
   const [ready, setReady] = useState<boolean | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -198,13 +200,16 @@ export function WaBotConnectionScreen() {
           ) : (
             <>
               <Text className="font-semibold text-foreground">Perangkat Belum Terhubung</Text>
-              <Text className="text-sm text-muted-foreground text-center">Scan QR dari WhatsApp (Perangkat Tertaut → Tautkan Perangkat).</Text>
+              <Text className="text-sm text-muted-foreground text-center">Scan QR dari WhatsApp (Perangkat Tertaut → Tautkan Perangkat). Naikkan kecerahan layar ke maksimum dan dekatkan kamera sampai QR memenuhi bingkai.</Text>
               {regenerating ? (
                 <View className="w-56 h-56 rounded-lg border border-border items-center justify-center">
                   <ActivityIndicator color={colors.primary} />
                 </View>
               ) : qrDataUrl ? (
-                <Image source={{ uri: qrDataUrl }} className="w-56 h-56 rounded-lg border border-border" />
+                // Latar putih + bingkai; sumber 650 px dengan kotak 10 px sehingga aman diperkecil. Jangan diberi tint/opacity.
+                <View className="rounded-xl border border-border bg-white p-3">
+                  <Image source={{ uri: qrDataUrl }} style={{ width: ukuranQr, height: ukuranQr }} resizeMode="contain" fadeDuration={0} />
+                </View>
               ) : (
                 <View className="w-56 h-56 rounded-lg border border-border items-center justify-center">
                   <Text className="text-sm text-muted-foreground">Menunggu QR...</Text>
