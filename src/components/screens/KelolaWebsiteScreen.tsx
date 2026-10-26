@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { ArrowLeft, CheckSquare, ChevronDown, ChevronUp, ExternalLink, ImageIcon, Lock, Plus, RotateCcw, Save, Search, Square, Trash2, Upload, UserPlus, X, AlertTriangle, CheckCircle } from "lucide-react-native";
+import { ArrowLeft, CheckSquare, ChevronDown, ChevronUp, ExternalLink, ImageIcon, Lock, Plus, RotateCcw, Save, Search, Square, Trash2, Upload, UserPlus, X, AlertTriangle, CheckCircle, BookOpen, FileCheck, GraduationCap, HelpCircle, History, Images, Info, Megaphone, Phone, Star, ThumbsUp, Type, Users } from "lucide-react-native";
 import { api } from "../../services/api";
 import { SimplePicker } from "../ui/SimplePicker";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -184,20 +184,28 @@ function Foto({ label, value, onChange, ro, wajib, tampil, unggah, saran }: {
   );
 }
 
-function Bagian({ judul, info, ringkas, terbuka, sembunyi, onToggle, kunci, children }: { judul: string; info: string; ringkas?: string; terbuka: boolean; sembunyi: boolean; onToggle: () => void; kunci?: boolean; children: React.ReactNode }) {
+function Bagian({ judul, info, ringkas, ikon, lihat, terbuka, sembunyi, onToggle, kunci, children }: { judul: string; info: string; ringkas?: string; ikon?: React.ReactNode; lihat?: string; terbuka: boolean; sembunyi: boolean; onToggle: () => void; kunci?: boolean; children: React.ReactNode }) {
   const colors = useThemeColors();
   if (sembunyi) return null;
   return (
     <View className="bg-card border border-border rounded-2xl overflow-hidden">
-      <Pressable onPress={onToggle} accessibilityRole="button" accessibilityState={{ expanded: terbuka }} className="flex-row items-center gap-3 px-4 py-3.5">
+      <Pressable onPress={onToggle} accessibilityRole="button" accessibilityState={{ expanded: terbuka }} className="flex-row items-center gap-3 px-4 py-4">
+        {ikon ? <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">{ikon}</View> : null}
         <View className="flex-1">
           <Text className="font-semibold text-sm text-foreground">{judul}</Text>
-          <Text numberOfLines={terbuka ? undefined : 2} className="text-xs text-muted-foreground">{terbuka ? info : (ringkas || info)}</Text>
+          <Text className="text-xs text-muted-foreground">{info}</Text>
+          {!terbuka && ringkas ? <Text numberOfLines={1} className="text-xs text-foreground mt-0.5" style={{ opacity: 0.7 }}>Saat ini: {ringkas}</Text> : null}
         </View>
-        {kunci ? <Lock size={15} color={colors.mutedForeground} /> : null}
+        {kunci ? <View className="flex-row items-center gap-1"><Lock size={13} color={colors.mutedForeground} /><Text className="text-[11px] text-muted-foreground">Hanya lihat</Text></View>
+          : !terbuka ? <View className="bg-primary/10 rounded-full px-2.5 py-1"><Text className="text-[11px] font-semibold text-primary">Ubah</Text></View> : null}
         {terbuka ? <ChevronUp size={18} color={colors.mutedForeground} /> : <ChevronDown size={18} color={colors.mutedForeground} />}
       </Pressable>
-      {terbuka ? <View className="px-4 pb-4 pt-3 gap-4 border-t border-border">{children}</View> : null}
+      {terbuka ? (
+        <View className="px-4 pb-4 pt-3 gap-4 border-t border-border">
+          {lihat ? <Pressable onPress={() => void Linking.openURL(lihat)} className="flex-row items-center gap-1.5 self-start"><ExternalLink size={13} color={colors.primary} /><Text className="text-xs text-primary">Lihat bagian ini di website</Text></Pressable> : null}
+          {children}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -254,87 +262,6 @@ function Kotak({ label, nilai, onToggle, disabled }: { label: string; nilai: boo
       {nilai ? <CheckSquare size={20} color="#16a34a" /> : <Square size={20} color="#9ca3af" />}
       <Text className="text-sm text-foreground">{label}</Text>
     </Pressable>
-  );
-}
-
-// ---------- panel Pengelola Website (khusus Admin IT) ----------
-function PanelPengelola() {
-  const colors = useThemeColors();
-  const [daftar, setDaftar] = useState<PengelolaItem[] | null>(null);
-  const [pilihan, setPilihan] = useState<PilihanScope[]>([]);
-  const [q, setQ] = useState("");
-  const [hasil, setHasil] = useState<{ userId: number; nama: string; role: string }[]>([]);
-  const [calon, setCalon] = useState<{ userId: number; nama: string; role: string; scopes: string[] } | null>(null);
-  const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState("");
-
-  const muat = useCallback(async () => {
-    const res = await api.websitePengelola();
-    if (res.success) { const d = res.data as { pengelola: PengelolaItem[]; pilihan: PilihanScope[] }; setDaftar(d.pengelola); setPilihan(d.pilihan); } else setPesan(res.message || "Gagal memuat daftar pengelola.");
-  }, []);
-  useEffect(() => { void muat(); }, [muat]);
-  useEffect(() => {
-    if (q.trim().length < 2) { setHasil([]); return undefined; }
-    const t = setTimeout(async () => {
-      const res = await api.websiteCariAkun(q.trim());
-      setHasil(res.success ? (res.data as typeof hasil) : []);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  const simpan = async (userId: number, scopes: string[]) => {
-    setSibuk(true); setPesan("");
-    const res = await api.websiteSetPengelola(userId, scopes);
-    setSibuk(false);
-    if (!res.success) { setPesan(res.message || "Gagal menyimpan."); return false; }
-    await muat();
-    return true;
-  };
-  const alihScope = (p: PengelolaItem, kode: string) => void simpan(p.userId, p.scopes.includes(kode) ? p.scopes.filter((x) => x !== kode) : [...p.scopes, kode]);
-  const cabut = async (p: PengelolaItem) => { if (await konfirmasi("Cabut akses", `Cabut akses ${p.nama} dari Kelola Website?`, "Cabut")) void simpan(p.userId, []); };
-  const simpanCalon = async () => { if (!calon || calon.scopes.length === 0) return; if (await simpan(calon.userId, calon.scopes)) setCalon(null); };
-  const adaDiDaftar = (id: number) => (daftar ?? []).some((d) => d.userId === id);
-
-  return (
-    <View className="gap-4">
-      <Text className="text-sm text-foreground">Orang yang ditunjuk di sini bisa membuka menu Kelola Website di akunnya sendiri, hanya untuk bagian yang Anda centang. Admin IT otomatis punya akses penuh.</Text>
-      {pesan ? <Text className="text-sm text-red-600">{pesan}</Text> : null}
-      {daftar === null ? <Text className="text-sm text-muted-foreground">Memuat...</Text> : daftar.length === 0 ? <Text className="text-sm text-muted-foreground">Belum ada Pengelola Website. Tambahkan lewat kotak pencarian di bawah.</Text> : (
-        <View className="gap-2">
-          {daftar.map((p) => (
-            <View key={p.userId} className="border border-border rounded-xl p-3 gap-1">
-              <View className="flex-row items-center gap-2">
-                <View className="flex-1"><Text numberOfLines={1} className="text-sm font-medium text-foreground">{p.nama}</Text><Text className="text-xs text-muted-foreground">{ROLE_LABEL[p.role] ?? p.role}</Text></View>
-                <Pressable onPress={() => void cabut(p)} disabled={sibuk} accessibilityLabel={`Cabut akses ${p.nama}`} className="p-1.5"><Trash2 size={16} color="#dc2626" /></Pressable>
-              </View>
-              {pilihan.map((o) => <Kotak key={o.kode} label={o.nama} nilai={p.scopes.includes(o.kode)} disabled={sibuk} onToggle={() => alihScope(p, o.kode)} />)}
-              {p.scopes.length === 0 ? <Text className="text-xs text-amber-700">Belum ada bagian yang dicentang: orang ini belum bisa mengedit apa pun.</Text> : null}
-            </View>
-          ))}
-        </View>
-      )}
-      {calon ? (
-        <View className="border border-primary rounded-xl p-3 gap-2 bg-muted">
-          <Text className="text-sm font-medium text-foreground">Tunjuk {calon.nama} untuk bagian apa?</Text>
-          {pilihan.map((o) => <Kotak key={o.kode} label={o.nama} nilai={calon.scopes.includes(o.kode)} onToggle={() => setCalon({ ...calon, scopes: calon.scopes.includes(o.kode) ? calon.scopes.filter((x) => x !== o.kode) : [...calon.scopes, o.kode] })} />)}
-          <View className="flex-row gap-2">
-            <TombolKecil onPress={() => setCalon(null)} disabled={sibuk}>Batal</TombolKecil>
-            <Pressable onPress={() => void simpanCalon()} disabled={sibuk || calon.scopes.length === 0} className={`px-4 py-2 rounded-xl bg-primary ${sibuk || calon.scopes.length === 0 ? "opacity-50" : ""}`}><Text className="text-sm font-semibold text-primary-foreground">Simpan penunjukan</Text></Pressable>
-          </View>
-        </View>
-      ) : null}
-      <View className="gap-1.5 border-t border-border pt-3">
-        <View className="flex-row items-center gap-1.5"><UserPlus size={15} color={colors.foreground} /><Text className="text-sm font-medium text-foreground">Tambah pengelola (cari nama)</Text></View>
-        <View className="flex-row items-center gap-2"><Search size={15} color={colors.mutedForeground} /><TextInput value={q} onChangeText={setQ} placeholder="Ketik minimal 2 huruf nama guru/pegawai" autoCapitalize="none" className={`${inputCls} flex-1`} /></View>
-        {hasil.map((a) => (
-          <Pressable key={a.userId} onPress={() => { setQ(""); setHasil([]); setCalon({ ...a, scopes: [] }); }} disabled={sibuk || adaDiDaftar(a.userId)} className="flex-row items-center justify-between border border-border rounded-xl px-3 py-2.5">
-            <Text className="text-sm text-foreground flex-1">{a.nama} <Text className="text-xs text-muted-foreground">· {ROLE_LABEL[a.role] ?? a.role}</Text></Text>
-            <Text className="text-xs text-primary">{adaDiDaftar(a.userId) ? "sudah ditunjuk" : "tunjuk"}</Text>
-          </Pressable>
-        ))}
-        <Text className="text-xs text-muted-foreground">Pilih nama, lalu centang bagian yang boleh diedit.</Text>
-      </View>
-    </View>
   );
 }
 
@@ -575,7 +502,7 @@ export function KelolaWebsiteScreen() {
           </View>
         ) : null}
 
-        <Bagian judul="Banner utama" info="Foto besar dan kalimat sambutan di bagian paling atas website." ringkas={t.hero.slides[0]?.judul.replace(/\*\*|\n/g, " ")} terbuka={buka === "hero"} sembunyi={sembunyi("hero")} onToggle={() => toggle("hero")} kunci={g}>
+        <Bagian judul="Banner utama" ikon={<ImageIcon size={18} color={colors.primary} />} lihat={`${urlSitus}/#beranda`} info="Foto besar dan kalimat sambutan di bagian paling atas website." ringkas={t.hero.slides[0]?.judul.replace(/\*\*|\n/g, " ")} terbuka={buka === "hero"} sembunyi={sembunyi("hero")} onToggle={() => toggle("hero")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Foto label="Foto utama (gedung sekolah)" saran="Pilih foto mendatar yang jelas. Tidak perlu dikecilkan dulu." value={draft.heroImage} wajib ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.heroImage = v; })} />
           <Teks label="Teks kecil di atas judul" value={t.hero.eyebrow} ro={g} onChange={(v) => ubah((d) => { d.teks.hero.eyebrow = v; })} />
@@ -602,7 +529,7 @@ export function KelolaWebsiteScreen() {
           <Teks label="Teks di bawah foto: lokasi" value={t.hero.captionLokasi} ro={g} onChange={(v) => ubah((d) => { d.teks.hero.captionLokasi = v; })} />
         </Bagian>
 
-        <Bagian judul="Tentang & profil yayasan" info="Perkenalan singkat yayasan, dan jendela “Lihat Profil Yayasan”." ringkas={t.tentang.subjudul} terbuka={buka === "tentang"} sembunyi={sembunyi("tentang")} onToggle={() => toggle("tentang")} kunci={g}>
+        <Bagian judul="Tentang & profil yayasan" ikon={<Info size={18} color={colors.primary} />} lihat={`${urlSitus}/#tentang`} info="Perkenalan singkat yayasan, dan jendela “Lihat Profil Yayasan”." ringkas={t.tentang.subjudul} terbuka={buka === "tentang"} sembunyi={sembunyi("tentang")} onToggle={() => toggle("tentang")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Foto label="Foto bagian Tentang" value={draft.aboutImage} ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.aboutImage = v; })} />
           <Teks label="Judul bagian" value={t.tentang.judul} ro={g} onChange={(v) => ubah((d) => { d.teks.tentang.judul = v; })} />
@@ -620,7 +547,7 @@ export function KelolaWebsiteScreen() {
           <Area label="Jendela “Lihat Profil Yayasan”: arah pendidikan" value={t.profil.arah} ro={g} onChange={(v) => ubah((d) => { d.teks.profil.arah = v; })} />
         </Bagian>
 
-        <Bagian judul="Empat nilai pendidikan" info="Empat kotak kecil di bawah perkenalan yayasan." ringkas={t.nilai.map((n) => n.judul).join(" · ")} terbuka={buka === "nilai"} sembunyi={sembunyi("nilai")} onToggle={() => toggle("nilai")} kunci={g}>
+        <Bagian judul="Empat nilai pendidikan" ikon={<Star size={18} color={colors.primary} />} lihat={`${urlSitus}/#tentang`} info="Empat kotak kecil di bawah perkenalan yayasan." ringkas={t.nilai.map((n) => n.judul).join(" · ")} terbuka={buka === "nilai"} sembunyi={sembunyi("nilai")} onToggle={() => toggle("nilai")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           {t.nilai.map((n, i) => (
             <View key={i} className="border border-border rounded-xl p-3 gap-3">
@@ -630,7 +557,7 @@ export function KelolaWebsiteScreen() {
           ))}
         </Bagian>
 
-        <Bagian judul="Jenjang pendidikan" info="Kartu TKIT dan SDIT beserta foto dan penjelasannya." ringkas={draft.education.map((e) => e.shortTitle).join(" · ")} terbuka={buka === "jenjang"} sembunyi={sembunyi("jenjang")} onToggle={() => toggle("jenjang")}>
+        <Bagian judul="Jenjang pendidikan" ikon={<GraduationCap size={18} color={colors.primary} />} lihat={`${urlSitus}/#pendidikan`} info="Kartu TKIT dan SDIT beserta foto dan penjelasannya." ringkas={draft.education.map((e) => e.shortTitle).join(" · ")} terbuka={buka === "jenjang"} sembunyi={sembunyi("jenjang")} onToggle={() => toggle("jenjang")}>
           {g ? <Text className="text-xs text-muted-foreground">Judul bagian dikunci. Anda dapat mengubah kartu jenjang milik katalog Anda.</Text> : (
             <>
               <Teks label="Judul bagian" value={t.jenjang.judul} onChange={(v) => ubah((d) => { d.teks.jenjang.judul = v; })} />
@@ -655,7 +582,7 @@ export function KelolaWebsiteScreen() {
           ) : null}
         </Bagian>
 
-        <Bagian judul="Mengapa memilih kami" info="Foto dan daftar alasan memilih Al Ikhlas 86." ringkas={`${t.keunggulan.butir.length} butir`} terbuka={buka === "unggul"} sembunyi={sembunyi("unggul")} onToggle={() => toggle("unggul")} kunci={g}>
+        <Bagian judul="Mengapa memilih kami" ikon={<ThumbsUp size={18} color={colors.primary} />} lihat={`${urlSitus}/#pendidikan`} info="Foto dan daftar alasan memilih Al Ikhlas 86." ringkas={`${t.keunggulan.butir.length} butir`} terbuka={buka === "unggul"} sembunyi={sembunyi("unggul")} onToggle={() => toggle("unggul")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Foto label="Foto bagian ini" value={draft.benefitsImage} ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.benefitsImage = v; })} />
           <JudulField label="Judul" rows={2} ro={g} value={t.keunggulan.judul} onChange={(v) => ubah((d) => { d.teks.keunggulan.judul = v; })} />
@@ -668,7 +595,7 @@ export function KelolaWebsiteScreen() {
           {!g && t.keunggulan.butir.length < 10 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.teks.keunggulan.butir.push("Butir baru."); })}>Tambah butir</TombolKecil> : null}
         </Bagian>
 
-        <Bagian judul="Program unggulan" info="Kartu kegiatan seperti tahfidz, pramuka, atau robotik." ringkas={`${draft.programs.length} program`} terbuka={buka === "program"} sembunyi={sembunyi("program")} onToggle={() => toggle("program")}>
+        <Bagian judul="Program unggulan" ikon={<BookOpen size={18} color={colors.primary} />} lihat={`${urlSitus}/#program`} info="Kartu kegiatan seperti tahfidz, pramuka, atau robotik." ringkas={`${draft.programs.length} program`} terbuka={buka === "program"} sembunyi={sembunyi("program")} onToggle={() => toggle("program")}>
           {g ? <Text className="text-xs text-muted-foreground">Judul bagian dikunci. Anda dapat mengubah, menambah, dan menghapus program milik katalog Anda.</Text> : (
             <>
               <Teks label="Judul bagian" value={t.program.judul} onChange={(v) => ubah((d) => { d.teks.program.judul = v; })} />
@@ -691,7 +618,7 @@ export function KelolaWebsiteScreen() {
           ) : null}
         </Bagian>
 
-        <Bagian judul="Pendaftaran" info="Ajakan mendaftar dan kolase empat foto." ringkas={t.pendaftaran.deskripsi} terbuka={buka === "daftar"} sembunyi={sembunyi("daftar")} onToggle={() => toggle("daftar")} kunci={g}>
+        <Bagian judul="Pendaftaran" ikon={<Megaphone size={18} color={colors.primary} />} lihat={`${urlSitus}/#pendaftaran`} info="Ajakan mendaftar dan kolase empat foto." ringkas={t.pendaftaran.deskripsi} terbuka={buka === "daftar"} sembunyi={sembunyi("daftar")} onToggle={() => toggle("daftar")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <JudulField label="Judul" rows={3} ro={g} value={t.pendaftaran.judul} onChange={(v) => ubah((d) => { d.teks.pendaftaran.judul = v; })} />
           <Area label="Kalimat pengantar" rows={2} ro={g} value={t.pendaftaran.deskripsi} onChange={(v) => ubah((d) => { d.teks.pendaftaran.deskripsi = v; })} />
@@ -699,7 +626,7 @@ export function KelolaWebsiteScreen() {
           {draft.registrationImages.map((p, i) => <Foto key={i} label={`Foto kolase ${i + 1}`} value={p} ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.registrationImages[i] = v; })} />)}
         </Bagian>
 
-        <Bagian judul="Galeri foto kegiatan" info="Foto-foto kegiatan sekolah. Bisa menambah banyak foto sekaligus." ringkas={`${draft.gallery.length} foto`} terbuka={buka === "galeri"} sembunyi={sembunyi("galeri")} onToggle={() => toggle("galeri")}>
+        <Bagian judul="Galeri foto kegiatan" ikon={<Images size={18} color={colors.primary} />} lihat={`${urlSitus}/#galeri`} info="Foto-foto kegiatan sekolah. Bisa menambah banyak foto sekaligus." ringkas={`${draft.gallery.length} foto`} terbuka={buka === "galeri"} sembunyi={sembunyi("galeri")} onToggle={() => toggle("galeri")}>
           {g ? <Text className="text-xs text-muted-foreground">Judul bagian dikunci. Anda dapat menambah, mengganti, dan menghapus foto milik katalog Anda.</Text> : (
             <>
               <Teks label="Judul bagian" value={t.galeri.judul} onChange={(v) => ubah((d) => { d.teks.galeri.judul = v; })} />
@@ -727,7 +654,7 @@ export function KelolaWebsiteScreen() {
           ) : null}
         </Bagian>
 
-        <Bagian judul="Kontak & media sosial" info="Alamat, telepon, email, WhatsApp, peta, dan tautan media sosial." ringkas={`${draft.contact.phone} · ${draft.contact.email}`} terbuka={buka === "kontak"} sembunyi={sembunyi("kontak")} onToggle={() => toggle("kontak")} kunci={g}>
+        <Bagian judul="Kontak & media sosial" ikon={<Phone size={18} color={colors.primary} />} lihat={`${urlSitus}/#kontak`} info="Alamat, telepon, email, WhatsApp, peta, dan tautan media sosial." ringkas={`${draft.contact.phone} · ${draft.contact.email}`} terbuka={buka === "kontak"} sembunyi={sembunyi("kontak")} onToggle={() => toggle("kontak")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Area label="Alamat" rows={2} max={500} ro={g} value={draft.contact.address} onChange={(v) => ubah((d) => { d.contact.address = v; })} />
           <Teks label="Lokasi singkat (di header)" value={draft.contact.lokasiSingkat} ro={g} onChange={(v) => ubah((d) => { d.contact.lokasiSingkat = v; })} />
@@ -750,7 +677,7 @@ export function KelolaWebsiteScreen() {
           </View>
         </Bagian>
 
-        <Bagian judul="Spanduk, Info Terbaru & footer" info="Spanduk hijau, judul bagian Info Terbaru, dan tulisan di bagian paling bawah." ringkas={t.footer.judul.replace(/\n/g, " ")} terbuka={buka === "footer"} sembunyi={sembunyi("footer")} onToggle={() => toggle("footer")} kunci={g}>
+        <Bagian judul="Spanduk, Info Terbaru & footer" ikon={<Type size={18} color={colors.primary} />} lihat={`${urlSitus}/#artikel`} info="Spanduk hijau, judul bagian Info Terbaru, dan tulisan di bagian paling bawah." ringkas={t.footer.judul.replace(/\n/g, " ")} terbuka={buka === "footer"} sembunyi={sembunyi("footer")} onToggle={() => toggle("footer")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <JudulField label="Spanduk hijau: judul" rows={1} ro={g} value={t.banner.judul} onChange={(v) => ubah((d) => { d.teks.banner.judul = v; })} />
           <Area label="Spanduk hijau: slogan" rows={2} max={300} ro={g} hint="Enter = baris baru." value={t.banner.slogan} onChange={(v) => ubah((d) => { d.teks.banner.slogan = v; })} />
@@ -760,7 +687,7 @@ export function KelolaWebsiteScreen() {
           <Area label="Footer: slogan" rows={2} max={300} ro={g} hint="Enter = baris baru." value={t.footer.slogan} onChange={(v) => ubah((d) => { d.teks.footer.slogan = v; })} />
         </Bagian>
 
-        <Bagian judul="Pengurus yayasan" info="Daftar pengurus/petinggi yayasan di halaman Profil Yayasan (diisi manual). Guru dan pegawai mengisi kartunya sendiri lewat akunnya." ringkas={`${draft.pengurus.length} orang`} terbuka={buka === "pengurus"} sembunyi={sembunyi("pengurus")} onToggle={() => toggle("pengurus")} kunci={g}>
+        <Bagian judul="Pengurus yayasan" ikon={<Users size={18} color={colors.primary} />} lihat={`${urlSitus}/profil/`} info="Daftar pengurus/petinggi yayasan di halaman Profil Yayasan (diisi manual). Guru dan pegawai mengisi kartunya sendiri lewat akunnya." ringkas={`${draft.pengurus.length} orang`} terbuka={buka === "pengurus"} sembunyi={sembunyi("pengurus")} onToggle={() => toggle("pengurus")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           {draft.pengurus.map((p, i) => (
             <KartuItem key={p.id} judul={p.nama} {...kartuProps("")} bisaHapus={!g}
@@ -775,7 +702,7 @@ export function KelolaWebsiteScreen() {
           {!g && draft.pengurus.length < 20 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.pengurus.push({ id: idBaru("pg"), nama: "Nama pengurus", jabatan: "Jabatan", deskripsi: "", foto: "" }); })}>Tambah pengurus</TombolKecil> : null}
         </Bagian>
 
-        <Bagian judul="Tanya jawab (FAQ)" info="Pertanyaan yang sering diajukan. Membantu pengunjung, dan membuat sekolah lebih mudah ditemukan di Google dan asisten AI." ringkas={`${draft.faq.length} pertanyaan`} terbuka={buka === "faq"} sembunyi={sembunyi("faq")} onToggle={() => toggle("faq")} kunci={g}>
+        <Bagian judul="Tanya jawab (FAQ)" ikon={<HelpCircle size={18} color={colors.primary} />} lihat={`${urlSitus}/#faq`} info="Pertanyaan yang sering diajukan. Membantu pengunjung, dan membuat sekolah lebih mudah ditemukan di Google dan asisten AI." ringkas={`${draft.faq.length} pertanyaan`} terbuka={buka === "faq"} sembunyi={sembunyi("faq")} onToggle={() => toggle("faq")} kunci={g}>
           {g ? <CatatanKunci /> : null}
           <Teks label="Judul bagian" value={t.faq.judul} ro={g} onChange={(v) => ubah((d) => { d.teks.faq.judul = v; })} />
           <Area label="Keterangan bagian" rows={2} ro={g} value={t.faq.deskripsi} onChange={(v) => ubah((d) => { d.teks.faq.deskripsi = v; })} />
@@ -791,17 +718,11 @@ export function KelolaWebsiteScreen() {
           {!g ? <Text className="text-xs text-muted-foreground">Tulis jawaban yang singkat dan benar (alamat, jenjang, cara mendaftar, jam layanan). Jangan memuat data pribadi.</Text> : null}
         </Bagian>
 
-        <Bagian judul="Persetujuan kartu guru" info="Kartu profil guru/pegawai yang menunggu persetujuan sebelum tayang di halaman Profil Yayasan." ringkas={antrian === null ? "Memuat..." : antrian.length ? `${antrian.length} kartu menunggu persetujuan` : "Tidak ada yang menunggu"} terbuka={buka === "setuju"} sembunyi={sembunyi("setuju")} onToggle={() => toggle("setuju")}>
+        <Bagian judul="Persetujuan kartu guru" ikon={<FileCheck size={18} color={colors.primary} />} lihat={`${urlSitus}/profil/`} info="Kartu profil guru/pegawai yang menunggu persetujuan sebelum tayang di halaman Profil Yayasan." ringkas={antrian === null ? "Memuat..." : antrian.length ? `${antrian.length} kartu menunggu persetujuan` : "Tidak ada yang menunggu"} terbuka={buka === "setuju"} sembunyi={sembunyi("setuju")} onToggle={() => toggle("setuju")}>
           <PanelPersetujuan antrian={antrian} onUbah={() => void muatAntrian()} />
         </Bagian>
 
-        {izin.global ? (
-          <Bagian judul="Pengelola website" info="Tunjuk siapa saja yang boleh mengedit website, dan bagian apa." ringkas="Tambah atau cabut orang yang boleh mengedit" terbuka={buka === "pengelola"} sembunyi={sembunyi("pengelola")} onToggle={() => toggle("pengelola")}>
-            <PanelPengelola />
-          </Bagian>
-        ) : null}
-
-        <Bagian judul="Riwayat perubahan" info="Siapa mengubah apa dan kapan." ringkas="Siapa mengubah apa" terbuka={buka === "riwayat"} sembunyi={sembunyi("riwayat")} onToggle={() => toggle("riwayat")}>
+        <Bagian judul="Riwayat perubahan" ikon={<History size={18} color={colors.primary} />} info="Siapa mengubah apa dan kapan." ringkas="Siapa mengubah apa" terbuka={buka === "riwayat"} sembunyi={sembunyi("riwayat")} onToggle={() => toggle("riwayat")}>
           {riwayat === null ? <Text className="text-sm text-muted-foreground">Memuat...</Text> : riwayat.length === 0 ? <Text className="text-sm text-muted-foreground">Belum ada perubahan tercatat.</Text> : (
             <View className="gap-2">
               {riwayat.map((r) => (

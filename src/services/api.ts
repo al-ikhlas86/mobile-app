@@ -51,6 +51,7 @@ export const ROLE_MAP: Record<string, RoleName> = {
   // nama role.
   admin_tu: "Admin TU",
   admin_media: "Admin Media",
+  admin_website: "Kelola Website" as RoleName,
   // kepala_sekolah_sd/tk DIHAPUS 2026-09-04 - bukan role lagi, Kepala
   // Sekolah sekarang FLAG (isKepalaSekolah) - lihat authService.ts.
   // guru_kelas JUGA DIHAPUS (Fase 3, 2026-09-04) - sama alasannya, sekarang

@@ -40,7 +40,7 @@ const CREATABLE_ROLE_OPTIONS = CREATABLE_ROLES.map((r) => ({ value: r, label: RO
 
 // Role Definitions (2026-09-15) - 4 role dasar yg BISA didaftarkan sbg
 // kombinasi Role+Katalog di tab "Tambah Role" - pola sama KapasitasTambahanScreen.tsx.
-const ROLE_TYPE_OPTIONS = ["admin_tu", "admin_media", "keuangan", "supervisor"];
+const ROLE_TYPE_OPTIONS = ["admin_tu", "admin_media", "keuangan", "supervisor", "admin_website"];
 const ROLE_TYPE_SELECT_OPTIONS = ROLE_TYPE_OPTIONS.map((r) => ({ value: r, label: ROLE_MAP[r] ?? r }));
 
 type Tab = "Akun Admin" | "Kelola Katalog" | "Tambah Role";

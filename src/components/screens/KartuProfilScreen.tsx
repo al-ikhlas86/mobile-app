@@ -49,7 +49,7 @@ export function KartuProfilScreen() {
     setSibuk(false);
     if (!res.success) { setPesan({ jenis: "galat", teks: res.message || "Gagal menyimpan." }); return; }
     const d = res.data as Kartu; isi(d);
-    setPesan({ jenis: "ok", teks: !tampil ? "Disimpan. Kartu Anda tidak tampil di website." : d.status_pengajuan === "disetujui" ? "Disimpan dan langsung tayang di website." : "Disimpan. Kartu menunggu persetujuan Pengelola Website sebelum tayang." });
+    setPesan({ jenis: "ok", teks: !tampil ? "Disimpan. Kartu Anda disembunyikan dari website." : d.status_pengajuan === "disetujui" ? "Disimpan." : "Disimpan. Foto/deskripsi menunggu persetujuan Pengelola Website sebelum tayang." });
   };
   const pilihFoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -66,7 +66,7 @@ export function KartuProfilScreen() {
     setSibuk(false);
     if (!res.success) { setPesan({ jenis: "galat", teks: res.message || "Gagal mengunggah foto." }); return; }
     const d = res.data as Kartu; setK(d);
-    setPesan({ jenis: "ok", teks: d.pengajuan?.tampil ? "Foto diunggah. Kartu menunggu persetujuan." : "Foto diunggah." });
+    setPesan({ jenis: "ok", teks: d.pengajuan?.tampil ? "Foto diunggah. Menunggu persetujuan Pengelola Website." : "Foto diunggah." });
   };
   const hapusFoto = () => Alert.alert("Hapus foto", "Hapus foto kartu?", [
     { text: "Batal", style: "cancel" },
@@ -79,14 +79,14 @@ export function KartuProfilScreen() {
 
   const foto = k.pengajuan?.foto ?? null;
   const st = k.status_pengajuan ?? "draf";
-  const info = st === "menunggu" ? { ikon: <Clock size={16} color="#92400e" />, bg: "bg-amber-50", tx: "text-amber-800", teks: "Menunggu persetujuan Pengelola Website." }
+  const info = st === "menunggu" ? { ikon: <Clock size={16} color="#92400e" />, bg: "bg-amber-50", tx: "text-amber-800", teks: "Foto/deskripsi Anda menunggu persetujuan Pengelola Website." }
     : st === "ditolak" ? { ikon: <AlertTriangle size={16} color="#b91c1c" />, bg: "bg-red-50", tx: "text-red-700", teks: `Belum bisa tayang: ${k.catatan ?? "perlu diperbaiki."} Perbaiki lalu simpan lagi.` }
-    : st === "disetujui" && k.publik?.tampil ? { ikon: <CheckCircle size={16} color="#166534" />, bg: "bg-green-50", tx: "text-green-800", teks: "Kartu Anda tayang di halaman Profil Yayasan website." } : null;
+    : st === "disetujui" && (k.publik?.foto || k.pengajuan?.deskripsi) ? { ikon: <CheckCircle size={16} color="#166534" />, bg: "bg-green-50", tx: "text-green-800", teks: "Foto/deskripsi Anda sudah tayang di halaman Profil Yayasan website." } : null;
 
   return (
     <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 14 }} bottomOffset={20}>
       <View className="bg-card border border-border rounded-2xl p-4">
-        <Text className="text-sm text-foreground">Kartu ini tampil di halaman <Text className="font-bold">Profil Yayasan</Text> website, <Text className="font-bold">hanya jika Anda mencentang "Tampilkan"</Text> dan sudah disetujui Pengelola Website. Yang tampil: nama, status, mata pelajaran, deskripsi, dan foto. <Text className="font-bold">Nomor HP dan data pribadi lain tidak pernah tampil.</Text></Text>
+        <Text className="text-sm text-foreground"><Text className="font-bold">Nama dan jabatan/status Anda sudah tampil otomatis</Text> di halaman <Text className="font-bold">Profil Yayasan</Text> website. Foto, mata pelajaran, dan deskripsi tampil setelah Anda mengisinya dan disetujui Pengelola Website. <Text className="font-bold">Nomor HP dan data pribadi lain tidak pernah tampil.</Text></Text>
       </View>
       {info ? <View className={`${info.bg} rounded-2xl px-4 py-3 flex-row items-start gap-2`}>{info.ikon}<Text className={`text-sm flex-1 ${info.tx}`}>{info.teks}</Text></View> : null}
       {pesan ? <View className={`${pesan.jenis === "ok" ? "bg-green-50" : "bg-red-50"} rounded-2xl px-4 py-3`}><Text className={`text-sm ${pesan.jenis === "ok" ? "text-green-800" : "text-red-700"}`}>{pesan.teks}</Text></View> : null}
@@ -107,7 +107,7 @@ export function KartuProfilScreen() {
               {foto ? <Pressable onPress={hapusFoto} disabled={sibuk} className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl border border-border"><Trash2 size={14} color={colors.foreground} /><Text className="text-sm font-medium text-foreground">Hapus</Text></Pressable> : null}
             </View>
           </View>
-          <Text className="text-xs text-muted-foreground">Foto berpakaian rapi, wajah jelas, latar sederhana. Foto baru perlu disetujui sebelum tayang.</Text>
+          <Text className="text-xs text-muted-foreground">Foto berpakaian rapi, wajah jelas, latar sederhana. Foto baru perlu disetujui sebelum tayang. Tanpa foto pun kartu Anda tetap tampil (dengan inisial).</Text>
         </View>
 
         <View className="gap-1">
@@ -124,7 +124,7 @@ export function KartuProfilScreen() {
 
         <Pressable onPress={() => setTampil(!tampil)} accessibilityRole="checkbox" accessibilityState={{ checked: tampil }} className="flex-row items-start gap-3 border border-border rounded-xl p-4">
           {tampil ? <CheckSquare size={22} color="#16a34a" /> : <Square size={22} color="#9ca3af" />}
-          <View className="flex-1 gap-0.5"><Text className="text-sm font-medium text-foreground">Tampilkan kartu saya di website</Text><Text className="text-xs text-muted-foreground">Hilangkan centang kapan saja untuk menyembunyikan kartu (langsung hilang dari website).</Text></View>
+          <View className="flex-1 gap-0.5"><Text className="text-sm font-medium text-foreground">Tampilkan nama saya di halaman Profil Yayasan</Text><Text className="text-xs text-muted-foreground">Hilangkan centang kapan saja untuk menyembunyikan kartu Anda (langsung hilang dari website).</Text></View>
         </Pressable>
 
         <Pressable onPress={() => void simpan()} disabled={sibuk || !berubah} className={`flex-row items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary ${sibuk || !berubah ? "opacity-50" : ""}`}>
