@@ -26,6 +26,7 @@ interface Isi {
   education: Jenjang[]; programs: Kartu[]; gallery: FotoGaleri[]; articles: unknown[];
   contact: { address: string; phone: string; email: string; whatsapp: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
   socials: { label: string; url: string }[];
+  faq: { q: string; a: string }[];
   teks: {
     hero: { eyebrow: string; slides: { judul: string; paragraf: string }[]; levels: string[]; captionJudul: string; captionLokasi: string };
     tentang: { judul: string; subjudul: string; paragraf: string[]; ribbonJudul: string; ribbonTeks: string };
@@ -39,6 +40,7 @@ interface Isi {
     banner: { judul: string; slogan: string };
     berita: { judul: string; deskripsi: string };
     footer: { judul: string; slogan: string };
+    faq: { judul: string; deskripsi: string };
   };
 }
 interface Izin { global: boolean; umum: boolean; katalog: string[] }
@@ -87,6 +89,7 @@ function ringkasanPerubahan(a: Isi, d: Isi): string[] {
   if (beda(a.gallery, d.gallery) || beda(a.teks.galeri, d.teks.galeri)) { const k = hitungKartu(a.gallery, d.gallery, "foto"); h.push(`Galeri foto${k ? ` (${k})` : ""}`); }
   if (beda(a.contact, d.contact) || beda(a.socials, d.socials)) h.push("Kontak & media sosial");
   if (beda(a.teks.banner, d.teks.banner) || beda(a.teks.berita, d.teks.berita) || beda(a.teks.footer, d.teks.footer)) h.push("Spanduk, Info Terbaru & footer");
+  if (beda(a.faq, d.faq) || beda(a.teks.faq, d.teks.faq)) h.push("Tanya jawab (FAQ)");
   return h;
 }
 
@@ -699,6 +702,22 @@ export function KelolaWebsiteScreen() {
           <Area label="Info Terbaru: keterangan" rows={2} ro={g} value={t.berita.deskripsi} onChange={(v) => ubah((d) => { d.teks.berita.deskripsi = v; })} />
           <Area label="Footer: judul" rows={2} max={300} ro={g} hint="Enter = baris baru." value={t.footer.judul} onChange={(v) => ubah((d) => { d.teks.footer.judul = v; })} />
           <Area label="Footer: slogan" rows={2} max={300} ro={g} hint="Enter = baris baru." value={t.footer.slogan} onChange={(v) => ubah((d) => { d.teks.footer.slogan = v; })} />
+        </Bagian>
+
+        <Bagian judul="Tanya jawab (FAQ)" info="Pertanyaan yang sering diajukan. Membantu pengunjung, dan membuat sekolah lebih mudah ditemukan di Google dan asisten AI." ringkas={`${draft.faq.length} pertanyaan`} terbuka={buka === "faq"} sembunyi={sembunyi("faq")} onToggle={() => toggle("faq")} kunci={g}>
+          {g ? <CatatanKunci /> : null}
+          <Teks label="Judul bagian" value={t.faq.judul} ro={g} onChange={(v) => ubah((d) => { d.teks.faq.judul = v; })} />
+          <Area label="Keterangan bagian" rows={2} ro={g} value={t.faq.deskripsi} onChange={(v) => ubah((d) => { d.teks.faq.deskripsi = v; })} />
+          {draft.faq.map((f, i) => (
+            <View key={i} className="border border-border rounded-xl p-3 gap-3">
+              <View className="flex-row items-center justify-between"><Text className="text-sm font-semibold text-foreground">Pertanyaan {i + 1}</Text>
+                {!g ? <Pressable onPress={() => ubah((d) => { d.faq.splice(i, 1); })}><Text className="text-xs text-red-600">Hapus</Text></Pressable> : null}</View>
+              <Teks label="Pertanyaan" value={f.q} max={500} ro={g} onChange={(v) => ubah((d) => { d.faq[i].q = v; })} />
+              <Area label="Jawaban" rows={4} max={1000} ro={g} value={f.a} onChange={(v) => ubah((d) => { d.faq[i].a = v; })} />
+            </View>
+          ))}
+          {!g && draft.faq.length < 12 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.faq.push({ q: "Pertanyaan baru?", a: "Jawaban singkat dan faktual." }); })}>Tambah pertanyaan</TombolKecil> : null}
+          {!g ? <Text className="text-xs text-muted-foreground">Tulis jawaban yang singkat dan benar (alamat, jenjang, cara mendaftar, jam layanan). Jangan memuat data pribadi.</Text> : null}
         </Bagian>
 
         {izin.global ? (
