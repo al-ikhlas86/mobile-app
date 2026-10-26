@@ -14,7 +14,7 @@ import Constants from "expo-constants";
 const API_URL: string =
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ||
   process.env.EXPO_PUBLIC_API_URL ||
-  "https://alikhlas86.duckdns.org/mobile-api";
+  "https://app.yayasanalikhlas86.sch.id/mobile-api";
 
 export interface DemoAccountShape {
   id: string;

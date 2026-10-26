@@ -29,7 +29,7 @@ const CAPTION_TRUNCATE_LENGTH = 180;
 // diminta login dulu, lalu SERVER yang menegakkan visibilitas sesuai role
 // akun itu (endpoint detail memang sudah authedFetch dari awal) - "kalau dia
 // bisa lihat maka bisa, kalau tidak maka tidak", tanpa logika tambahan.
-const PUBLIC_WEB_URL = "https://alikhlas86.duckdns.org";
+const PUBLIC_WEB_URL = "https://app.yayasanalikhlas86.sch.id";
 
 function CaptionText({ text, colors }: { text: string; colors: { primary: string; foreground: string } }) {
   const [expanded, setExpanded] = useState(false);
