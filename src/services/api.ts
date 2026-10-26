@@ -721,6 +721,17 @@ export const api = {
   beritaAcaraUpdate: (id: number, data: { title?: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null; tampil_di_website?: boolean }) =>
     authedFetch(`/api/berita-acara/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   beritaAcaraPublish: (id: number) => authedFetch(`/api/berita-acara/${id}/publish`, { method: "POST" }),
+  // Kelola Website (2026-10-26): isi landing page yayasan, disimpan sebagai commit ke repo GitHub `web` oleh backend.
+  websiteGet: () => authedFetch("/api/website"),
+  websiteSave: (isi: unknown, sha: string) => authedFetch("/api/website", { method: "PUT", body: JSON.stringify({ isi, sha }) }, 45000),
+  websiteFoto: (uri: string, mimeType: string) => {
+    const form = new FormData();
+    form.append("foto", fileFromUri(uri, `foto.${mimeType.split("/")[1] ?? "jpg"}`, mimeType));
+    return authedUpload("/api/website/foto", form);
+  },
+  websiteRiwayat: () => authedFetch("/api/website/riwayat"),
+  websiteKembalikan: (commit: string, sha: string) => authedFetch("/api/website/kembalikan", { method: "POST", body: JSON.stringify({ commit, sha }) }, 45000),
+  websiteStatus: () => authedFetch("/api/website/status"),
   beritaAcaraDelete: (id: number) => authedFetch(`/api/berita-acara/${id}`, { method: "DELETE" }),
   beritaAcaraUploadMedia: (id: number, uri: string, mimeType: string, type: "thumbnail" | "activity") => {
     const form = new FormData();

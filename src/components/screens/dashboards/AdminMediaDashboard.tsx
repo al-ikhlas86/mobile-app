@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { FileText, Plus, BookOpen, User, Ban, Heart, MessageCircle, BarChart3, ChevronRight } from "lucide-react-native";
+import { FileText, Plus, BookOpen, User, Ban, Heart, MessageCircle, BarChart3, ChevronRight, Globe } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -44,6 +44,7 @@ export function AdminMediaDashboard({ onNavigate }: Props) {
     { title: "Berita Acara", items: [
       { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara-admin") },
       { label: "Berita Acara (Lihat)", icon: <BookOpen size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
+      { label: "Kelola Website", icon: <Globe size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kelola-website") },
       { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("statistik-konten") },
       { label: "Pengguna Diblokir", icon: <Ban size={20} color="#be123c" />, colorScheme: "red", onPress: () => onNavigate("blokiran-komentar") },
     ] },
