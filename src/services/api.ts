@@ -716,9 +716,9 @@ export const api = {
   beritaAcaraDetail: (id: number, ortu = false) => authedFetch(`/api/berita-acara/${id}`, {}, FETCH_TIMEOUT_MS, ortu),
   // catalog_id (2026-09-14, Sistem Katalog) - PENGGANTI unit_scope (string
   // SD/TK_PLAYGROUND/ALL lama) - null = ALL (semua katalog).
-  beritaAcaraCreate: (data: { title: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null }) =>
+  beritaAcaraCreate: (data: { title: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null; tampil_di_website?: boolean }) =>
     authedFetch("/api/berita-acara", { method: "POST", body: JSON.stringify(data) }),
-  beritaAcaraUpdate: (id: number, data: { title?: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null }) =>
+  beritaAcaraUpdate: (id: number, data: { title?: string; category?: string; description?: string; author_name?: string; activity_date?: string; catalog_id?: number | null; tampil_di_website?: boolean }) =>
     authedFetch(`/api/berita-acara/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   beritaAcaraPublish: (id: number) => authedFetch(`/api/berita-acara/${id}/publish`, { method: "POST" }),
   beritaAcaraDelete: (id: number) => authedFetch(`/api/berita-acara/${id}`, { method: "DELETE" }),

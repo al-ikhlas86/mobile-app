@@ -40,7 +40,7 @@ interface Media { id: number; media_type: "thumbnail" | "activity"; filename: st
 interface LinkItem { id: number; url: string; }
 interface BeritaItem {
   id: number; title: string; category: string | null; description: string | null; author_name: string | null;
-  activity_date: string | null; catalog_id: number | null; status: Status; created_by_name: string; created_at: string;
+  activity_date: string | null; catalog_id: number | null; tampil_di_website?: number | boolean; status: Status; created_by_name: string; created_at: string;
   approved_at: string | null; media: Media[]; links: LinkItem[];
 }
 interface Catalog { id: number; kode: string; nama: string; }
@@ -85,6 +85,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
   const [formCategory, setFormCategory] = useState(CATEGORIES[0]);
   const [formCatalogId, setFormCatalogId] = useState<number | null>(null);
   const [formActivityDate, setFormActivityDate] = useState(getTodayLocal());
+  const [formTampilWebsite, setFormTampilWebsite] = useState(true);
   const [formSaving, setFormSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [uploadingThumb, setUploadingThumb] = useState(false);
@@ -103,21 +104,21 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
     const myIds = myAdminMediaCatalogIds();
     setFormCategory(CATEGORIES[0]);
     setFormCatalogId(isGlobalBeritaAdmin() ? null : (myIds[0] ?? null));
-    setFormActivityDate(getTodayLocal()); setFormMessage("");
+    setFormActivityDate(getTodayLocal()); setFormTampilWebsite(true); setFormMessage("");
   }
   function openCreate() { resetForm(); setView("form"); }
   function openEdit(item: BeritaItem) {
     setEditingId(item.id); setEditingMedia(item.media); setEditingLinks(item.links); setNewLinkUrl("");
     setFormTitle(item.title); setFormDescription(item.description ?? ""); setFormAuthorName(item.author_name ?? "");
     setFormCategory(item.category ?? CATEGORIES[0]); setFormCatalogId(item.catalog_id);
-    setFormActivityDate(item.activity_date ?? getTodayLocal());
+    setFormActivityDate(item.activity_date ?? getTodayLocal()); setFormTampilWebsite(Boolean(item.tampil_di_website));
     setFormMessage(""); setView("form");
   }
 
   async function saveOrCreate(): Promise<number | null> {
     if (!formTitle.trim()) { setFormMessage("Isi judul dulu."); return null; }
     setFormSaving(true); setFormMessage("");
-    const payload = { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, catalog_id: formCatalogId };
+    const payload = { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, catalog_id: formCatalogId, tampil_di_website: formTampilWebsite };
     const res = editingId ? await api.beritaAcaraUpdate(editingId, payload) : await api.beritaAcaraCreate(payload);
     setFormSaving(false);
     if (!res.success) { setFormMessage(res.message ?? "Gagal menyimpan."); return null; }
@@ -290,6 +291,13 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
           <Text className="text-sm font-medium text-foreground">Tanggal Kegiatan (YYYY-MM-DD)</Text>
           <TextInput value={formActivityDate} onChangeText={setFormActivityDate} placeholder="2026-08-21" className="bg-input-background border border-border rounded-xl px-4 py-3 text-foreground" />
         </View>
+        <Pressable onPress={() => setFormTampilWebsite((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: formTampilWebsite }} className="flex-row items-start gap-3 border border-border rounded-xl p-4">
+          <CheckCircle size={22} color={formTampilWebsite ? "#16a34a" : "#9ca3af"} />
+          <View className="flex-1 gap-0.5">
+            <Text className="text-sm font-medium text-foreground">Tampilkan di website yayasan</Text>
+            <Text className="text-xs text-muted-foreground">Setelah diterbitkan, berita ini ikut tampil di bagian Info Terbaru website (yayasanalikhlas86.sch.id) dan dapat dilihat siapa saja tanpa login. Matikan untuk berita internal, atau yang memuat foto/data siswa.</Text>
+          </View>
+        </Pressable>
 
         <View className="border border-border rounded-xl p-4 gap-3">
           <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color={colors.foreground} /><Text className="text-sm font-semibold text-foreground">Media</Text></View>
