@@ -24,7 +24,7 @@ interface FotoGaleri { id: string; label: string; category: KategoriGaleri; imag
 interface Isi {
   heroImage: string; aboutImage: string; benefitsImage: string; registrationImages: string[];
   education: Jenjang[]; programs: Kartu[]; gallery: FotoGaleri[]; articles: unknown[];
-  contact: { address: string; phone: string; email: string; whatsapp: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
+  contact: { address: string; phone: string; email: string; emailTkit: string; whatsapp: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
   socials: { label: string; url: string }[];
   faq: { q: string; a: string }[];
   pengurus: { id: string; nama: string; jabatan: string; deskripsi: string; foto: string }[];
@@ -660,7 +660,8 @@ export function KelolaWebsiteScreen() {
           <Teks label="Lokasi singkat (di header)" value={draft.contact.lokasiSingkat} ro={g} onChange={(v) => ubah((d) => { d.contact.lokasiSingkat = v; })} />
           <Teks label="Nama kontak (mis. Administrasi SDIT Al Ikhlas)" value={draft.contact.namaKontak} ro={g} onChange={(v) => ubah((d) => { d.contact.namaKontak = v; })} />
           <Teks label="Telepon" value={draft.contact.phone} max={25} ro={g} keyboard="phone-pad" onChange={(v) => ubah((d) => { d.contact.phone = v; })} />
-          <Teks label="Email" value={draft.contact.email} max={200} ro={g} keyboard="email-address" onChange={(v) => ubah((d) => { d.contact.email = v; })} />
+          <Teks label="Email SDIT" value={draft.contact.email} max={200} ro={g} keyboard="email-address" onChange={(v) => ubah((d) => { d.contact.email = v; })} />
+          <Teks label="Email TKIT" value={draft.contact.emailTkit} max={200} ro={g} keyboard="email-address" onChange={(v) => ubah((d) => { d.contact.emailTkit = v; })} />
           <Teks label="WhatsApp (angka saja, awali 62)" value={draft.contact.whatsapp} max={16} ro={g} keyboard="number-pad" hint="Contoh: 6281234567890. Kosongkan bila tidak ada." onChange={(v) => ubah((d) => { d.contact.whatsapp = v.replace(/[^0-9]/g, ""); })} />
           <Teks label="Tautan formulir pendaftaran (https://...)" value={draft.contact.registrationUrl} max={2000} ro={g} keyboard="url" hint="Kosongkan bila tidak ada. Bila kosong, tombol pendaftaran memakai WhatsApp, lalu email." onChange={(v) => ubah((d) => { d.contact.registrationUrl = v; })} />
           <Teks label="Tautan peta Google Maps (https://...)" value={draft.contact.mapUrl} max={2000} ro={g} keyboard="url" onChange={(v) => ubah((d) => { d.contact.mapUrl = v; })} />
