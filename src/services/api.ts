@@ -156,6 +156,21 @@ export async function requestOtp(
   }
 }
 
+export async function checkOtp(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/check-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, code }),
+    });
+    const body = await res.json();
+    if (!res.ok || !body.success) return { success: false, error: body.message ?? "Kode OTP salah." };
+    return { success: true };
+  } catch {
+    return { success: false, error: "Tidak dapat menghubungi server. Cek koneksi internet Anda." };
+  }
+}
+
 export async function verifyOtp(
   phone: string,
   code: string,
