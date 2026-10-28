@@ -77,6 +77,10 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
   const [viewMonth, setViewMonth] = useState(() => { const d = new Date(selected + "T00:00:00"); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const cells = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
   const monthLabel = viewMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  // Ukuran sel DIHITUNG dari lebar grid yang diukur (bukan className aspect-square): sejak RN 0.88 aspect-ratio pada sel berlebar persen
+  // tidak lagi menghasilkan kotak (sel jadi pipih/pil) dan bingkai "dipilih" yang lebih tebal menggeser angkanya ke bawah.
+  const [lebarGrid, setLebarGrid] = useState(0);
+  const ukuranSel = lebarGrid > 0 ? Math.floor(lebarGrid / 7) : 40;
 
   return (
     <Card padding="md">
@@ -89,9 +93,9 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
       <View className="flex-row mb-1">
         {WEEKDAY_HEADER.map((w) => <Text key={w} className="flex-1 text-center text-[10px] font-medium text-muted-foreground py-1">{w}</Text>)}
       </View>
-      <View className="flex-row flex-wrap">
+      <View className="flex-row flex-wrap" onLayout={(e) => setLebarGrid(e.nativeEvent.layout.width)}>
         {cells.map((cell, idx) => {
-          if (cell.date === null) return <View key={idx} style={{ width: "14.28%" }} className="aspect-square" />;
+          if (cell.date === null) return <View key={idx} style={{ width: ukuranSel, height: ukuranSel }} />;
           const agenda = cell.iso ? (agendaByDate[cell.iso] || []) : [];
           const libur = agenda.some((a) => Number(a.is_libur) === 1);
           const adaJadwal = cell.hariKey ? hasSchedule[cell.hariKey] : false;
@@ -107,17 +111,16 @@ export function AcademicMonthCalendar({ hasSchedule, agendaByDate, selected, onS
             <Pressable
               key={idx}
               onPress={() => cell.iso && onSelectDate(cell.iso)}
-              style={{ width: "14.28%" }}
-              // Indikator "tanggal yang di-tap" pakai BORDER (bukan
-              // backgroundColor) - lihat catatan panjang di versi lama file
-              // ini soal kenapa (bentrok dgn backgroundColor libur/agenda/
-              // jadwal kalau pakai warna latar juga).
-              className={`aspect-square items-center justify-center rounded-lg ${selected === cell.iso ? "border-2 border-primary" : cell.isToday ? "border border-primary" : ""} ${libur ? "bg-red-100 dark:bg-red-900/20" : adaAgenda ? "bg-amber-100 dark:bg-amber-900/20" : adaJadwal ? "bg-primary/10" : ""}`}
+              style={{ width: ukuranSel, height: ukuranSel, padding: 1.5 }}
             >
+              {/* Indikator "tanggal yang di-tap" pakai BORDER (bukan backgroundColor - bentrok dgn warna libur/agenda/jadwal). Lebar bingkai SELALU 2
+                  (transparan bila tidak dipilih) supaya ukuran/posisi isi sel tidak berubah saat dipilih. */}
+              <View className={`flex-1 items-center justify-center rounded-lg border-2 ${selected === cell.iso ? "border-primary" : cell.isToday ? "border-primary/50" : "border-transparent"} ${libur ? "bg-red-100 dark:bg-red-900/20" : adaAgenda ? "bg-amber-100 dark:bg-amber-900/20" : adaJadwal ? "bg-primary/10" : ""}`}>
               <Text className={`text-xs ${libur ? "text-red-700 dark:text-red-400 font-semibold" : adaAgenda ? "text-amber-800 dark:text-amber-300 font-semibold" : adaJadwal ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{cell.date}</Text>
               {adaJadwal && !libur && !adaAgenda && (
                 <View className="mt-0.5" style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary }} />
               )}
+              </View>
             </Pressable>
           );
         })}

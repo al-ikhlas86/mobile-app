@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect } from "react";
 import { useColorScheme } from "react-native";
+import { colorScheme } from "nativewind";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { applyNavBarStyle } from "../utils/navBarStyle";
 
@@ -38,6 +39,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(STORAGE_KEY, theme).catch(() => {});
   }, [theme, loaded]);
+
+  // SINKRONKAN skema warna NativeWind dengan tema DI DALAM app (2026-10-28, bug "teks tak terbaca di tema terang"). Variabel CSS tema
+  // (bg-background, text-foreground, dst) sudah mengikuti kelas "dark" di App.tsx, TETAPI varian Tailwind `dark:` (dipakai di banyak layar,
+  // mis. kalender: dark:text-amber-300) hanya mengikuti tema SISTEM HP - NativeWind membacanya dari Appearance. Jadi HP mode gelap + app
+  // terang = varian gelap (teks kuning terang) tampil di latar terang, dan sebaliknya. colorScheme.set menyetel Appearance app ke tema
+  // pilihan pengguna, sehingga SEMUA `dark:` otomatis konsisten. useLayoutEffect: diterapkan sebelum frame digambar (tanpa kedip).
+  useLayoutEffect(() => {
+    colorScheme.set(theme);
+  }, [theme]);
 
   // Ikon tombol navigasi bawaan Android (segitiga/lingkaran/kotak) warnanya
   // TIDAK otomatis ikut tema app - defaultnya "light" (ikon putih), yang

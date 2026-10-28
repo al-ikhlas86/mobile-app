@@ -437,7 +437,9 @@ export function RootNavigator() {
           animasinya jalan (laporan user). Dimatikan spy pindah layar
           langsung (spt Dashboard/dst yg pindah TAB, bukan STACK, memang
           tidak pernah py animasi ini dari awal). */}
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: "none" }}>
+      {/* freezeOnBlur: layar di bawah yang sedang ditutup layar lain (mis. seluruh MainTabs saat Kalender dibuka) tidak ikut di-render ulang
+          sampai kembali terlihat - mengurangi beban render di HP lama. Tetap ter-mount, state aman. */}
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: "none", freezeOnBlur: true }}>
         {!session ? (
           <Stack.Screen name="login">
             {() => <LoginScreen onLogin={handleLogin} notice={sessionExpired ? "Sesi Anda berakhir - silakan masuk kembali." : undefined} />}

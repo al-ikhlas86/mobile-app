@@ -70,6 +70,16 @@ function TabIcon({ IconCmp, focused, color, activeColor, isDark }: { IconCmp: Re
   );
 }
 
+// Dideklarasikan DI LUAR MainTabs (sebelumnya didefinisikan di dalam): komponen yang dibuat ulang tiap render dianggap tipe baru oleh React,
+// sehingga tombol tema di header di-unmount lalu di-mount lagi pada setiap render MainTabs.
+function ThemeToggleButton({ isDark, textColor, onPress }: { isDark: boolean; textColor: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className="mr-4 p-1.5">
+      {isDark ? <Sun size={19} color={textColor} /> : <Moon size={19} color={textColor} />}
+    </Pressable>
+  );
+}
+
 interface Props {
   role: RoleName;
   onLogout: () => void;
@@ -100,12 +110,6 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
   const border = isDark ? "rgba(255,255,255,0.1)" : "rgba(33,57,41,0.1)";
   const textColor = isDark ? "#F1F1F2" : "#17201B";
 
-  const ThemeToggleButton = () => (
-    <Pressable onPress={toggleTheme} className="mr-4 p-1.5">
-      {isDark ? <Sun size={19} color={textColor} /> : <Moon size={19} color={textColor} />}
-    </Pressable>
-  );
-
   return (
     <Tab.Navigator
       backBehavior="history"
@@ -122,7 +126,11 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
         // yang py inset besar, krn override height manual menghapus
         // penyesuaian aman-area otomatis bawaan react-navigation.
         tabBarStyle: { backgroundColor: bg, borderTopColor: border, height: 56 + insets.bottom, paddingTop: 8, paddingBottom: insets.bottom },
-        headerRight: () => <ThemeToggleButton />,
+        headerRight: () => <ThemeToggleButton isDark={isDark} textColor={textColor} onPress={toggleTheme} />,
+        // Tab yang tidak sedang dilihat DIBEKUKAN (react-native-screens): tidak ikut di-render ulang tiap ada perubahan state di induk
+        // (polling, tema, sesi). Kelima tab tetap ter-mount (state/riwayat chat aman), hanya render-nya ditunda sampai tab dibuka lagi.
+        // Terasa terutama di HP lama, karena sebelumnya 5 layar dirender ulang sekaligus untuk setiap perubahan.
+        freezeOnBlur: true,
       }}
     >
       <Tab.Screen
