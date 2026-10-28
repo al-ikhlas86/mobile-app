@@ -95,7 +95,15 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease --no-daemon
+          # Unduhan Maven Central kadang macet (2026-10-28: react-android-0.88.0.aar "Read timed out", build menggantung ~2 jam).
+          # Batas waktu unduhan dipasang, dan build diulang sampai 3x (hasil unduhan/kompilasi sebelumnya dipakai ulang), tiap percobaan maks 50 menit.
+          for percobaan in 1 2 3; do
+            if timeout 50m ./gradlew assembleRelease bundleRelease --no-daemon                 -Dorg.gradle.internal.http.connectionTimeout=60000 -Dorg.gradle.internal.http.socketTimeout=120000                 -Dorg.gradle.internal.repository.max.retries=5; then
+              exit 0
+            fi
+            echo "Percobaan build $percobaan gagal/terlalu lama, mengulang..."
+          done
+          exit 1
 
       - name: Clean up decoded secrets
         if: always()
