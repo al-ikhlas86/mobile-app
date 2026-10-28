@@ -9,7 +9,7 @@ import { View, Text, Pressable } from "react-native";
 // gesture-handler ikut sistem gesture recognizer yang sama dgn navigasi
 // stack app ini (sudah terpasang, bukan dependency baru), jadi prioritas
 // scroll nested-nya benar tanpa perlu balik ke <Modal>.
-import { ScrollView } from "react-native-gesture-handler";
+import { LegacyScrollView as ScrollView } from "react-native-gesture-handler";
 import { ChevronDown, ChevronUp, Check } from "lucide-react-native";
 import { useThemeColors } from "../../context/ThemeContext";
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Keyboard } from "react-native";
+import { View, Text, Pressable, TextInput, ScrollView, ActivityIndicator, Keyboard, type TextInputInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Clock, Lock, Send, Undo2, History, ClipboardPaste } from "lucide-react-native";
@@ -321,7 +321,7 @@ function IndikatorSimpan({ status, pesan, onCoba }: { status: StatusSimpan; pesa
 interface PropsBaris {
   r: number; siswaId: number; komponen: KomponenNilai[]; teksBaris: Record<string, string> | undefined;
   kodeSalah: string; akhirServer: number | null; kkm: number; bisaIsi: boolean;
-  inputRefs: React.MutableRefObject<Record<string, TextInput | null>>;
+  inputRefs: React.MutableRefObject<Record<string, TextInputInstance | null>>;
   onUbah: (studentId: number, kode: string, teks: string, r: number, c: number) => void;
   onSubmit: (r: number, c: number) => void;
   onFokus: (r: number, c: number) => void;
@@ -382,7 +382,7 @@ function LembarNilai({ kelasId, mapelSourceId, semester }: { kelasId: number; ma
   const [tempelTeks, setTempelTeks] = useState("");
   const [infoTempel, setInfoTempel] = useState("");
 
-  const inputRefs = useRef<Record<string, TextInput | null>>({});
+  const inputRefs = useRef<Record<string, TextInputInstance | null>>({});
   const kotor = useRef<Map<string, { studentId: number; kode: string }>>(new Map());
   const teksRef = useRef(teks);
   teksRef.current = teks;

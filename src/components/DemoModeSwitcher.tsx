@@ -72,7 +72,7 @@ export function DemoModeSwitcher({ visible, roles, activeDemoLabel, loading, err
                 </Pressable>
               );
             }}
-            ListFooterComponent={loading ? <ActivityIndicator className="mt-2" /> : null}
+            ListFooterComponent={loading ? <ActivityIndicator className="mt-2" /> : undefined}
           />
         </Pressable>
       </Pressable>

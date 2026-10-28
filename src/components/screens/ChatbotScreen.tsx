@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, type ScrollViewInstance } from "react-native";
 // ScrollView gesture-handler KHUSUS dropdown saran model - dropdown ini
 // dipasang di dalam ScrollView RN biasa milik SinkronisasiPane sendiri,
 // nested scroll RN vs RN macet (sama root cause dgn catatan SimplePicker.tsx
 // - scroll dalam kalah rebutan gesture ke scroll luar).
-import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+import { LegacyScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { Send, Bot, User as UserIcon, Trash2, Settings, GraduationCap, Pencil, Check, X, UserPlus, Search, Lock, RotateCcw } from "lucide-react-native";
@@ -76,7 +76,7 @@ function ChatPane({ hidden }: { hidden: boolean }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   // Gerbang atomik pakai ref (bukan state `sending`) - port 1:1 dari
   // webview (lihat catatan lengkap di sana), nutup celah double-invoke
   // handleSend() yang bikin pesan/jawaban "nyampur, tampil dobel".

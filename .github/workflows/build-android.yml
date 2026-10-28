@@ -26,7 +26,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          # Expo SDK 58 mewajibkan Node >= 22.13 (jalur 22).
+          node-version: "22"
           cache: "npm"
 
       - name: Setup Java JDK
@@ -131,6 +132,8 @@ jobs:
       # /usr/local/bin/deploy-mobile-apk.sh, tidak bisa buka shell / akses
       # file lain sama sekali (dibuat & diuji 2026-09-02).
       - name: Deploy APK to VPS for direct download link
+        # Hanya dari main/tag: build uji dari cabang lain (mis. upgrade SDK) TIDAK boleh menimpa APK yang diunduh pengguna.
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         env:
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         run: |
