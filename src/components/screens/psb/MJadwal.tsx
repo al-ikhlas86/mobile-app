@@ -113,7 +113,16 @@ function PanelPeserta({ g, j, onTutup }: { g: GelombangDetail; j: Jadwal; onTutu
     const res = (await api.psbPesertaTambah(j.id, pilih)) as Res;
     setSibuk(false);
     if (!res.success) { setGalat(res.message || "Gagal menambah peserta."); return; }
+    const n = pilih.length;
     setPilih([]); void muat();
+    // Orang tua baru tahu jadwalnya kalau diberi kabar: tawarkan langsung kirim email ke peserta yang belum menerimanya.
+    Alert.alert("Kirim email jadwal?", `${n} peserta ditambahkan. Kirim email jadwal "${j.judul}" ke mereka sekarang? Orang tua baru tahu jadwal tes lewat email ini. Bisa juga dikirim nanti dari daftar jadwal.`, [
+      { text: "Nanti", style: "cancel" },
+      { text: "Kirim sekarang", onPress: async () => {
+        const k = (await api.psbJadwalKirim(j.id, false)) as Res<{ antrian: number }>;
+        Alert.alert(k.success ? "Email" : "Gagal", k.success ? (k.data?.antrian ? `Mengirim email ke ${k.data.antrian} penerima. Status terkirim tampil di daftar jadwal.` : "Tidak ada penerima baru dengan email.") : (k.message || "Gagal mengirim email."));
+      } },
+    ]);
   };
   const lepas = async (p: Peserta) => { const res = (await api.psbPesertaHapus(j.id, p.id)) as Res; if (!res.success) Alert.alert("Gagal", res.message || "Gagal."); void muat(); };
   return (
