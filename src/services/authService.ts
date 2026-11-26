@@ -342,6 +342,26 @@ export function saringAkunGanda(accounts: SavedAccount[], currentId: string): Sa
   });
 }
 
+/** "Office" = semua akun kerja (guru, pegawai, admin, dst); "Orang Tua" = akun wali murid. Dipakai label di Ganti Akun. */
+export function jenisAkun(role: string): "Office" | "Orang Tua" {
+  return role === "Orang Tua" ? "Orang Tua" : "Office";
+}
+
+/**
+ * Daftar Ganti Akun (2026-11-26): SEMUA akun tersimpan ditampilkan, dikelompokkan per orang (username/nomor HP sama) dengan akun Office
+ * lebih dulu lalu akun Orang Tua, urutan orang mengikuti kemunculan pertama. Satu orang yang guru sekaligus orang tua murid jadi dua
+ * entri yang bisa dipindah cepat; ayah dan ibu (nomor HP berbeda) tetap akun terpisah. Perilaku lain TIDAK berubah: Keluar/Hapus tetap
+ * per orang (idAkunSeorang) dan pemilihan akun cadangan setelah keluar tetap memakai saringAkunGanda (mengutamakan akun Office).
+ */
+export function daftarAkunGantiAkun(accounts: SavedAccount[]): SavedAccount[] {
+  const urutanOrang: string[] = [];
+  for (const a of accounts) if (!urutanOrang.includes(a.username)) urutanOrang.push(a.username);
+  return urutanOrang.flatMap((u) => {
+    const miliknya = accounts.filter((a) => a.username === u);
+    return [...miliknya.filter((a) => jenisAkun(a.role) === "Office"), ...miliknya.filter((a) => jenisAkun(a.role) === "Orang Tua")];
+  });
+}
+
 /** Semua id akun milik orang yang sama (username sama) - dipakai Keluar/Hapus supaya satu orang keluar sekaligus. */
 export function idAkunSeorang(accountId: string): string[] {
   assertLoaded();

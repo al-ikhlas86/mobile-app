@@ -3,7 +3,7 @@ import { View, Text, Image, Pressable, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, Check, X, Trash2 } from "lucide-react-native";
 import { resolveAvatarUrl } from "../services/api";
-import { saringAkunGanda, type SavedAccount } from "../services/authService";
+import { daftarAkunGantiAkun, jenisAkun, type SavedAccount } from "../services/authService";
 import { useThemeColors } from "../context/ThemeContext";
 
 interface Props {
@@ -32,6 +32,7 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   if (!visible) return null;
+  const akunAktif = savedAccounts.find((a) => a.id === currentAccountId);
   return (
     <View className="absolute inset-0" style={{ zIndex: 50, elevation: 50 }}>
       <Pressable className="flex-1 bg-black/50 justify-end" onPress={onClose}>
@@ -44,8 +45,8 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
             <Pressable onPress={onClose}><X size={20} color={colors.mutedForeground} /></Pressable>
           </View>
           <FlatList
-            // Satu entri per orang: akun Orang Tua milik guru/pegawai yang sama disembunyikan (lihat saringAkunGanda).
-            data={saringAkunGanda(savedAccounts, currentAccountId)}
+            // Semua akun tampil, dikelompokkan per orang: Office dulu lalu Orang Tua (lihat daftarAkunGantiAkun).
+            data={daftarAkunGantiAkun(savedAccounts)}
             keyExtractor={(a) => a.id}
             contentContainerStyle={{ padding: 12, gap: 4 }}
             renderItem={({ item }) => {
@@ -60,11 +61,15 @@ export function AccountSwitcher({ visible, currentAccountId, savedAccounts, onSw
                     <View className="flex-1">
                       <Text numberOfLines={1} className="text-sm font-semibold text-foreground">{item.fullName}</Text>
                       <Text numberOfLines={1} className="text-xs text-muted-foreground">{item.role}</Text>
+                      <View style={{ alignSelf: "flex-start", marginTop: 4, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: jenisAkun(item.role) === "Office" ? "rgba(53,100,71,0.12)" : "#fef3c7" }}>
+                        <Text style={{ fontSize: 11, fontWeight: "600", color: jenisAkun(item.role) === "Office" ? colors.primary : "#78350f" }}>{jenisAkun(item.role)}</Text>
+                      </View>
                     </View>
                     {isCurrent && <Check size={18} color={colors.primary} />}
                   </Pressable>
-                  {!isCurrent && (
-                    <Pressable onPress={() => onRemoveAccount(item.id)} className="p-2">
+                  {/* Akun lain milik orang yang SAMA dengan akun aktif tidak bisa dihapus dari sini (akan ikut menghapus akun aktif): gunakan Keluar. */}
+                  {!isCurrent && item.username !== akunAktif?.username && (
+                    <Pressable onPress={() => onRemoveAccount(item.id)} className="p-2" accessibilityLabel={savedAccounts.some((a) => a.id !== item.id && a.username === item.username) ? "Hapus akses (akun Office dan Orang Tua orang ini)" : "Hapus akses akun"}>
                       <Trash2 size={16} color={colors.mutedForeground} />
                     </Pressable>
                   )}
