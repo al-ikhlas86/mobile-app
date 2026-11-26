@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Alert, Linking, AppState } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert, Linking, AppState, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
@@ -11,7 +11,7 @@ import { Isian, Kolom, Lencana, type Res } from "./psb/mShared";
 // Email & Kontak (Admin IT) di HP: padanan layar web. Rahasia tidak pernah dikirim balik oleh server; kolom kosong = tidak diubah.
 interface StatusEmail {
   mode: string; aktif: string | null; nama: string; kunciEnkripsi: boolean; urlBalik: string; cadanganEnv: boolean;
-  gmail: { clientId: string; adaRahasia: boolean; terhubung: boolean; akun: string };
+  gmail: { clientId: string; adaRahasia: boolean; klienSiap: boolean; terhubung: boolean; akun: string };
   smtp: { host: string; port: number; user: string; from: string; adaSandi: boolean; lengkap: boolean };
   terakhir: { waktu: number | null; ok: boolean | null; alasan: string | null; via: string | null };
 }
@@ -52,6 +52,7 @@ function KartuEmail({ st, onUbah, onMuat }: { st: StatusEmail; onUbah: (s: Statu
   const [smtp, setSmtp] = useState({ host: st.smtp.host, port: String(st.smtp.port), user: st.smtp.user, pass: "", from: st.smtp.from });
   const [ke, setKe] = useState("");
   const [jenis, setJenis] = useState(st.mode === "smtp" ? "smtp" : "gmail");
+  const [lanjutan, setLanjutan] = useState(false);
 
   const jalankan = async (fn: () => Promise<unknown>, ok?: string) => {
     setSibuk(true); setPesan(null);
@@ -94,16 +95,31 @@ function KartuEmail({ st, onUbah, onMuat }: { st: StatusEmail; onUbah: (s: Statu
 
         {jenis === "gmail" ? (
           <View className="gap-3">
-            <Text className="text-xs text-muted-foreground">Tanpa menyimpan sandi Gmail: Anda memberi izin &quot;kirim email saja&quot; lewat Google (bisa dicabut di myaccount.google.com/permissions). Sekali saja di Google Cloud Console: buat proyek, aktifkan Gmail API, buat OAuth client ID jenis Web, isi Authorized redirect URI dengan alamat berikut.</Text>
-            <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground" style={{ fontFamily: "monospace" }}>{st.urlBalik}</Text>
-            <Isian label="Client ID"><Kolom value={clientId} onChangeText={setClientId} maxLength={200} autoCapitalize="none" autoCorrect={false} /></Isian>
-            <Isian label="Client secret" bantuan={st.gmail.adaRahasia ? "Tersimpan. Kosongkan bila tidak diganti." : undefined}><Kolom value={rahasia} onChangeText={setRahasia} maxLength={200} secureTextEntry autoCapitalize="none" autoCorrect={false} /></Isian>
-            <View className="flex-row flex-wrap gap-2">
-              <Button size="sm" variant="outline" disabled={sibuk || !clientId} onPress={async () => { if (await jalankan(() => api.komunikasiGmailKlien(clientId.trim(), rahasia.trim()), "Client OAuth disimpan.")) setRahasia(""); }}>Simpan Client OAuth</Button>
-              <Button size="sm" variant="primary" disabled={sibuk || !st.gmail.clientId || !st.gmail.adaRahasia} onPress={() => void hubungkan()}>{st.gmail.terhubung ? "Hubungkan ulang Google" : "Hubungkan akun Google"}</Button>
-              {st.gmail.terhubung && st.mode !== "gmail" ? <Button size="sm" variant="outline" disabled={sibuk} onPress={() => void jalankan(() => api.komunikasiMode("gmail"), "Pengirim diganti ke Gmail.")}>Pakai Gmail ini</Button> : null}
-              {st.gmail.terhubung ? <Button size="sm" variant="outline" disabled={sibuk} onPress={() => Alert.alert("Putuskan akun Google", "Email sistem berhenti terkirim sampai ada pengirim lain.", [{ text: "Batal", style: "cancel" }, { text: "Putuskan", style: "destructive", onPress: () => void jalankan(() => api.komunikasiPutus(), "Akun Google diputuskan.") }])}>Putuskan</Button> : null}
-            </View>
+            {st.gmail.terhubung ? (
+              <View className="gap-2">
+                <Text className="text-sm text-foreground">Terhubung sebagai <Text className="font-bold">{st.gmail.akun}</Text></Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {st.mode !== "gmail" ? <Button size="sm" variant="primary" disabled={sibuk} onPress={() => void jalankan(() => api.komunikasiMode("gmail"), "Pengirim diganti ke Gmail.")}>Pakai Gmail ini</Button> : null}
+                  <Button size="sm" variant="outline" disabled={sibuk} onPress={() => void hubungkan()}>Ganti akun Gmail</Button>
+                  <Button size="sm" variant="outline" disabled={sibuk} onPress={() => Alert.alert("Putuskan sambungan", "Email sistem berhenti terkirim sampai ada pengirim lain.", [{ text: "Batal", style: "cancel" }, { text: "Putuskan", style: "destructive", onPress: () => void jalankan(() => api.komunikasiPutus(), "Sambungan Gmail diputuskan.") }])}>Putuskan sambungan</Button>
+                </View>
+              </View>
+            ) : (
+              <View className="gap-2">
+                <Text className="text-xs text-muted-foreground">Ketuk tombol, pilih akun Gmail pengirim di Google, lalu Izinkan. Hanya izin &quot;kirim email&quot;, tanpa menyimpan sandi.</Text>
+                <View className="flex-row"><Button size="sm" variant="primary" disabled={sibuk} onPress={() => (st.gmail.klienSiap ? void hubungkan() : setPesan({ ok: false, t: "Aplikasi belum didaftarkan ke Google (sekali saja). Isi Client ID dan Client secret di bagian Pengaturan sekali saja di bawah, lalu ketuk Hubungkan Gmail lagi." }))}>Hubungkan Gmail</Button></View>
+              </View>
+            )}
+            <Pressable onPress={() => setLanjutan((x) => !x)} accessibilityRole="button"><Text className="text-sm font-medium text-primary">{lanjutan || !st.gmail.klienSiap ? "▾" : "▸"} Pengaturan sekali saja (pendaftaran aplikasi ke Google){st.gmail.klienSiap ? " - sudah diisi" : ""}</Text></Pressable>
+            {lanjutan || !st.gmail.klienSiap ? (
+              <View className="gap-3">
+                <Text className="text-xs text-muted-foreground">Di Google Cloud Console: buat proyek, aktifkan Gmail API, buat OAuth client ID jenis Web, isi Authorized redirect URI dengan alamat berikut, lalu salin Client ID dan secret ke sini.</Text>
+                <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground" style={{ fontFamily: "monospace" }}>{st.urlBalik}</Text>
+                <Isian label="Client ID"><Kolom value={clientId} onChangeText={setClientId} maxLength={200} autoCapitalize="none" autoCorrect={false} /></Isian>
+                <Isian label="Client secret" bantuan={st.gmail.adaRahasia ? "Tersimpan. Kosongkan bila tidak diganti." : undefined}><Kolom value={rahasia} onChangeText={setRahasia} maxLength={200} secureTextEntry autoCapitalize="none" autoCorrect={false} /></Isian>
+                <View className="flex-row"><Button size="sm" variant="outline" disabled={sibuk || !clientId} onPress={async () => { if (await jalankan(() => api.komunikasiGmailKlien(clientId.trim(), rahasia.trim()), "Disimpan. Sekarang ketuk Hubungkan Gmail.")) setRahasia(""); }}>Simpan</Button></View>
+              </View>
+            ) : null}
           </View>
         ) : (
           <View className="gap-3">
