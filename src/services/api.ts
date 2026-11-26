@@ -707,6 +707,9 @@ export const api = {
     authedFetch(`/api/admin/keuangan-installations/${id}/approve`, { method: "POST", body: JSON.stringify({ catalogIds }) }),
   adminKeuanganSetCatalogs: (id: number, catalogIds: number[]) =>
     authedFetch(`/api/admin/keuangan-installations/${id}/catalogs`, { method: "PUT", body: JSON.stringify({ catalogIds }) }),
+  adminKeuanganBlock: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}/block`, { method: "POST" }),
+  adminKeuanganUnblock: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}/unblock`, { method: "POST" }),
+  adminKeuanganRename: (id: number, label: string) => authedFetch(`/api/admin/keuangan-installations/${id}`, { method: "PATCH", body: JSON.stringify({ label }) }),
   adminKeuanganRevoke: (id: number) => authedFetch(`/api/admin/keuangan-installations/${id}/revoke`, { method: "POST" }),
   // Instalasi yang sudah punya data dibalas 409 { code: 'BUTUH_KONFIRMASI', jumlahItem } -
   // ulangi dengan konfirmasi=true (?konfirmasi=1) setelah user setuju.

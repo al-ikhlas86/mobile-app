@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert, Pressable } from "react-native";
-import { UserPlus, Check, X, Ban, Pencil, AlertTriangle } from "lucide-react-native";
+import { View, Text, Alert, Pressable, TextInput } from "react-native";
+import { UserPlus, Check, X, Ban, Pencil, AlertTriangle, ShieldOff, ShieldCheck, Type } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { api } from "../../services/api";
@@ -14,6 +14,8 @@ export interface KeuanganInstallation {
   id: number;
   label: string;
   is_approved: number;
+  is_blocked?: number;
+  blocked_at?: string | null;
   approved_at: string | null;
   approved_by_name: string | null;
   last_sync_at: string | null;
@@ -46,8 +48,9 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
     api.adminCatalogs().then((res) => { if (res.success) setCatalogs(res.data); });
   }, []);
 
-  const pending = installations.filter((i) => !i.is_approved && !i.approved_at);
-  const dicabut = installations.filter((i) => !i.is_approved && i.approved_at);
+  const diblokir = installations.filter((i) => !!i.is_blocked);
+  const pending = installations.filter((i) => !i.is_blocked && !i.is_approved && !i.approved_at);
+  const dicabut = installations.filter((i) => !i.is_blocked && !i.is_approved && i.approved_at);
   const aktif = installations.filter((i) => !!i.is_approved);
 
   const bukaPanel = (inst: KeuanganInstallation, m: "approve" | "edit") => {
@@ -140,6 +143,50 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
     ]);
   };
 
+  // Blokir BEDA dari Tolak/Hapus: instalasi tetap tersimpan, tokennya tidak berlaku, dan tidak bisa dihapus sampai blokir dibuka.
+  const [renameId, setRenameId] = useState<number | null>(null);
+  const [namaBaru, setNamaBaru] = useState("");
+  const aksiBiasa = async (inst: KeuanganInstallation, panggil: () => Promise<{ success: boolean; message?: string }>) => {
+    setBusyId(inst.id);
+    try {
+      const res = await panggil();
+      if (!res.success) Alert.alert("Gagal", res.message || "Gagal memproses.");
+      else setRenameId(null);
+      onChanged();
+    } catch {
+      Alert.alert("Gagal", "Gagal menghubungi server - cek koneksi internet.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+  const blokir = (inst: KeuanganInstallation) => Alert.alert("Blokir instalasi", `Blokir "${inst.label}"? Sinkronisasinya berhenti dan tidak bisa disetujui atau dihapus sampai Anda buka blokirnya.`, [
+    { text: "Batal", style: "cancel" },
+    { text: "Blokir", style: "destructive", onPress: () => void aksiBiasa(inst, () => api.adminKeuanganBlock(inst.id)) },
+  ]);
+  const bukaBlokir = (inst: KeuanganInstallation) => Alert.alert("Buka blokir", `Buka blokir "${inst.label}"? Statusnya kembali "belum disetujui" (harus disetujui lagi).`, [
+    { text: "Batal", style: "cancel" },
+    { text: "Buka blokir", onPress: () => void aksiBiasa(inst, () => api.adminKeuanganUnblock(inst.id)) },
+  ]);
+  const renderRename = (i: KeuanganInstallation) => (
+    <View className="gap-2 mt-2">
+      <TextInput value={namaBaru} onChangeText={setNamaBaru} maxLength={150} accessibilityLabel="Nama instalasi" className="bg-input-background border border-border rounded-lg px-2.5 py-2 text-sm text-foreground" placeholderTextColor={colors.mutedForeground} />
+      <View className="flex-row gap-2">
+        <Button size="sm" variant="primary" disabled={busyId === i.id || !namaBaru.trim()} onPress={() => void aksiBiasa(i, () => api.adminKeuanganRename(i.id, namaBaru.trim()))}>Simpan nama</Button>
+        <Button size="sm" variant="outline" onPress={() => setRenameId(null)}>Batal</Button>
+      </View>
+    </View>
+  );
+  const tombolNama = (i: KeuanganInstallation) => (
+    <Button size="sm" variant="outline" disabled={busyId === i.id} onPress={() => { setRenameId(i.id); setNamaBaru(i.label); }}>
+      <Type size={14} color={colors.primary} /><Text className="text-primary text-sm font-semibold ml-1">Ubah nama</Text>
+    </Button>
+  );
+  const tombolBlokir = (i: KeuanganInstallation) => (
+    <Button size="sm" variant="outline" disabled={busyId === i.id} onPress={() => blokir(i)}>
+      <ShieldOff size={14} color={colors.primary} /><Text className="text-primary text-sm font-semibold ml-1">Blokir</Text>
+    </Button>
+  );
+
   const renderPanel = (inst: KeuanganInstallation) => (
     <View className="gap-2 bg-card rounded-lg p-2.5 border border-border mt-2">
       <Text className="text-xs font-medium text-foreground">Ambil data dari katalog mana? (boleh lebih dari 1)</Text>
@@ -193,6 +240,7 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
                     <Button size="sm" variant="destructive" disabled={busyId === i.id} onPress={() => jalankan("delete", i, "Tolak Permintaan", `Tolak & hapus permintaan "${i.label}"? Tidak bisa dibatalkan.`, "Tolak")}>
                       <X size={14} color="#fff" /><Text className="text-destructive-foreground text-sm font-semibold ml-1">Tolak</Text>
                     </Button>
+                    {tombolBlokir(i)}
                   </View>
                 ) : renderPanel(i)}
               </View>
@@ -227,6 +275,8 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
                     </Button>
                   </View>
                 ) : renderPanel(i)}
+                {panelId !== i.id && renameId !== i.id ? <View className="flex-row gap-2 mt-2">{tombolNama(i)}{tombolBlokir(i)}</View> : null}
+                {renameId === i.id ? renderRename(i) : null}
               </View>
             ))}
           </View>
@@ -251,8 +301,34 @@ export function KeuanganInstallationsSection({ installations, onChanged }: { ins
                     <Button size="sm" variant="destructive" disabled={busyId === i.id} onPress={() => jalankan("delete", i, "Hapus Instalasi", `Hapus "${i.label}" permanen? Token-nya tidak akan bisa dipakai lagi.`, "Hapus")}>
                       <X size={14} color="#fff" /><Text className="text-destructive-foreground text-sm font-semibold ml-1">Hapus</Text>
                     </Button>
+                    {tombolBlokir(i)}
                   </View>
                 ) : renderPanel(i)}
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
+
+      {diblokir.length > 0 && (
+        <Card padding="lg">
+          <View className="flex-row items-center gap-2 mb-1">
+            <ShieldOff size={18} color="#dc2626" />
+            <Text className="font-semibold text-sm text-foreground">Diblokir ({diblokir.length})</Text>
+          </View>
+          <Text className="text-xs text-muted-foreground mb-3">Tidak bisa sinkron, disetujui, atau dihapus sampai blokir dibuka.</Text>
+          <View className="gap-3">
+            {diblokir.map((i) => (
+              <View key={i.id} className="border-b border-border pb-3">
+                <Text className="text-sm font-medium text-foreground">{i.label}</Text>
+                <Text className="text-xs text-muted-foreground">Diblokir: {formatTanggal(i.blocked_at ?? null)}</Text>
+                <View className="flex-row flex-wrap gap-2 mt-2">
+                  <Button size="sm" variant="primary" disabled={busyId === i.id} onPress={() => bukaBlokir(i)}>
+                    <ShieldCheck size={14} color="#fff" /><Text className="text-primary-foreground text-sm font-semibold ml-1">Buka blokir</Text>
+                  </Button>
+                  {renameId !== i.id ? tombolNama(i) : null}
+                </View>
+                {renameId === i.id ? renderRename(i) : null}
               </View>
             ))}
           </View>

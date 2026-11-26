@@ -300,7 +300,7 @@ export function SyncStatusScreen() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  const pendingKeuangan = (keuangan ?? []).filter((i) => !i.is_approved && !i.approved_at).length;
+  const pendingKeuangan = (keuangan ?? []).filter((i) => !i.is_approved && !i.approved_at && !i.is_blocked).length;
   const pendingAbsensi = (kiosk ?? []).filter((d) => !d.is_approved && !d.is_blocked).length;
 
   const tabBtn = (key: "datamaster" | "keuangan" | "absensi", label: string, icon: React.ReactNode, badge = 0) => (
