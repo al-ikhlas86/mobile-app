@@ -780,6 +780,8 @@ export const api = {
   komunikasiKontakBawaan: (nomor: string) => authedFetch("/api/admin/komunikasi/kontak/bawaan", { method: "PUT", body: JSON.stringify({ nomor }) }),
   komunikasiKontakSimpan: (catalogId: number, label: string, nomor: string) => authedFetch(`/api/admin/komunikasi/kontak/${catalogId}`, { method: "PUT", body: JSON.stringify({ label, nomor }) }),
   komunikasiKontakHapus: (catalogId: number) => authedFetch(`/api/admin/komunikasi/kontak/${catalogId}`, { method: "DELETE" }),
+  psbJadwalKirim: (id: number, semua = false) => authedFetch(`/api/psb-admin/jadwal/${id}/kirim`, { method: "POST", body: JSON.stringify({ semua }) }),
+  psbPengumumanKirim: (id: number, semua = false) => authedFetch(`/api/psb-admin/pengumuman/${id}/kirim`, { method: "POST", body: JSON.stringify({ semua }) }),
   psbGelombangHapus: (id: number, konfirmasiNama?: string) => authedFetch(`/api/psb-admin/gelombang/${id}`, { method: "DELETE", ...(konfirmasiNama !== undefined ? { body: JSON.stringify({ konfirmasiNama }) } : {}) }),
   psbFormulirSimpan: (id: number, fields: unknown) => authedFetch(`/api/psb-admin/gelombang/${id}/formulir`, { method: "PUT", body: JSON.stringify({ fields }) }),
   psbPendaftarList: (gelombangId: number, o: { status?: string; kelompok?: string; kelas?: string; q?: string; halaman?: number } = {}) =>

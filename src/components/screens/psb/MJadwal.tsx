@@ -5,10 +5,11 @@ import { Button } from "../../ui/Button";
 import { SimplePicker } from "../../ui/SimplePicker";
 import { api } from "../../../services/api";
 import { useThemeColors } from "../../../context/ThemeContext";
+import { KirimEmail, type RingkasanEmail } from "./MKirimEmail";
 import { Isian, Kolom, JENIS_JADWAL, LABEL_STATUS, waktuLengkap, type GelombangDetail, type Res, type StatusPendaftar } from "./mShared";
 
 // Tab Jadwal (HP): daftar, buat, hapus, dan atur peserta. Tanggal TTTT-BB-HH dan jam JJ:MM (zona waktu perangkat).
-interface Jadwal { id: number; judul: string; jenis: string; mulai: string; selesai: string | null; lokasi: string | null; catatan: string | null; kuota: number | null; peserta: number }
+interface Jadwal { id: number; judul: string; jenis: string; mulai: string; selesai: string | null; lokasi: string | null; catatan: string | null; kuota: number | null; peserta: number; email: RingkasanEmail }
 interface Peserta { id: number; nomor: string; nama: string; status: StatusPendaftar }
 const RE_TGL = /^\d{4}-\d{2}-\d{2}$/; const RE_JAM = /^\d{2}:\d{2}$/;
 const gabung = (t: string, j: string) => (RE_TGL.test(t) && RE_JAM.test(j) ? new Date(`${t}T${j}:00`) : null);
@@ -43,6 +44,7 @@ export function TabJadwal({ g }: { g: GelombangDetail }) {
           <Text className="text-xs text-muted-foreground">{waktuLengkap(j.mulai)}{j.selesai ? ` – ${waktuLengkap(j.selesai)}` : ""}{j.lokasi ? ` · ${j.lokasi}` : ""}</Text>
           <Text className="text-xs text-muted-foreground">{j.peserta} peserta{j.kuota ? ` / kuota ${j.kuota}` : ""}</Text>
           {j.catatan ? <Text className="text-xs text-muted-foreground">{j.catatan}</Text> : null}
+          <KirimEmail jenis="jadwal" id={j.id} email={j.email} bolehKirim={g.bisaKelola && j.peserta > 0} alasanNonaktif={j.peserta === 0 ? "Tambahkan peserta dulu" : undefined} onSelesai={() => void muat()} />
           <View className="flex-row gap-2 mt-1"><Button size="sm" variant="outline" onPress={() => setPeserta(j)}><Users size={14} /> Peserta</Button>{g.bisaKelola ? <Button size="sm" variant="outline" onPress={() => hapus(j)}><Trash2 size={14} /> Hapus</Button> : null}</View>
         </View>
       ))}

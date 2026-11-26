@@ -4,10 +4,11 @@ import { Plus, Trash2 } from "lucide-react-native";
 import { Button } from "../../ui/Button";
 import { SimplePicker } from "../../ui/SimplePicker";
 import { api } from "../../../services/api";
+import { KirimEmail, type RingkasanEmail } from "./MKirimEmail";
 import { Isian, Kolom, Lencana, TARGET_PENGUMUMAN, waktuLengkap, type GelombangDetail, type Res } from "./mShared";
 
 // Tab Pengumuman (HP): tampil di halaman status orang tua (nomor + kode akses) sesuai sasaran status. Draf tidak tampil.
-interface Pengumuman { id: number; judul: string; isi: string; target: string; terbitPada: string | null }
+interface Pengumuman { id: number; judul: string; isi: string; target: string; terbitPada: string | null; email: RingkasanEmail }
 interface Template { id: number; nama: string; judul: string; isi: string }
 
 export function TabPengumuman({ g }: { g: GelombangDetail }) {
@@ -73,6 +74,7 @@ export function TabPengumuman({ g }: { g: GelombangDetail }) {
   }
   return (
     <View className="gap-3">
+      <Text className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">Pengumuman memberi kabar ke pendaftar sesuai sasarannya (tampil di halaman pendaftaran dan bisa dikirim lewat email). Untuk menentukan diterima, cadangan, atau ditolak, ubah status di tab Pendaftar (buka pendaftar lalu tekan Jadikan ...); sasaran pengumuman mengikuti status itu.</Text>
       {g.bisaKelola ? <View className="flex-row"><Button size="sm" variant="primary" onPress={() => setForm({ judul: "", isi: "", target: "semua", terbit: true })}><Plus size={14} color="#fff" /> Pengumuman baru</Button></View> : null}
       {galat ? <Text className="text-sm text-red-600">{galat}</Text> : null}
       {!daftar && !galat ? <ActivityIndicator /> : null}
@@ -87,6 +89,7 @@ export function TabPengumuman({ g }: { g: GelombangDetail }) {
           <View className="flex-row items-start justify-between gap-2"><Text className="text-sm font-semibold text-foreground flex-1">{p.judul}</Text><View className="gap-1 items-end"><Lencana jenis={p.terbitPada ? "terbuka" : "draft"} teks={p.terbitPada ? "Terbit" : "Draf"} /><Lencana jenis="baru" teks={TARGET_PENGUMUMAN[p.target] ?? p.target} /></View></View>
           {p.terbitPada ? <Text className="text-xs text-muted-foreground">Terbit {waktuLengkap(p.terbitPada)}</Text> : null}
           <Text className="text-sm text-foreground">{p.isi}</Text>
+          <KirimEmail jenis="pengumuman" id={p.id} email={p.email} bolehKirim={g.bisaKelola && Boolean(p.terbitPada)} alasanNonaktif={p.terbitPada ? undefined : "Terbitkan dulu (bukan draf)"} onSelesai={() => void muat()} />
           {g.bisaKelola ? <View className="flex-row mt-1"><Button size="sm" variant="outline" onPress={() => hapus(p)}><Trash2 size={14} /> Hapus</Button></View> : null}
         </View>
       ))}
