@@ -60,7 +60,7 @@ function DaftarPendaftar({ g, onBuka, onCatat }: { g: GelombangDetail; onBuka: (
       {d && d.data.length === 0 ? <Text className="text-sm text-muted-foreground">Belum ada pendaftar{status || kelompok || kelas || qAktif ? " yang cocok dengan filter" : ""}.</Text> : null}
       {d?.data.map((p) => (
         <Pressable key={p.id} onPress={() => onBuka(p.id)} accessibilityRole="button" className="flex-row items-start justify-between gap-2 py-2 border-b border-border">
-          <View className="flex-1"><Text className="text-sm font-semibold text-foreground">{p.nama}</Text><Text className="text-xs text-muted-foreground">{p.nomor} · {p.noHp}{p.sumber === "admin" ? " · dicatat staf" : ""}</Text>{p.namaOrtu || p.email || p.kelas ? <Text className="text-xs text-muted-foreground">{[p.namaOrtu && `Ortu: ${p.namaOrtu}`, p.email, p.kelas && `Kelas ${p.kelas}`].filter(Boolean).join(" · ")}</Text> : null}</View>
+          <View className="flex-1"><Text className="text-sm font-semibold text-foreground">{p.nama}</Text><Text className="text-xs text-muted-foreground">{p.nomor} · {p.noHp}{p.sumber === "admin" ? " · dicatat staf" : ""}</Text>{p.namaOrtu !== p.nama || p.email || p.kelas ? <Text className="text-xs text-muted-foreground">{[p.namaOrtu && p.namaOrtu !== p.nama && `Ortu: ${p.namaOrtu}`, p.email, p.kelas && `Kelas ${p.kelas}`].filter(Boolean).join(" · ")}</Text> : null}</View>
           <View className="items-end gap-1"><Lencana jenis={p.status} teks={LABEL_STATUS[p.status]} />{p.tagihan ? <Lencana jenis={p.tagihan} teks={`Tagihan ${p.tagihan}`} /> : null}</View>
         </Pressable>
       ))}
@@ -135,7 +135,7 @@ function DetailPendaftar({ id, onKembali }: { id: number; onKembali: () => void 
 
       <View className="gap-1">
         <Text className="text-sm font-semibold text-foreground">Kontak</Text>
-        <Text className="text-sm text-foreground">Orang tua: {p.namaOrtu || "-"} · Email: {p.email || "-"} · WA: {p.noHp}</Text>
+        <Text className="text-sm text-foreground">{p.namaOrtu !== p.nama ? `Orang tua: ${p.namaOrtu || "-"} · ` : ""}Email: {p.email || "-"} · WA: {p.noHp}</Text>
         {p.bisaKelola && p.bisaResetKey ? <View className="flex-row mt-1"><Button size="sm" variant="outline" disabled={sibuk} onPress={resetKey}>Buat ulang Key formulir</Button></View> : null}
         {keyBaru ? (
           <View className="bg-muted rounded-lg px-3 py-2 mt-1 gap-1">
@@ -228,8 +228,8 @@ function CatatPendaftar({ g, onSelesai, onBatal }: { g: GelombangDetail; onSeles
       <Text className="font-semibold text-sm text-foreground">Catat pendaftar (oleh staf)</Text>
       {g.fields.some((f) => f.tipe === "berkas") ? <Text className="text-xs text-muted-foreground">Dari HP hanya isian teks yang bisa dicatat. Unggah berkas lewat versi web.</Text> : null}
       <Text className="text-xs font-semibold text-muted-foreground uppercase">Data awal</Text>
-      <Isian label="Nama orang tua / wali *" galat={rincian.namaOrtu}><Kolom value={awal.namaOrtu} onChangeText={(v) => setAwal({ ...awal, namaOrtu: v })} maxLength={120} /></Isian>
-      <Isian label="Nama calon siswa *" galat={rincian.namaCalon}><Kolom value={awal.namaCalon} onChangeText={(v) => setAwal({ ...awal, namaCalon: v })} maxLength={120} /></Isian>
+      {g.jenis === "siswa" ? <Isian label="Nama orang tua / wali *" galat={rincian.namaOrtu}><Kolom value={awal.namaOrtu} onChangeText={(v) => setAwal({ ...awal, namaOrtu: v })} maxLength={120} /></Isian> : null}
+      <Isian label={g.jenis === "siswa" ? "Nama calon siswa *" : "Nama lengkap pelamar *"} galat={rincian.namaCalon}><Kolom value={awal.namaCalon} onChangeText={(v) => setAwal({ ...awal, namaCalon: v })} maxLength={120} /></Isian>
       <Isian label="Email (untuk mengirim Key)" galat={rincian.email}><Kolom value={awal.email} onChangeText={(v) => setAwal({ ...awal, email: v })} maxLength={254} keyboardType="email-address" autoCapitalize="none" /></Isian>
       <Isian label="Nomor WhatsApp *" galat={rincian.noHp}><Kolom value={awal.noHp} onChangeText={(v) => setAwal({ ...awal, noHp: v })} maxLength={20} keyboardType="phone-pad" /></Isian>
       <Text className="text-xs font-semibold text-muted-foreground uppercase mt-1">Formulir</Text>

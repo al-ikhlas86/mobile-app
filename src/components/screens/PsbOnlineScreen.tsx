@@ -9,7 +9,7 @@ import { useThemeColors } from "../../context/ThemeContext";
 import { PsbGelombang } from "./psb/PsbGelombang";
 import { FormGelombang } from "./psb/MFormGelombang";
 import {
-  Lencana, Isian, Kolom, LABEL_GELOMBANG, LABEL_STATUS, rupiah, tanggalPendek, type GelombangRingkas, type Izin, type Res, type StatusPendaftar,
+  Lencana, Isian, Kolom, LABEL_GELOMBANG, LABEL_JENIS, LABEL_STATUS, rupiah, tanggalPendek, type GelombangRingkas, type Izin, type Res, type StatusPendaftar,
 } from "./psb/mShared";
 
 // PSB Online (staf) di HP: padanan layar web PsbOnlineScreen. Hak akses dijaga server per katalog.
@@ -116,7 +116,7 @@ export function PsbOnlineScreen() {
           <Card padding="lg">
             <View className="flex-row items-start justify-between gap-2">
               <View className="flex-1">
-                <View className="flex-row items-center gap-2"><GraduationCap size={16} color={colors.primary} /><Text className="font-semibold text-sm text-foreground flex-1">{g.nama}{g.akses === "privat" ? " (privat)" : ""}</Text></View>
+                <View className="flex-row items-center gap-2"><GraduationCap size={16} color={colors.primary} /><Text className="font-semibold text-sm text-foreground flex-1">{g.nama}{g.akses === "privat" ? " (privat)" : ""}{g.jenis !== "siswa" ? ` (lowongan ${LABEL_JENIS[g.jenis].toLowerCase()})` : ""}</Text></View>
                 <Text className="text-xs text-muted-foreground">{g.katalog?.nama} · {g.tahunAjaran} · {tanggalPendek(g.tanggalBuka)} s.d. {tanggalPendek(g.tanggalTutup)}</Text>
               </View>
               <View className="items-end gap-1"><Lencana jenis={g.status} teks={LABEL_GELOMBANG[g.status]} /><ChevronRight size={16} color={colors.mutedForeground} /></View>

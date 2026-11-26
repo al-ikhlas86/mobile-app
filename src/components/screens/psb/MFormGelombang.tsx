@@ -3,13 +3,14 @@ import { View, Text } from "react-native";
 import { Button } from "../../ui/Button";
 import { SimplePicker } from "../../ui/SimplePicker";
 import { api } from "../../../services/api";
-import { Isian, Kolom, type GelombangDetail, type GelombangRingkas, type Izin, type Res } from "./mShared";
+import { Isian, Kolom, LABEL_JENIS, type GelombangDetail, type GelombangRingkas, type Izin, type Res } from "./mShared";
 
 // Formulir gelombang di HP: buat baru (pilih katalog, formulir awal atau salin), atau ubah (awal terisi). Pemeriksaan sesungguhnya ada di server (psbCore.bersihkanGelombang).
 export function FormGelombang({ izin, daftarGelombang, awal, onBatal, onSelesai }: { izin?: Izin; daftarGelombang?: GelombangRingkas[]; awal?: GelombangDetail; onBatal: () => void; onSelesai: (id: number) => void }) {
   const katalog = izin?.katalog.filter((k) => k.kelola) ?? [];
   const t = new Date(); const a = t.getMonth() >= 6 ? t.getFullYear() : t.getFullYear() - 1;
   const [catalogId, setCatalogId] = useState(String(katalog[0]?.id ?? ""));
+  const [jenis, setJenis] = useState<"siswa" | "guru" | "pegawai">("siswa");
   const [template, setTemplate] = useState("dasar");
   const [salinDari, setSalinDari] = useState("");
   const [f, setF] = useState(() => (awal
@@ -18,14 +19,15 @@ export function FormGelombang({ izin, daftarGelombang, awal, onBatal, onSelesai 
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
-  const sumberSalin = (daftarGelombang ?? []).filter((g) => String(g.catalogId) === catalogId);
+  const sumberSalin = (daftarGelombang ?? []).filter((g) => String(g.catalogId) === catalogId && g.jenis === jenis);
+  const templatCocok = (izin?.templateFormulir ?? [{ kunci: "dasar", label: "Formulir dasar (ringkas)", untuk: ["siswa"] }]).filter((t) => !t.untuk || t.untuk.includes(jenis));
 
   const simpan = async () => {
     setGalat("");
     if (!awal && !catalogId) { setGalat("Pilih katalog."); return; }
     setSibuk(true);
     const badan = { ...f, kuota: f.kuota.trim() === "" ? null : Number(f.kuota), biaya: f.biaya.trim() === "" ? 0 : Number(f.biaya) };
-    const res = (awal ? await api.psbGelombangUbah(awal.id, badan) : await api.psbGelombangBuat({ ...badan, catalogId: Number(catalogId), ...(template === "salin" ? { salinDariId: Number(salinDari) || null } : { template }) })) as Res<{ id: number }>;
+    const res = (awal ? await api.psbGelombangUbah(awal.id, badan) : await api.psbGelombangBuat({ ...badan, catalogId: Number(catalogId), jenis, ...(template === "salin" ? { salinDariId: Number(salinDari) || null } : { template }) })) as Res<{ id: number }>;
     setSibuk(false);
     if (!res.success) { setGalat(res.message || "Gagal menyimpan."); return; }
     onSelesai(awal ? awal.id : res.data!.id);
@@ -36,8 +38,11 @@ export function FormGelombang({ izin, daftarGelombang, awal, onBatal, onSelesai 
       {!awal ? (
         <>
           <Isian label="Katalog"><SimplePicker value={catalogId} options={katalog.map((k) => ({ value: String(k.id), label: `${k.nama} (${k.kode})` }))} onChange={(v) => { setCatalogId(v); setSalinDari(""); }} placeholder="Pilih katalog" /></Isian>
+          <Isian label="Jenis pendaftaran" bantuan="Siswa baru, atau lowongan guru/pegawai. Tidak bisa diubah setelah dibuat.">
+            <SimplePicker value={jenis} options={(["siswa", "guru", "pegawai"] as const).map((j) => ({ value: j, label: LABEL_JENIS[j] }))} onChange={(v) => { const j = v as "siswa" | "guru" | "pegawai"; setJenis(j); setTemplate(j === "siswa" ? "dasar" : j); setSalinDari(""); }} placeholder="Pilih jenis" />
+          </Isian>
           <Isian label="Formulir awal" bantuan="Pilih formulir siap pakai, atau salin dari gelombang sebelumnya.">
-            <SimplePicker value={template} options={[...(izin?.templateFormulir ?? [{ kunci: "dasar", label: "Formulir dasar (ringkas)" }]).map((x) => ({ value: x.kunci, label: x.label })), ...(sumberSalin.length ? [{ value: "salin", label: "Salin dari gelombang lain" }] : [])]} onChange={setTemplate} placeholder="Pilih formulir" />
+            <SimplePicker value={template} options={[...templatCocok.map((x) => ({ value: x.kunci, label: x.label })), ...(sumberSalin.length ? [{ value: "salin", label: "Salin dari gelombang lain" }] : [])]} onChange={setTemplate} placeholder="Pilih formulir" />
           </Isian>
           {template === "salin" ? <Isian label="Salin dari gelombang"><SimplePicker value={salinDari} options={sumberSalin.map((g) => ({ value: String(g.id), label: `${g.nama} (${g.tahunAjaran})` }))} onChange={setSalinDari} placeholder="Pilih gelombang" /></Isian> : null}
         </>

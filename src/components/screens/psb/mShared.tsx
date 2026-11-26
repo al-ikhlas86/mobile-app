@@ -5,12 +5,12 @@ import { useThemeColors } from "../../../context/ThemeContext";
 // Tipe dan alat bantu bersama layar PSB Online (staf) di aplikasi HP. Bentuk data mengikuti routes/psbAdmin.js (sama dengan versi web).
 export interface Res<T = unknown> { success: boolean; data?: T; message?: string; code?: string; rincian?: Record<string, string> }
 export interface Katalog { id: number; kode: string; nama: string; kelola: boolean }
-export interface Izin { semua: boolean; katalog: Katalog[]; publikAktif: boolean; daftarOnline: boolean; kontak: string; emailTerpasang: boolean; bisaAturPublik: boolean; templateFormulir: { kunci: string; label: string }[] }
+export interface Izin { semua: boolean; katalog: Katalog[]; publikAktif: boolean; daftarOnline: boolean; kontak: string; emailTerpasang: boolean; bisaAturPublik: boolean; templateFormulir: { kunci: string; label: string; untuk?: string[] }[] }
 export type StatusPendaftar = "menunggu_bayar" | "menunggu_formulir" | "baru" | "diverifikasi" | "ditolak" | "diterima" | "cadangan" | "mundur";
 export type StatusGelombang = "draft" | "belum_buka" | "terbuka" | "penuh" | "ditutup";
 export interface GelombangRingkas {
   id: number; catalogId: number; katalog?: { kode: string; nama: string }; nama: string; tahunAjaran: string; deskripsi: string | null;
-  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean; akses: "publik" | "privat"; ditutupManual: boolean; tautan?: string;
+  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean; akses: "publik" | "privat"; jenis: "siswa" | "guru" | "pegawai"; ditutupManual: boolean; tautan?: string;
   status: StatusGelombang; hitung: Partial<Record<StatusPendaftar, number>>; jumlahAktif: number; bisaKelola: boolean;
 }
 export interface FieldForm { id?: number; kunci: string; label: string; tipe: string; wajib: boolean; sistem: boolean; opsi: string[] | null; bantuan: string | null; bagian: string | null }
@@ -22,6 +22,7 @@ export const TIPE_LABEL: Record<string, string> = { teks: "Teks pendek", teks_pa
 export const JENIS_JADWAL: Record<string, string> = { tes: "Tes", wawancara: "Wawancara", observasi: "Observasi", daftar_ulang: "Daftar ulang", lainnya: "Lainnya" };
 export const TARGET_PENGUMUMAN: Record<string, string> = { semua: "Semua pendaftar", diverifikasi: "Yang diverifikasi", diterima: "Yang diterima", cadangan: "Yang cadangan", ditolak: "Yang tidak diterima" };
 
+export const LABEL_JENIS: Record<string, string> = { siswa: "Siswa baru", guru: "Guru", pegawai: "Pegawai" };
 export const rupiah = (n: number) => `Rp ${Number(n).toLocaleString("id-ID")}`;
 export const waktuLengkap = (v: string) => new Date(v).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 export const tanggalPendek = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
