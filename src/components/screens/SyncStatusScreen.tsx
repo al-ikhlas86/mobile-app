@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Alert, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban, Database, Wallet, MonitorSmartphone } from "lucide-react-native";
+import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban, Database, Wallet, MonitorSmartphone, ShieldOff, ShieldCheck, Type } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
@@ -40,7 +40,7 @@ function SourceCard({ title, status }: { title: string; status: SourceStatus }) 
 // Katalog mana, dan namanya apa") - null kalau unit_id belum/tidak
 // terpetakan ke katalog manapun (GET /hub-units sekarang JOIN
 // unit_catalog_map, lihat routes/admin.js).
-interface HubUnit { id: number; name: string; unit_id: number | null; status: "pending" | "active" | "deactivated"; created_at: string; catalog: { id: number; kode: string; nama: string } | null; }
+interface HubUnit { id: number; name: string; unit_id: number | null; status: "pending" | "active" | "deactivated" | "blocked"; punya_pengenal?: boolean; created_at: string; catalog: { id: number; kode: string; nama: string } | null; }
 interface Catalog { id: number; kode: string; nama: string; }
 function formatTanggal(ts: string) { return new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
@@ -48,6 +48,8 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
   const [busyId, setBusyId] = useState<number | null>(null);
   const pending = units.filter((u) => u.status === "pending");
   const aktif = units.filter((u) => u.status === "active");
+  const diblokir = units.filter((u) => u.status === "blocked");
+  const colors = useThemeColors();
 
   // Sistem Katalog (2026-09-14) - approve SEKARANG WAJIB sekalian tentukan
   // katalog mana yg dipetakan ke unit ini (menutup celah lama: unit baru
@@ -140,6 +142,54 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
     ]);
   };
 
+  // Blokir BEDA dari Tolak: unit tetap tersimpan, tokennya tidak berlaku, dan PC-nya (bila sudah mengirim pengenal, Data Master >= 1.8.4)
+  // tidak bisa mendaftar lagi sampai blokir dibuka.
+  const [renameId, setRenameId] = useState<number | null>(null);
+  const [namaBaru, setNamaBaru] = useState("");
+  const aksiBiasa = async (unit: HubUnit, panggil: () => Promise<{ success: boolean; message?: string }>) => {
+    setBusyId(unit.id);
+    try {
+      const res = await panggil();
+      if (!res.success) Alert.alert("Gagal", res.message || "Gagal memproses.");
+      else { setRenameId(null); if (res.message) Alert.alert("Berhasil", res.message); }
+      onChanged();
+    } catch {
+      Alert.alert("Gagal", "Gagal menghubungi server - cek koneksi internet.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+  const blokir = (unit: HubUnit) => {
+    const catatan = unit.punya_pengenal ? "" : "\n\nCatatan: PC ini belum mengirim pengenal (versi lama), jadi blokir hanya berlaku pada tokennya sampai aplikasinya diperbarui.";
+    Alert.alert("Blokir unit", `Blokir unit "${unit.name}"? Sinkronisasi berhenti dan PC ini tidak bisa mendaftar lagi sampai blokir dibuka. (Untuk sekadar menolak agar boleh mendaftar lagi, pakai Tolak.)${catatan}`, [
+      { text: "Batal", style: "cancel" },
+      { text: "Blokir", style: "destructive", onPress: () => void aksiBiasa(unit, () => api.adminBlockHubUnit(unit.id)) },
+    ]);
+  };
+  const bukaBlokir = (unit: HubUnit) => Alert.alert("Buka blokir", `Buka blokir "${unit.name}"? Statusnya kembali menunggu persetujuan.`, [
+    { text: "Batal", style: "cancel" },
+    { text: "Buka blokir", onPress: () => void aksiBiasa(unit, () => api.adminUnblockHubUnit(unit.id)) },
+  ]);
+  const renderRename = (u: HubUnit) => (
+    <View className="gap-2 mt-2">
+      <TextInput value={namaBaru} onChangeText={setNamaBaru} maxLength={100} accessibilityLabel="Nama unit" className="bg-input-background border border-border rounded-lg px-2.5 py-2 text-sm text-foreground" placeholderTextColor={colors.mutedForeground} />
+      <View className="flex-row gap-2">
+        <Button size="sm" variant="primary" disabled={busyId === u.id || !namaBaru.trim()} onPress={() => void aksiBiasa(u, () => api.adminRenameHubUnit(u.id, namaBaru.trim()))}>Simpan nama</Button>
+        <Button size="sm" variant="outline" onPress={() => setRenameId(null)}>Batal</Button>
+      </View>
+    </View>
+  );
+  const tombolNama = (u: HubUnit) => (
+    <Button size="sm" variant="outline" disabled={busyId === u.id} onPress={() => { setRenameId(u.id); setNamaBaru(u.name); }}>
+      <Type size={14} color={colors.primary} /><Text className="text-primary text-sm font-semibold ml-1">Ubah nama</Text>
+    </Button>
+  );
+  const tombolBlokir = (u: HubUnit) => (
+    <Button size="sm" variant="outline" disabled={busyId === u.id} onPress={() => blokir(u)}>
+      <ShieldOff size={14} color={colors.primary} /><Text className="text-primary text-sm font-semibold ml-1">Blokir</Text>
+    </Button>
+  );
+
   return (
     <>
       {pending.length > 0 && (
@@ -162,6 +212,7 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
                     <Button size="sm" variant="destructive" disabled={busyId === u.id} onPress={() => jalankan("reject", u, "Tolak Pendaftaran", `Tolak & hapus pendaftaran "${u.name}"? Tidak bisa dibatalkan.`)}>
                       <X size={14} color="#fff" /><Text className="text-destructive-foreground text-sm font-semibold ml-1">Tolak</Text>
                     </Button>
+                    {tombolBlokir(u)}
                   </View>
                 ) : (
                   <View className="gap-2 bg-card rounded-lg p-2.5 border border-amber-300 dark:border-amber-700">
@@ -226,7 +277,8 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
         ) : (
           <View className="gap-2">
             {aktif.map((u) => (
-              <View key={u.id} className="flex-row items-center justify-between gap-2 border-b border-border pb-2">
+              <View key={u.id} className="border-b border-border pb-2">
+              <View className="flex-row items-center justify-between gap-2">
                 <View className="flex-1">
                   <Text className="text-sm font-medium text-foreground">{u.name}</Text>
                   <Text className="text-xs text-muted-foreground">
@@ -239,10 +291,37 @@ function HubUnitsSection({ units, onChanged }: { units: HubUnit[]; onChanged: ()
                   <Ban size={14} /><Text className="text-primary text-sm font-semibold ml-1">Nonaktifkan</Text>
                 </Button>
               </View>
+            <View className="flex-row gap-2 mt-2">{tombolNama(u)}{tombolBlokir(u)}</View>
+            {renameId === u.id ? renderRename(u) : null}
+              </View>
             ))}
           </View>
         )}
       </Card>
+
+      {diblokir.length > 0 && (
+        <Card padding="lg">
+          <View className="flex-row items-center gap-2 mb-1">
+            <ShieldOff size={18} color="#dc2626" />
+            <Text className="font-semibold text-sm text-foreground">Diblokir ({diblokir.length})</Text>
+          </View>
+          <Text className="text-xs text-muted-foreground mb-3">Tidak bisa sinkron atau mendaftar lagi sampai blokir dibuka.</Text>
+          <View className="gap-3">
+            {diblokir.map((u) => (
+              <View key={u.id} className="border-b border-border pb-3">
+                <Text className="text-sm font-medium text-foreground">{u.name}</Text>
+                <View className="flex-row flex-wrap gap-2 mt-2">
+                  <Button size="sm" variant="primary" disabled={busyId === u.id} onPress={() => bukaBlokir(u)}>
+                    <ShieldCheck size={14} color="#fff" /><Text className="text-primary-foreground text-sm font-semibold ml-1">Buka blokir</Text>
+                  </Button>
+                  {renameId !== u.id ? tombolNama(u) : null}
+                </View>
+                {renameId === u.id ? renderRename(u) : null}
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
     </>
   );
 }

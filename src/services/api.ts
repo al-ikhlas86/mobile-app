@@ -700,6 +700,9 @@ export const api = {
     authedFetch(`/api/admin/hub-units/${id}/approve`, { method: "POST", body: JSON.stringify(data) }),
   adminRejectHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/reject`, { method: "POST" }),
   adminDeactivateHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/deactivate`, { method: "POST" }),
+  adminBlockHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/block`, { method: "POST" }),
+  adminUnblockHubUnit: (id: number) => authedFetch(`/api/admin/hub-units/${id}/unblock`, { method: "POST" }),
+  adminRenameHubUnit: (id: number, nama: string) => authedFetch(`/api/admin/hub-units/${id}`, { method: "PATCH", body: JSON.stringify({ nama }) }),
   // Instalasi Keuangan desktop (2026-09-29) - tab "Keuangan" di Status Sinkronisasi.
   // 1 instalasi boleh terikat >1 katalog (SD + TK) -> catalogIds.
   adminKeuanganInstallations: () => authedFetch("/api/admin/keuangan-installations"),
