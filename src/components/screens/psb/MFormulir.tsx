@@ -71,7 +71,7 @@ export function TabFormulir({ g, onChanged }: { g: GelombangDetail; onChanged: (
           </View>
         );
       })}
-      <View className="flex-row"><Button size="sm" variant="outline" disabled={fields.length >= 60} onPress={() => { setBerhasil(false); setFields((s) => [...s, { kunci: "", label: "", tipe: "teks", wajib: false, sistem: false, opsi: null, bantuan: null, bagian: null }]); }}><Plus size={14} color={colors.primary} /> Tambah kolom</Button></View>
+      <View className="flex-row"><Button size="sm" variant="outline" disabled={fields.length >= 100} onPress={() => { setBerhasil(false); setFields((s) => [...s, { kunci: "", label: "", tipe: "teks", wajib: false, sistem: false, opsi: null, bantuan: null, bagian: null }]); }}><Plus size={14} color={colors.primary} /> Tambah kolom</Button></View>
       {galat ? <Text className="text-sm text-red-600">{galat}</Text> : null}
       {berhasil ? <Text className="text-sm text-green-700">Formulir disimpan.</Text> : null}
       <View className="flex-row"><Button size="sm" variant="primary" disabled={sibuk} loading={sibuk} onPress={() => void simpan()}>Simpan formulir</Button></View>

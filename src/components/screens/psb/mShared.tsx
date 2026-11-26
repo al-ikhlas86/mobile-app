@@ -5,20 +5,20 @@ import { useThemeColors } from "../../../context/ThemeContext";
 // Tipe dan alat bantu bersama layar PSB Online (staf) di aplikasi HP. Bentuk data mengikuti routes/psbAdmin.js (sama dengan versi web).
 export interface Res<T = unknown> { success: boolean; data?: T; message?: string; code?: string; rincian?: Record<string, string> }
 export interface Katalog { id: number; kode: string; nama: string; kelola: boolean }
-export interface Izin { semua: boolean; katalog: Katalog[]; publikAktif: boolean; bisaAturPublik: boolean }
-export type StatusPendaftar = "baru" | "diverifikasi" | "ditolak" | "diterima" | "cadangan" | "mundur";
+export interface Izin { semua: boolean; katalog: Katalog[]; publikAktif: boolean; daftarOnline: boolean; kontak: string; emailTerpasang: boolean; bisaAturPublik: boolean; templateFormulir: { kunci: string; label: string }[] }
+export type StatusPendaftar = "menunggu_bayar" | "menunggu_formulir" | "baru" | "diverifikasi" | "ditolak" | "diterima" | "cadangan" | "mundur";
 export type StatusGelombang = "draft" | "belum_buka" | "terbuka" | "penuh" | "ditutup";
 export interface GelombangRingkas {
   id: number; catalogId: number; katalog?: { kode: string; nama: string }; nama: string; tahunAjaran: string; deskripsi: string | null;
-  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean;
+  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean; akses: "publik" | "privat"; ditutupManual: boolean; tautan?: string;
   status: StatusGelombang; hitung: Partial<Record<StatusPendaftar, number>>; jumlahAktif: number; bisaKelola: boolean;
 }
 export interface FieldForm { id?: number; kunci: string; label: string; tipe: string; wajib: boolean; sistem: boolean; opsi: string[] | null; bantuan: string | null; bagian: string | null }
 export interface GelombangDetail extends GelombangRingkas { fields: FieldForm[] }
 
-export const LABEL_STATUS: Record<StatusPendaftar, string> = { baru: "Baru", diverifikasi: "Diverifikasi", cadangan: "Cadangan", diterima: "Diterima", ditolak: "Ditolak", mundur: "Mundur" };
-export const LABEL_GELOMBANG: Record<StatusGelombang, string> = { draft: "Draf (belum terbit)", belum_buka: "Belum dibuka", terbuka: "Terbuka", penuh: "Kuota penuh", ditutup: "Ditutup" };
-export const TIPE_LABEL: Record<string, string> = { teks: "Teks pendek", teks_panjang: "Teks panjang", angka: "Angka", tanggal: "Tanggal", email: "Email", telepon: "Nomor HP", pilihan: "Pilihan", ya_tidak: "Ya / Tidak", berkas: "Berkas (foto/PDF)" };
+export const LABEL_STATUS: Record<StatusPendaftar, string> = { menunggu_bayar: "Belum bayar", menunggu_formulir: "Sudah bayar, formulir belum diisi", baru: "Valid (baru)", diverifikasi: "Diverifikasi", cadangan: "Cadangan", diterima: "Diterima", ditolak: "Ditolak", mundur: "Mundur" };
+export const LABEL_GELOMBANG: Record<StatusGelombang, string> = { draft: "Draf (belum terbit)", belum_buka: "Belum dibuka", terbuka: "Terbuka", penuh: "Kuota penuh", ditutup: "Ditutup (arsip)" };
+export const TIPE_LABEL: Record<string, string> = { teks: "Teks pendek", teks_panjang: "Teks panjang", angka: "Angka", tanggal: "Tanggal", email: "Email", telepon: "Nomor HP", pilihan: "Pilihan", ya_tidak: "Ya / Tidak", persetujuan: "Persetujuan (wajib dicentang)", berkas: "Berkas (foto/PDF)" };
 export const JENIS_JADWAL: Record<string, string> = { tes: "Tes", wawancara: "Wawancara", observasi: "Observasi", daftar_ulang: "Daftar ulang", lainnya: "Lainnya" };
 export const TARGET_PENGUMUMAN: Record<string, string> = { semua: "Semua pendaftar", diverifikasi: "Yang diverifikasi", diterima: "Yang diterima", cadangan: "Yang cadangan", ditolak: "Yang tidak diterima" };
 
@@ -28,6 +28,7 @@ export const tanggalPendek = (iso: string) => new Date(`${iso.slice(0, 10)}T00:0
 export const adaPendaftar = (g: GelombangRingkas) => Object.values(g.hitung).some((n) => (n ?? 0) > 0);
 
 const WARNA: Record<string, [string, string]> = {
+  menunggu_bayar: ["#fef3c7", "#78350f"], menunggu_formulir: ["#dbeafe", "#1e3a8a"],
   baru: ["#e5e7eb", "#1f2937"], diverifikasi: ["#dbeafe", "#1e3a8a"], cadangan: ["#fef3c7", "#78350f"], diterima: ["#dcfce7", "#166534"], ditolak: ["#fee2e2", "#991b1b"], mundur: ["#e5e7eb", "#4b5563"],
   terbuka: ["#dcfce7", "#166534"], draft: ["#e5e7eb", "#4b5563"], belum_buka: ["#dbeafe", "#1e3a8a"], penuh: ["#fef3c7", "#78350f"], ditutup: ["#e5e7eb", "#4b5563"], lunas: ["#dcfce7", "#166534"], belum: ["#fef3c7", "#78350f"], batal: ["#e5e7eb", "#4b5563"],
 };

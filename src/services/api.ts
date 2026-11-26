@@ -752,19 +752,28 @@ export const api = {
   // PSB internal (gelombang, form builder, pendaftar, jadwal, pengumuman, tagihan) - hak per katalog dijaga server (routes/psbAdmin.js).
   // Pencatatan pendaftar dari HP berupa teks saja (JSON); unggah berkas dilakukan lewat versi web.
   psbIzin: () => authedFetch("/api/psb-admin/izin"),
-  psbGoPublik: (publikAktif: boolean) => authedFetch("/api/psb-admin/pengaturan", { method: "PUT", body: JSON.stringify({ publikAktif }) }),
+  psbPengaturan: (d: { publikAktif?: boolean; daftarOnline?: boolean; kontak?: string }) => authedFetch("/api/psb-admin/pengaturan", { method: "PUT", body: JSON.stringify(d) }),
   psbGelombangList: () => authedFetch("/api/psb-admin/gelombang"),
   psbGelombangBuat: (d: unknown) => authedFetch("/api/psb-admin/gelombang", { method: "POST", body: JSON.stringify(d) }),
   psbGelombang: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}`),
   psbGelombangUbah: (id: number, d: unknown) => authedFetch(`/api/psb-admin/gelombang/${id}`, { method: "PUT", body: JSON.stringify(d) }),
   psbGelombangTerbit: (id: number, terbit: boolean) => authedFetch(`/api/psb-admin/gelombang/${id}/terbit`, { method: "POST", body: JSON.stringify({ terbit }) }),
+  psbGelombangTutup: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}/tutup`, { method: "POST" }),
+  psbGelombangPerpanjang: (id: number, tanggalTutup: string) => authedFetch(`/api/psb-admin/gelombang/${id}/perpanjang`, { method: "POST", body: JSON.stringify({ tanggalTutup }) }),
+  psbGelombangSalin: (id: number, d: { nama?: string; tanggalBuka: string; tanggalTutup: string }) => authedFetch(`/api/psb-admin/gelombang/${id}/salin`, { method: "POST", body: JSON.stringify(d) }),
+  // Sumber gambar QR tautan formulir untuk <Image> (butuh header Authorization).
+  psbQrSumber: (id: number) => ({ uri: `${API_URL}/api/psb-admin/gelombang/${id}/qr`, headers: { Authorization: `Bearer ${getActiveToken() ?? ""}` } }),
+  psbResetKey: (id: number) => authedFetch(`/api/psb-admin/pendaftar/${id}/reset-key`, { method: "POST" }),
+  psbTemplateList: (catalogId: number) => authedFetch(`/api/psb-admin/template?catalogId=${catalogId}`),
+  psbTemplateBuat: (d: { catalogId: number; nama: string; judul: string; isi: string }) => authedFetch("/api/psb-admin/template", { method: "POST", body: JSON.stringify(d) }),
+  psbTemplateHapus: (id: number) => authedFetch(`/api/psb-admin/template/${id}`, { method: "DELETE" }),
   psbGelombangHapus: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}`, { method: "DELETE" }),
   psbFormulirSimpan: (id: number, fields: unknown) => authedFetch(`/api/psb-admin/gelombang/${id}/formulir`, { method: "PUT", body: JSON.stringify({ fields }) }),
-  psbPendaftarList: (gelombangId: number, o: { status?: string; q?: string; halaman?: number } = {}) =>
-    authedFetch(`/api/psb-admin/pendaftar?gelombangId=${gelombangId}${o.status ? `&status=${o.status}` : ""}${o.q ? `&q=${encodeURIComponent(o.q)}` : ""}${o.halaman ? `&halaman=${o.halaman}` : ""}`),
+  psbPendaftarList: (gelombangId: number, o: { status?: string; kelompok?: string; kelas?: string; q?: string; halaman?: number } = {}) =>
+    authedFetch(`/api/psb-admin/pendaftar?gelombangId=${gelombangId}${o.status ? `&status=${o.status}` : ""}${o.kelompok ? `&kelompok=${o.kelompok}` : ""}${o.kelas ? `&kelas=${encodeURIComponent(o.kelas)}` : ""}${o.q ? `&q=${encodeURIComponent(o.q)}` : ""}${o.halaman ? `&halaman=${o.halaman}` : ""}`),
   psbPendaftar: (id: number) => authedFetch(`/api/psb-admin/pendaftar/${id}`),
-  psbPendaftarCatat: (gelombangId: number, jawaban: Record<string, string>) =>
-    authedFetch(`/api/psb-admin/gelombang/${gelombangId}/pendaftar`, { method: "POST", body: JSON.stringify(Object.fromEntries(Object.entries(jawaban).map(([k, v]) => [`j_${k}`, v]))) }),
+  psbPendaftarCatat: (gelombangId: number, awal: Record<string, string>, jawaban: Record<string, string>) =>
+    authedFetch(`/api/psb-admin/gelombang/${gelombangId}/pendaftar`, { method: "POST", body: JSON.stringify({ ...Object.fromEntries(Object.entries(awal).map(([k, v]) => [`a_${k}`, v])), ...Object.fromEntries(Object.entries(jawaban).map(([k, v]) => [`j_${k}`, v])) }) }),
   psbStatus: (id: number, status: string, catatan?: string) => authedFetch(`/api/psb-admin/pendaftar/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, catatan }) }),
   psbCatatan: (id: number, catatan: string) => authedFetch(`/api/psb-admin/pendaftar/${id}/catatan`, { method: "PATCH", body: JSON.stringify({ catatan }) }),
   // Sumber gambar berkas (foto) untuk <Image>: butuh header Authorization. PDF tidak ditampilkan di HP.

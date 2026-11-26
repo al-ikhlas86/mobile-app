@@ -24,7 +24,7 @@ interface FotoGaleri { id: string; label: string; category: KategoriGaleri; imag
 interface Isi {
   heroImage: string; aboutImage: string; benefitsImage: string; registrationImages: string[];
   education: Jenjang[]; programs: Kartu[]; gallery: FotoGaleri[]; articles: unknown[];
-  contact: { address: string; phone: string; email: string; emailTkit: string; whatsapp: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
+  contact: { address: string; phone: string; email: string; emailTkit: string; whatsapp: string; whatsappTk: string; registrationUrl: string; mapUrl: string; lokasiSingkat: string; namaKontak: string };
   socials: { label: string; url: string }[];
   faq: { q: string; a: string }[];
   pengurus: { id: string; nama: string; jabatan: string; deskripsi: string; foto: string }[];
@@ -37,6 +37,7 @@ interface Isi {
     keunggulan: { judul: string; butir: string[] };
     program: { judul: string; deskripsi: string };
     pendaftaran: { judul: string; deskripsi: string; catatan: string };
+    pendaftaranHalaman: { judulAlur: string; langkah: { judul: string; isi: string }[]; judulJenjang: string };
     galeri: { judul: string; deskripsi: string };
     banner: { judul: string; slogan: string };
     berita: { judul: string; deskripsi: string };
@@ -86,7 +87,7 @@ function ringkasanPerubahan(a: Isi, d: Isi): string[] {
   if (beda(a.education, d.education) || beda(a.teks.jenjang, d.teks.jenjang)) { const k = hitungKartu(a.education, d.education, "jenjang"); h.push(`Jenjang pendidikan${k ? ` (${k})` : ""}`); }
   if (beda(a.benefitsImage, d.benefitsImage) || beda(a.teks.keunggulan, d.teks.keunggulan)) h.push("Mengapa memilih kami");
   if (beda(a.programs, d.programs) || beda(a.teks.program, d.teks.program)) { const k = hitungKartu(a.programs, d.programs, "program"); h.push(`Program unggulan${k ? ` (${k})` : ""}`); }
-  if (beda(a.registrationImages, d.registrationImages) || beda(a.teks.pendaftaran, d.teks.pendaftaran)) h.push("Pendaftaran");
+  if (beda(a.registrationImages, d.registrationImages) || beda(a.teks.pendaftaran, d.teks.pendaftaran) || beda(a.teks.pendaftaranHalaman, d.teks.pendaftaranHalaman)) h.push("Pendaftaran");
   if (beda(a.gallery, d.gallery) || beda(a.teks.galeri, d.teks.galeri)) { const k = hitungKartu(a.gallery, d.gallery, "foto"); h.push(`Galeri foto${k ? ` (${k})` : ""}`); }
   if (beda(a.contact, d.contact) || beda(a.socials, d.socials)) h.push("Kontak & media sosial");
   if (beda(a.teks.banner, d.teks.banner) || beda(a.teks.berita, d.teks.berita) || beda(a.teks.footer, d.teks.footer)) h.push("Spanduk, Info Terbaru & footer");
@@ -658,6 +659,19 @@ export function KelolaWebsiteScreen() {
           <JudulField label="Judul" rows={3} ro={g} value={t.pendaftaran.judul} onChange={(v) => ubah((d) => { d.teks.pendaftaran.judul = v; })} />
           <Area label="Kalimat pengantar" rows={2} ro={g} value={t.pendaftaran.deskripsi} onChange={(v) => ubah((d) => { d.teks.pendaftaran.deskripsi = v; })} />
           <Area label="Catatan kecil di bawah tombol" rows={2} ro={g} value={t.pendaftaran.catatan} onChange={(v) => ubah((d) => { d.teks.pendaftaran.catatan = v; })} />
+          <Text className="text-xs font-semibold text-muted-foreground mt-2">Halaman Pendaftaran (/pendaftaran/)</Text>
+          <Teks label="Judul bagian alur" value={t.pendaftaranHalaman.judulAlur} max={300} ro={g} onChange={(v) => ubah((d) => { d.teks.pendaftaranHalaman.judulAlur = v; })} />
+          {t.pendaftaranHalaman.langkah.map((l, i) => (
+            <View key={i} className="rounded-xl border border-border p-3 gap-2">
+              <View className="flex-row gap-2 items-center">
+                <TextInput accessibilityLabel={`Judul langkah ${i + 1}`} value={l.judul} maxLength={300} editable={!g} onChangeText={(v) => ubah((d) => { d.teks.pendaftaranHalaman.langkah[i].judul = v; })} className={`${inputCls} flex-1 ${g ? "opacity-60" : ""}`} />
+                {!g && t.pendaftaranHalaman.langkah.length > 1 ? <Pressable onPress={() => ubah((d) => { d.teks.pendaftaranHalaman.langkah.splice(i, 1); })} accessibilityLabel="Hapus langkah" className="p-2"><Trash2 size={16} color="#dc2626" /></Pressable> : null}
+              </View>
+              <TextInput accessibilityLabel={`Isi langkah ${i + 1}`} value={l.isi} maxLength={1500} multiline editable={!g} onChangeText={(v) => ubah((d) => { d.teks.pendaftaranHalaman.langkah[i].isi = v; })} className={`${inputCls} ${g ? "opacity-60" : ""}`} style={{ textAlignVertical: "top", minHeight: 64 }} />
+            </View>
+          ))}
+          {!g && t.pendaftaranHalaman.langkah.length < 8 ? <TombolKecil icon={<Plus size={14} color={colors.foreground} />} onPress={() => ubah((d) => { d.teks.pendaftaranHalaman.langkah.push({ judul: "Langkah baru", isi: "Penjelasan langkah." }); })}>Tambah langkah</TombolKecil> : null}
+          <Teks label="Judul bagian jenjang" value={t.pendaftaranHalaman.judulJenjang} max={300} ro={g} onChange={(v) => ubah((d) => { d.teks.pendaftaranHalaman.judulJenjang = v; })} />
           {draft.registrationImages.map((p, i) => <Foto key={i} label={`Foto kolase ${i + 1}`} value={p} ro={g} tampil={tampil} unggah={unggah} onChange={(v) => ubah((d) => { d.registrationImages[i] = v; })} />)}
         </Bagian>
 
@@ -697,7 +711,8 @@ export function KelolaWebsiteScreen() {
           <Teks label="Telepon" value={draft.contact.phone} max={25} ro={g} keyboard="phone-pad" onChange={(v) => ubah((d) => { d.contact.phone = v; })} />
           <Teks label="Email SDIT" value={draft.contact.email} max={200} ro={g} keyboard="email-address" onChange={(v) => ubah((d) => { d.contact.email = v; })} />
           <Teks label="Email TKIT" value={draft.contact.emailTkit} max={200} ro={g} keyboard="email-address" onChange={(v) => ubah((d) => { d.contact.emailTkit = v; })} />
-          <Teks label="WhatsApp (angka saja, awali 62)" value={draft.contact.whatsapp} max={16} ro={g} keyboard="number-pad" hint="Contoh: 6281234567890. Kosongkan bila tidak ada." onChange={(v) => ubah((d) => { d.contact.whatsapp = v.replace(/[^0-9]/g, ""); })} />
+          <Teks label="WhatsApp admin SD (angka saja, awali 62)" value={draft.contact.whatsapp} max={16} ro={g} keyboard="number-pad" hint="Contoh: 6281234567890. Kosongkan bila tidak ada." onChange={(v) => ubah((d) => { d.contact.whatsapp = v.replace(/[^0-9]/g, ""); })} />
+          <Teks label="WhatsApp admin TK & PG (angka saja, awali 62)" value={draft.contact.whatsappTk} max={16} ro={g} keyboard="number-pad" hint="Tombol Hubungi administrasi di halaman Pendaftaran menawarkan dua pilihan: SD dan TK & PG." onChange={(v) => ubah((d) => { d.contact.whatsappTk = v.replace(/[^0-9]/g, ""); })} />
           <Teks label="Tautan formulir pendaftaran (https://...)" value={draft.contact.registrationUrl} max={2000} ro={g} keyboard="url" hint="Kosongkan bila tidak ada. Bila kosong, tombol pendaftaran memakai WhatsApp, lalu email." onChange={(v) => ubah((d) => { d.contact.registrationUrl = v; })} />
           <Teks label="Tautan peta Google Maps (https://...)" value={draft.contact.mapUrl} max={2000} ro={g} keyboard="url" onChange={(v) => ubah((d) => { d.contact.mapUrl = v; })} />
           <View className="gap-2">
