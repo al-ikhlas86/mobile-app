@@ -95,6 +95,18 @@ function KartuEmail({ st, onUbah, onMuat }: { st: StatusEmail; onUbah: (s: Statu
 
         {jenis === "gmail" ? (
           <View className="gap-3">
+            <Pressable onPress={() => setLanjutan((x) => !x)} accessibilityRole="button"><Text className="text-sm font-semibold text-foreground">{lanjutan || !st.gmail.klienSiap ? "▾" : "▸"} Langkah 1 - Daftarkan aplikasi ke Google (sekali saja) <Text className={st.gmail.klienSiap ? "text-green-700" : "text-amber-700"}>{st.gmail.klienSiap ? "✓ Sudah diisi" : "Belum diisi"}</Text></Text></Pressable>
+            {lanjutan || !st.gmail.klienSiap ? (
+              <View className="gap-3">
+                <Text className="text-xs text-muted-foreground">Di Google Cloud Console: buat proyek, aktifkan Gmail API, buat OAuth client ID jenis Web, isi Authorized redirect URI dengan alamat berikut, lalu salin Client ID dan secret ke sini.</Text>
+                <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground" style={{ fontFamily: "monospace" }}>{st.urlBalik}</Text>
+                <Isian label="Client ID"><Kolom value={clientId} onChangeText={setClientId} maxLength={200} autoCapitalize="none" autoCorrect={false} /></Isian>
+                <Isian label="Client secret" bantuan={st.gmail.adaRahasia ? "Tersimpan. Kosongkan bila tidak diganti." : undefined}><Kolom value={rahasia} onChangeText={setRahasia} maxLength={200} secureTextEntry autoCapitalize="none" autoCorrect={false} /></Isian>
+                <View className="flex-row"><Button size="sm" variant="outline" disabled={sibuk || !clientId} onPress={async () => { if (await jalankan(() => api.komunikasiGmailKlien(clientId.trim(), rahasia.trim()), "Disimpan. Sekarang ketuk Hubungkan Gmail.")) setRahasia(""); }}>Simpan</Button></View>
+              </View>
+            ) : null}
+            <View className="rounded-xl border border-border p-3 gap-2">
+              <Text className="text-sm font-semibold text-foreground">Langkah 2 - Hubungkan Gmail pengirim <Text className={st.gmail.terhubung ? "text-green-700" : "text-muted-foreground"}>{st.gmail.terhubung ? "✓ Tersambung" : "Belum tersambung"}</Text></Text>
             {st.gmail.terhubung ? (
               <View className="gap-2">
                 <Text className="text-sm text-foreground">Terhubung sebagai <Text className="font-bold">{st.gmail.akun}</Text></Text>
@@ -110,16 +122,7 @@ function KartuEmail({ st, onUbah, onMuat }: { st: StatusEmail; onUbah: (s: Statu
                 <View className="flex-row"><Button size="sm" variant="primary" disabled={sibuk} onPress={() => (st.gmail.klienSiap ? void hubungkan() : setPesan({ ok: false, t: "Aplikasi belum didaftarkan ke Google (sekali saja). Isi Client ID dan Client secret di bagian Pengaturan sekali saja di bawah, lalu ketuk Hubungkan Gmail lagi." }))}>Hubungkan Gmail</Button></View>
               </View>
             )}
-            <Pressable onPress={() => setLanjutan((x) => !x)} accessibilityRole="button"><Text className="text-sm font-medium text-primary">{lanjutan || !st.gmail.klienSiap ? "▾" : "▸"} Pengaturan sekali saja (pendaftaran aplikasi ke Google){st.gmail.klienSiap ? " - sudah diisi" : ""}</Text></Pressable>
-            {lanjutan || !st.gmail.klienSiap ? (
-              <View className="gap-3">
-                <Text className="text-xs text-muted-foreground">Di Google Cloud Console: buat proyek, aktifkan Gmail API, buat OAuth client ID jenis Web, isi Authorized redirect URI dengan alamat berikut, lalu salin Client ID dan secret ke sini.</Text>
-                <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground" style={{ fontFamily: "monospace" }}>{st.urlBalik}</Text>
-                <Isian label="Client ID"><Kolom value={clientId} onChangeText={setClientId} maxLength={200} autoCapitalize="none" autoCorrect={false} /></Isian>
-                <Isian label="Client secret" bantuan={st.gmail.adaRahasia ? "Tersimpan. Kosongkan bila tidak diganti." : undefined}><Kolom value={rahasia} onChangeText={setRahasia} maxLength={200} secureTextEntry autoCapitalize="none" autoCorrect={false} /></Isian>
-                <View className="flex-row"><Button size="sm" variant="outline" disabled={sibuk || !clientId} onPress={async () => { if (await jalankan(() => api.komunikasiGmailKlien(clientId.trim(), rahasia.trim()), "Disimpan. Sekarang ketuk Hubungkan Gmail.")) setRahasia(""); }}>Simpan</Button></View>
-              </View>
-            ) : null}
+            </View>
           </View>
         ) : (
           <View className="gap-3">
