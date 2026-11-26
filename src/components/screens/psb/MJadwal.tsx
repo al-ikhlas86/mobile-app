@@ -101,16 +101,28 @@ function PanelPeserta({ g, j, onTutup }: { g: GelombangDetail; j: Jadwal; onTutu
   useEffect(() => { void muat(); }, [muat]);
   useEffect(() => {
     if (!g.bisaKelola) return undefined;
+    let batal = false;
     const t = setTimeout(async () => {
-      const res = (await api.psbPendaftarList(g.id, { q: q.trim() || undefined })) as Res<Peserta[]>;
-      if (res.success && res.data) setCalon(res.data.filter((c) => c.status !== "ditolak" && c.status !== "mundur"));
+      // Daftar pendaftar berhalaman 30: muat semua halaman (maks. 10) agar "Pilih semua" benar-benar semua.
+      const semua: Peserta[] = [];
+      for (let h = 1; h <= 10; h += 1) {
+        const res = (await api.psbPendaftarList(g.id, { q: q.trim() || undefined, halaman: h })) as Res<Peserta[]> & { totalHalaman?: number };
+        if (batal) return;
+        if (!res.success || !res.data) break;
+        semua.push(...res.data);
+        if (h >= (res.totalHalaman ?? 1)) break;
+      }
+      setCalon(semua.filter((c) => !["ditolak", "mundur", "menunggu_bayar"].includes(c.status)));
     }, 300);
-    return () => clearTimeout(t);
+    return () => { batal = true; clearTimeout(t); };
   }, [g.id, g.bisaKelola, q]);
   const sudah = new Set((peserta ?? []).map((p) => p.id));
+  const tersedia = calon.filter((c) => !sudah.has(c.id));
+  const semuaTerpilih = tersedia.length > 0 && tersedia.every((c) => pilih.includes(c.id));
   const tambah = async () => {
     setGalat(""); setSibuk(true);
-    const res = (await api.psbPesertaTambah(j.id, pilih)) as Res;
+    let res: Res = { success: true };
+    for (let i = 0; i < pilih.length && res.success; i += 200) res = (await api.psbPesertaTambah(j.id, pilih.slice(i, i + 200))) as Res;
     setSibuk(false);
     if (!res.success) { setGalat(res.message || "Gagal menambah peserta."); return; }
     const n = pilih.length;
@@ -140,7 +152,13 @@ function PanelPeserta({ g, j, onTutup }: { g: GelombangDetail; j: Jadwal; onTutu
         <View className="gap-2 border-t border-border pt-3">
           <Text className="text-sm font-semibold text-foreground">Tambah peserta</Text>
           <Kolom value={q} onChangeText={setQ} placeholder="Cari pendaftar..." maxLength={60} />
-          {calon.filter((c) => !sudah.has(c.id)).map((c) => (
+          {tersedia.length > 0 ? (
+            <Pressable onPress={() => setPilih(semuaTerpilih ? [] : tersedia.map((c) => c.id))} accessibilityRole="checkbox" accessibilityState={{ checked: semuaTerpilih }} className="flex-row items-center gap-2 py-1.5">
+              <View style={{ borderColor: semuaTerpilih ? colors.primary : colors.mutedForeground, backgroundColor: semuaTerpilih ? colors.primary : "transparent" }} className="w-5 h-5 rounded border-2 items-center justify-center">{semuaTerpilih ? <Check size={12} color="#fff" /> : null}</View>
+              <Text className="text-sm font-semibold text-foreground">Pilih semua ({tersedia.length})</Text>
+            </Pressable>
+          ) : peserta ? <Text className="text-xs text-muted-foreground">Tidak ada pendaftar lain yang bisa ditambahkan (hanya yang sudah membayar dan belum ditolak/mundur).</Text> : null}
+          {tersedia.map((c) => (
             <Pressable key={c.id} onPress={() => setPilih((s) => (s.includes(c.id) ? s.filter((x) => x !== c.id) : [...s, c.id]))} accessibilityRole="checkbox" accessibilityState={{ checked: pilih.includes(c.id) }} className="flex-row items-center gap-2 py-1.5">
               <View style={{ borderColor: pilih.includes(c.id) ? colors.primary : colors.mutedForeground, backgroundColor: pilih.includes(c.id) ? colors.primary : "transparent" }} className="w-5 h-5 rounded border-2 items-center justify-center">{pilih.includes(c.id) ? <Check size={12} color="#fff" /> : null}</View>
               <Text className="text-sm text-foreground flex-1">{c.nama} <Text className="text-xs text-muted-foreground">{c.nomor} · {LABEL_STATUS[c.status]}</Text></Text>
