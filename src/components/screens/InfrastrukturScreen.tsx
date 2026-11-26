@@ -11,7 +11,8 @@ import { useThemeColors } from "../../context/ThemeContext";
 // unduh yang bisa dibuka siapa pun tanpa login), jadi tidak ada salinan panduan yang bisa tertinggal. Tombol Unduh selalu mengarah ke rilis TERBARU
 // (tautan GitHub releases/latest/download) dan membuka peramban yang langsung mengunduh. Padanan layar web InfrastrukturScreen.tsx.
 interface AplikasiInfo {
-  id: string; nama: string; untuk: string; persyaratan: string[]; langkah: string[]; catatan: string[]; berkas: string; versi: string | null; urlUnduh: string;
+  id: string; nama: string; untuk: string; persyaratan: string[]; langkah: ({ teks: string; gambar: string | null } | string)[]; catatan: string[];
+  video?: { judul: string; url: string }[]; lampiran?: { judul: string; url: string }[]; berkas: string; versi: string | null; urlUnduh: string;
 }
 interface Data {
   halamanPublik: string;
@@ -98,8 +99,16 @@ export function InfrastrukturScreen() {
           </View>
           <Text className="text-sm text-foreground mt-2">{a.untuk}</Text>
           <Daftar judul="Persyaratan" butir={a.persyaratan} />
-          <Daftar judul="Cara memasang" butir={a.langkah} bernomor />
+          <Daftar judul="Cara memasang" butir={a.langkah.map((l) => (typeof l === "string" ? l : l.gambar ? `${l.teks} (ada gambar: lihat di halaman publik)` : l.teks))} bernomor />
           {a.catatan.length > 0 ? <Daftar judul="Catatan" butir={a.catatan} redup terbuka={false} /> : null}
+          {[...(a.video ?? []), ...(a.lampiran ?? [])].length > 0 ? (
+            <View className="mt-3 gap-1">
+              <Text className="text-sm font-semibold text-foreground">Video dan lampiran</Text>
+              {[...(a.video ?? []), ...(a.lampiran ?? [])].map((t, i) => (
+                <Pressable key={i} onPress={() => buka(t.url)} accessibilityRole="link"><Text className="text-sm text-primary underline">{t.judul}</Text></Pressable>
+              ))}
+            </View>
+          ) : null}
         </Card>
       ))}
 
