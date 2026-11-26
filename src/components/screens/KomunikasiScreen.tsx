@@ -15,7 +15,6 @@ interface StatusEmail {
   smtp: { host: string; port: number; user: string; from: string; adaSandi: boolean; lengkap: boolean };
   terakhir: { waktu: number | null; ok: boolean | null; alasan: string | null; via: string | null };
 }
-interface KontakKatalog { id: number; kode: string; nama: string; label: string; nomor: string }
 const NAMA_JALUR: Record<string, string> = { gmail: "Gmail (OAuth)", smtp: "SMTP", "smtp-env": "SMTP bawaan server (.env)" };
 
 export function KomunikasiScreen() {
@@ -149,27 +148,39 @@ function KartuEmail({ st, onUbah, onMuat }: { st: StatusEmail; onUbah: (s: Statu
   );
 }
 
+interface KatalogAdmin { id: number; kode: string; nama: string; label: string; nomor: string; email: string; tampilAtur: boolean | null; urutan: number; jenisAtur: "pendidikan" | "pengurus" | null; jenisOtomatis: "pendidikan" | "pengurus"; tampilEfektif: boolean; adaUnit: boolean }
+interface IsiKatalog { label: string; nomor: string; email: string; tampil: string; jenis: string; urutan: string }
+
 function KartuKontak() {
-  const [data, setData] = useState<{ bawaan: string; katalog: KontakKatalog[] } | null>(null);
-  const [isi, setIsi] = useState<Record<number, { label: string; nomor: string }>>({});
+  const [data, setData] = useState<{ bawaan: string; urutanProfil: "pengurus" | "pendidik"; katalog: KatalogAdmin[] } | null>(null);
+  const [isi, setIsi] = useState<Record<number, IsiKatalog>>({});
   const [bawaan, setBawaan] = useState("");
-  const [sibuk, setSibuk] = useState<number | "b" | null>(null);
+  const [sibuk, setSibuk] = useState<number | "b" | "u" | null>(null);
   const [pesan, setPesan] = useState<{ ok: boolean; t: string } | null>(null);
 
   const muat = useCallback(async () => {
-    const res = (await api.komunikasiKontak()) as Res<{ bawaan: string; katalog: KontakKatalog[] }>;
-    if (res.success && res.data) { setData(res.data); setBawaan(res.data.bawaan); setIsi(Object.fromEntries(res.data.katalog.map((k) => [k.id, { label: k.label || `Admin ${k.kode}`, nomor: k.nomor }]))); } else setPesan({ ok: false, t: res.message || "Gagal memuat kontak." });
+    const res = (await api.komunikasiKontak()) as Res<{ bawaan: string; urutanProfil: "pengurus" | "pendidik"; katalog: KatalogAdmin[] }>;
+    if (res.success && res.data) {
+      setData(res.data); setBawaan(res.data.bawaan);
+      setIsi(Object.fromEntries(res.data.katalog.map((k) => [k.id, { label: k.label || `Admin ${k.kode}`, nomor: k.nomor, email: k.email, tampil: k.tampilAtur === null ? "auto" : k.tampilAtur ? "ya" : "tidak", jenis: k.jenisAtur ?? "auto", urutan: String(k.urutan) }])));
+    } else setPesan({ ok: false, t: res.message || "Gagal memuat katalog." });
   }, []);
   useEffect(() => { void muat(); }, [muat]);
 
-  const simpan = async (k: KontakKatalog) => {
+  const ubah = (id: number, k: keyof IsiKatalog, v: string) => setIsi((s) => ({ ...s, [id]: { ...s[id], [k]: v } }));
+  const simpan = async (k: KatalogAdmin) => {
+    const f = isi[k.id];
     setSibuk(k.id); setPesan(null);
-    const res = (await api.komunikasiKontakSimpan(k.id, isi[k.id].label, isi[k.id].nomor)) as Res;
+    if (f.nomor.trim() || f.email.trim()) {
+      const r1 = (await api.komunikasiKontakSimpan(k.id, f.label, f.nomor, f.email)) as Res;
+      if (!r1.success) { setSibuk(null); setPesan({ ok: false, t: r1.message || "Gagal menyimpan kontak." }); return; }
+    }
+    const r2 = (await api.komunikasiKatalogWeb(k.id, { tampil: f.tampil === "auto" ? null : f.tampil === "ya", urutan: Number(f.urutan) || 0, jenis: f.jenis === "auto" ? null : (f.jenis as "pendidikan" | "pengurus") })) as Res;
     setSibuk(null);
-    if (!res.success) { setPesan({ ok: false, t: res.message || "Gagal menyimpan." }); return; }
-    setPesan({ ok: true, t: `Kontak ${k.nama} disimpan.` }); void muat();
+    if (!r2.success) { setPesan({ ok: false, t: r2.message || "Gagal menyimpan pengaturan website." }); return; }
+    setPesan({ ok: true, t: `${k.nama} disimpan. Website memperbarui dirinya dalam ±30 menit.` }); void muat();
   };
-  const hapus = (k: KontakKatalog) => Alert.alert("Hapus kontak", `Hapus kontak person ${k.nama}? Halaman dan email PSB katalog ini memakai nomor bawaan.`, [
+  const hapus = (k: KatalogAdmin) => Alert.alert("Hapus kontak", `Hapus kontak person ${k.nama}? Halaman/email PSB memakai nomor bawaan dan website tidak menampilkan kontaknya.`, [
     { text: "Batal", style: "cancel" },
     { text: "Hapus", style: "destructive", onPress: async () => { setSibuk(k.id); const res = (await api.komunikasiKontakHapus(k.id)) as Res; setSibuk(null); if (!res.success) setPesan({ ok: false, t: res.message || "Gagal menghapus." }); else void muat(); } },
   ]);
@@ -179,30 +190,48 @@ function KartuKontak() {
     if (!res.success) { setPesan({ ok: false, t: res.message || "Gagal menyimpan." }); return; }
     setPesan({ ok: true, t: "Nomor bawaan disimpan." }); void muat();
   };
+  const ubahUrutanProfil = async (v: string) => {
+    if (v !== "pengurus" && v !== "pendidik") return;
+    setSibuk("u"); setPesan(null);
+    const res = (await api.komunikasiUrutanProfil(v)) as Res; setSibuk(null);
+    if (!res.success) { setPesan({ ok: false, t: res.message || "Gagal menyimpan." }); return; }
+    setPesan({ ok: true, t: "Urutan halaman profil disimpan." }); void muat();
+  };
 
   return (
     <Card padding="lg">
       <View className="gap-3">
         <View className="gap-1">
-          <Text className="font-semibold text-sm text-foreground">Kontak person per katalog</Text>
-          <Text className="text-xs text-muted-foreground">Nomor WhatsApp yang ditampilkan ke orang tua sesuai katalog pendaftarannya (halaman PSB dan email). Katalog baru otomatis muncul di sini.</Text>
+          <Text className="font-semibold text-sm text-foreground">Katalog di website &amp; kontak person</Text>
+          <Text className="text-xs text-muted-foreground">Website yayasan mengikuti katalog yang terdaftar: jenjang, kontak WhatsApp/email, tombol Hubungi administrasi, dan halaman profil. Katalog baru muncul sendiri di sini; di website ia tampil otomatis setelah Data Master-nya tersambung (atau paksa lewat pilihan Tampil). Nomor yang sama dipakai halaman dan email PSB sesuai katalog pendaftarannya.</Text>
         </View>
         {!data ? <ActivityIndicator /> : null}
         {data?.katalog.map((k) => (
           <View key={k.id} className="rounded-xl border border-border p-3 gap-2">
             <Text className="text-sm font-semibold text-foreground">{k.nama} ({k.kode})</Text>
-            <Lencana jenis={k.nomor ? "terbuka" : "draft"} teks={k.nomor ? "Kontak diatur" : "Memakai nomor bawaan"} />
-            <Isian label="Nama kontak"><Kolom value={isi[k.id]?.label ?? ""} onChangeText={(v) => setIsi((s) => ({ ...s, [k.id]: { ...s[k.id], label: v } }))} maxLength={80} placeholder={`Admin ${k.kode}`} /></Isian>
-            <Isian label="Nomor WhatsApp"><Kolom value={isi[k.id]?.nomor ?? ""} onChangeText={(v) => setIsi((s) => ({ ...s, [k.id]: { ...s[k.id], nomor: v } }))} maxLength={25} keyboardType="phone-pad" placeholder="0812-3456-7890" /></Isian>
+            <Lencana jenis={k.tampilEfektif ? "terbuka" : "draft"} teks={k.tampilEfektif ? "Tampil di website" : k.adaUnit ? "Disembunyikan" : "Belum tampil (Data Master belum tersambung)"} />
+            <Isian label="Nama kontak"><Kolom value={isi[k.id]?.label ?? ""} onChangeText={(v) => ubah(k.id, "label", v)} maxLength={80} placeholder={`Admin ${k.kode}`} /></Isian>
+            <Isian label="Nomor WhatsApp"><Kolom value={isi[k.id]?.nomor ?? ""} onChangeText={(v) => ubah(k.id, "nomor", v)} maxLength={25} keyboardType="phone-pad" placeholder="0812-3456-7890" /></Isian>
+            <Isian label="Email kontak"><Kolom value={isi[k.id]?.email ?? ""} onChangeText={(v) => ubah(k.id, "email", v)} maxLength={254} keyboardType="email-address" autoCapitalize="none" placeholder="admin@sekolah.sch.id" /></Isian>
+            <Isian label="Tampil di website"><SimplePicker value={isi[k.id]?.tampil ?? "auto"} options={[{ value: "auto", label: "Otomatis (saat Data Master tersambung)" }, { value: "ya", label: "Selalu tampilkan" }, { value: "tidak", label: "Sembunyikan" }]} onChange={(v) => ubah(k.id, "tampil", v)} /></Isian>
+            <Isian label="Jenis" bantuan="Pendidikan = jenjang sekolah. Pengurus = tim pengurus yayasan."><SimplePicker value={isi[k.id]?.jenis ?? "auto"} options={[{ value: "auto", label: `Otomatis (${k.jenisOtomatis})` }, { value: "pendidikan", label: "Pendidikan" }, { value: "pengurus", label: "Pengurus" }]} onChange={(v) => ubah(k.id, "jenis", v)} /></Isian>
+            <Isian label="Urutan tampil" bantuan="Angka kecil tampil lebih dulu."><Kolom value={isi[k.id]?.urutan ?? "0"} onChangeText={(v) => ubah(k.id, "urutan", v.replace(/\D/g, ""))} maxLength={3} keyboardType="number-pad" /></Isian>
             <View className="flex-row gap-2">
-              <Button size="sm" variant="primary" disabled={sibuk !== null || !isi[k.id]?.nomor} loading={sibuk === k.id} onPress={() => void simpan(k)}>Simpan</Button>
-              {k.nomor ? <Button size="sm" variant="outline" disabled={sibuk !== null} onPress={() => hapus(k)}>Hapus</Button> : null}
+              <Button size="sm" variant="primary" disabled={sibuk !== null} loading={sibuk === k.id} onPress={() => void simpan(k)}>Simpan</Button>
+              {k.nomor || k.email ? <Button size="sm" variant="outline" disabled={sibuk !== null} onPress={() => hapus(k)}>Hapus kontak</Button> : null}
             </View>
           </View>
         ))}
         {data ? (
+          <View className="rounded-xl border border-border p-3 gap-2">
+            <Isian label="Urutan di halaman Profil website" bantuan="Pengurus yayasan ditampilkan sebelum atau sesudah pendidik/guru.">
+              <SimplePicker value={data.urutanProfil} options={[{ value: "pengurus", label: "Pengurus dulu, lalu pendidik" }, { value: "pendidik", label: "Pendidik dulu, lalu pengurus" }]} onChange={(v) => void ubahUrutanProfil(v)} />
+            </Isian>
+          </View>
+        ) : null}
+        {data ? (
           <View className="rounded-xl border border-dashed border-border p-3 gap-2">
-            <Isian label="Nomor bawaan" bantuan="Dipakai bila katalog belum punya kontak sendiri dan di halaman PSB lintas katalog."><Kolom value={bawaan} onChangeText={setBawaan} maxLength={25} keyboardType="phone-pad" /></Isian>
+            <Isian label="Nomor bawaan" bantuan="Dipakai bila katalog belum punya nomor sendiri dan di halaman PSB lintas katalog."><Kolom value={bawaan} onChangeText={setBawaan} maxLength={25} keyboardType="phone-pad" /></Isian>
             <View className="flex-row"><Button size="sm" variant="outline" disabled={sibuk !== null || bawaan === data.bawaan} onPress={() => void simpanBawaan()}>Simpan nomor bawaan</Button></View>
           </View>
         ) : null}
