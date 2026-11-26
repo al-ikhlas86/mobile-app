@@ -31,10 +31,12 @@ export function KeuanganDashboard({ onNavigate }: Props) {
       { label: "Laporan Keuangan", icon: <BarChart2 size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("placeholder", { title: "Laporan Keuangan" }) },
       { label: "Riwayat Transaksi", icon: <History size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("placeholder", { title: "Riwayat Transaksi" }) },
     ] },
-    { title: "Operasional", items: [
+    { title: "Konten & Komunikasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
-      { label: "Presensi", icon: <Clock size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("presensi") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
+    ] },
+    { title: "Presensi", items: [
+      { label: "Presensi", icon: <Clock size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("presensi") },
     ] },
   ];
 

@@ -34,18 +34,22 @@ export function AdminTUDashboard({ onNavigate }: Props) {
   }, []);
 
   const menuDasar: MenuCategory[] = [
-    { title: "Operasional", items: [
+    { title: "Kesiswaan & Akademik", items: [
       { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
-      { label: "Berita Acara", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
       { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
+      { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("cari-siswa-guru") },
+    ] },
+    { title: "Presensi", items: [
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
       { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
       { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
       { label: "Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
+    ] },
+    { title: "Konten & Komunikasi", items: [
+      { label: "Berita Acara", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
-      { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("cari-siswa-guru") },
     ] },
   ];
 

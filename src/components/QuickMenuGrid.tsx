@@ -9,6 +9,9 @@ const DEFAULT_PREFS: BerandaPreferensi = { hiddenMenu: [], menuOrder: [], hideBe
 
 // Kustomisasi Beranda per-user (2026-09-03) - padanan native dari webview
 // QuickMenuGrid.tsx, lihat catatan lengkap di sana.
+// Label menu yang pernah berganti nama: preferensi beranda tersimpan per LABEL, jadi label lama dipetakan ke yang baru.
+const LABEL_LAMA: Record<string, string> = { "Status Sinkronisasi": "Perangkat" };
+const petakanLabel = (daftar: string[] | undefined) => (daftar ?? []).map((l) => LABEL_LAMA[l] ?? l);
 export function useBerandaPreferensi() {
   const [prefs, setPrefs] = useState<BerandaPreferensi>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -16,7 +19,7 @@ export function useBerandaPreferensi() {
   useEffect(() => {
     (async () => {
       const res = await api.berandaPreferensi();
-      if (res.success) setPrefs({ ...DEFAULT_PREFS, ...res.data });
+      if (res.success) setPrefs({ ...DEFAULT_PREFS, ...res.data, hiddenMenu: petakanLabel(res.data?.hiddenMenu), menuOrder: petakanLabel(res.data?.menuOrder) });
       setLoading(false);
     })();
   }, []);

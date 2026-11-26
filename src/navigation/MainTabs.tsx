@@ -106,7 +106,7 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
   const insets = useSafeAreaInsets();
   const activeColor = isDark ? "#D0AF68" : "#356447";
   const inactiveColor = isDark ? "#A3A3AA" : "#6E776F";
-  const bg = isDark ? "#19191C" : "#FFFFFF";
+  const bg = isDark ? "#212127" : "#FFFFFF";
   const border = isDark ? "rgba(255,255,255,0.1)" : "rgba(33,57,41,0.1)";
   const textColor = isDark ? "#F1F1F2" : "#17201B";
 

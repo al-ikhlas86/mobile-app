@@ -714,13 +714,32 @@ export const api = {
     authedFetch(`/api/admin/keuangan-installations/${id}${konfirmasi ? "?konfirmasi=1" : ""}`, { method: "DELETE" }),
   // Perangkat Kiosk Presensi (khusus Admin IT). Token asli hanya dikembalikan SEKALI oleh POST.
   adminKioskDevices: () => authedFetch("/api/admin/kiosk-devices"),
-  adminCreateKioskDevice: (data: { nama: string; catalog_id?: number }) =>
+  adminCreateKioskDevice: (data: { nama: string; catalog_id?: number; catalogIds?: number[] }) =>
     authedFetch("/api/admin/kiosk-devices", { method: "POST", body: JSON.stringify(data) }),
   adminSetKioskDeviceActive: (id: number, is_active: boolean) =>
     authedFetch(`/api/admin/kiosk-devices/${id}`, { method: "PATCH", body: JSON.stringify({ is_active }) }),
   adminDeleteKioskDevice: (id: number) => authedFetch(`/api/admin/kiosk-devices/${id}`, { method: "DELETE" }),
-  adminSetKioskTokenLama: (aktif: boolean) =>
-    authedFetch("/api/admin/kiosk-token-lama", { method: "PUT", body: JSON.stringify({ aktif }) }),
+  // Pendaftaran mandiri aplikasi Presensi -> disetujui Admin IT (wajib katalog; nama tampilan opsional) / ubah katalog / ganti nama.
+  adminApproveKioskDevice: (id: number, catalogIds: number[], nama?: string) =>
+    authedFetch(`/api/admin/kiosk-devices/${id}/approve`, { method: "POST", body: JSON.stringify({ catalogIds, ...(nama ? { nama } : {}) }) }),
+  adminSetKioskDeviceCatalogs: (id: number, catalogIds: number[]) =>
+    authedFetch(`/api/admin/kiosk-devices/${id}/catalogs`, { method: "PUT", body: JSON.stringify({ catalogIds }) }),
+  adminRenameKioskDevice: (id: number, nama: string) =>
+    authedFetch(`/api/admin/kiosk-devices/${id}`, { method: "PATCH", body: JSON.stringify({ nama }) }),
+  // Blokir (tidak bisa mendaftar lagi sampai dibuka) beda dari Tolak/Hapus (boleh mengajukan lagi).
+  adminBlockKioskDevice: (id: number) => authedFetch(`/api/admin/kiosk-devices/${id}/block`, { method: "POST" }),
+  adminUnblockKioskDevice: (id: number) => authedFetch(`/api/admin/kiosk-devices/${id}/unblock`, { method: "POST" }),
+  // Infrastruktur: panduan + tautan unduh. PUBLIK (tanpa token) - sama dengan halaman unduh yang bisa dibuka tanpa login.
+  publikUnduhan: async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/public/unduhan`);
+      return await res.json();
+    } catch {
+      return { success: false, message: "Gagal memuat panduan. Periksa koneksi internet." };
+    }
+  },
+  adminSetKioskTokenLama: (aktif: boolean, konfirmasi = false) =>
+    authedFetch("/api/admin/kiosk-token-lama", { method: "PUT", body: JSON.stringify({ aktif, ...(konfirmasi ? { konfirmasi: true } : {}) }) }),
   // Masalah data dari Data Master (no HP tidak valid, dst) - khusus Admin IT.
   adminDataIssues: () => authedFetch("/api/admin/data-issues"),
   adminActivityLogs: (page = 1) => authedFetch(`/api/admin/activity-logs?page=${page}`),

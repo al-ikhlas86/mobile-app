@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server, Award, Globe } from "lucide-react-native";
+import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server, Award, Globe, Download } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -45,29 +45,40 @@ export function AdminITDashboard({ onNavigate }: Props) {
   const today = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const menuCategories: MenuCategory[] = [
-    { title: "Administrasi Pengguna", items: [
+    { title: "Perangkat & Infrastruktur", items: [
+      { label: "Koneksi Bot WhatsApp", icon: <MessageCircle size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("koneksi-wa-bot") },
+      { label: "Perangkat", icon: <Activity size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("status-sinkronisasi") },
+      { label: "Infrastruktur", icon: <Download size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("infrastruktur") },
+    ] },
+    { title: "Pengguna & Akses", items: [
       { label: "Manajemen Pengguna", icon: <Users size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("manajemen-pengguna") },
       { label: "Kapasitas Tambahan", icon: <Users2 size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kapasitas-tambahan") },
       { label: "Role & Hak Akses", icon: <Shield size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("role-hak-akses") },
-      { label: "Koneksi Bot WhatsApp", icon: <MessageCircle size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("koneksi-wa-bot") },
-      { label: "Buat Pengumuman", icon: <Megaphone size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("buat-pengumuman") },
       { label: "Pengguna Diblokir", icon: <Ban size={20} color="#be123c" />, colorScheme: "red", onPress: () => onNavigate("blokiran-komentar") },
     ] },
-    { title: "Operasional", items: [
-      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
+    { title: "Konten & Komunikasi", items: [
+      { label: "Buat Pengumuman", icon: <Megaphone size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("buat-pengumuman") },
       { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
       { label: "Kelola Website", icon: <Globe size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kelola-website") },
+      { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
+    ] },
+    { title: "Akademik & Kesiswaan", items: [
+      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
-      { label: "Keuangan", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
+    ] },
+    { title: "Presensi", items: [
       { label: "Presensi", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("presensi-admin-tu") },
       { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("rekapitulasi-kehadiran") },
       { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
       { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
       { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
-      { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
+    ] },
+    { title: "Keuangan", items: [
+      { label: "Keuangan", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },
+    ] },
+    { title: "Sistem & Pemeliharaan", items: [
       { label: "Backup Database", icon: <HardDrive size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("backup-database") },
-      { label: "Status Sinkronisasi", icon: <Activity size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("status-sinkronisasi") },
       { label: "Log Aktivitas", icon: <History size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("log-aktivitas") },
       { label: "Kondisi VPS", icon: <Server size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("kondisi-vps") },
     ] },

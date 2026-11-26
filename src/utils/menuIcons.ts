@@ -55,6 +55,7 @@ const PETA: Record<string, string> = {
   "Koneksi Bot WhatsApp": "koneksi-bot-wa",
   "Backup Database": "backup-database",
   "Status Sinkronisasi": "status-sinkronisasi",
+  "Perangkat": "status-sinkronisasi",
   "Log Aktivitas": "log-aktivitas",
   "Kondisi VPS": "kondisi-vps",
   "Profil": "profil",

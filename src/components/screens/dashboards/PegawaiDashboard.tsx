@@ -110,6 +110,18 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     { title: "Presensi & Wajah", items: [
       { label: "Presensi Pegawai", icon: <Clock size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
+    ] },
+    { title: "Kehadiran & Rekap", items: [
+      ...(isTuLike || isKepalaSekolah ? [
+        { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
+        { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
+        { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
+      ] : []),
+      ...(isTuLike ? [
+        { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
+      ] : []),
+    ] },
+    { title: "Persetujuan & Aduan", items: [
       ...(isKepalaSekolah ? [
         { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
       ] : []),
@@ -120,27 +132,29 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       ...(isKepalaSekolah && !isTuLike ? [
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
-      ...(isTuLike || isKepalaSekolah ? [
-        { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
-        { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
-        { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
+      ...(isTuLike ? [
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
+    ] },
+    { title: "Tata Usaha & Akademik", items: [
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04).
       ...(isAdminTuCap && tampilNilai ? [
         { label: "Pengaturan Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-raport") },
       ] : []),
       ...(isTuLike ? [
-        { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
-        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
         { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-psb") },
         { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("cari-siswa-guru") },
       ] : []),
+    ] },
+    { title: "Konten & Komunikasi", items: [
       // Kapasitas Admin Media SD/TK (2026-09-04).
       ...(isMediaLike ? [
         { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
         { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") },
         { label: "Pengguna Diblokir", icon: <Ban size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("blokiran-komentar") },
       ] : []),
+    ] },
+    { title: "Keuangan", items: [
       // Kapasitas Keuangan (2026-09-04).
       ...(isKeuangan ? [
         { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("keuangan-admin") },

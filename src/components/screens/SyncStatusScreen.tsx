@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, ActivityIndicator, Alert, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban, Database, Wallet } from "lucide-react-native";
+import { CheckCircle2, AlertTriangle, RefreshCw, UserPlus, Check, X, Ban, Database, Wallet, MonitorSmartphone } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { SimplePicker } from "../ui/SimplePicker";
@@ -9,7 +9,7 @@ import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 import { KeuanganInstallationsSection, type KeuanganInstallation } from "./KeuanganInstallationsSection";
 import { MasalahDataSection } from "./MasalahDataSection";
-import { KioskPerangkatSection } from "./KioskPerangkatSection";
+import { KioskPerangkatSection, type KioskDevice, type KioskMeta } from "./KioskPerangkatSection";
 
 const POLL_MS = 10000;
 interface SourceStatus { lastSuccessAt: string | null; lastAttemptAt: string | null; failStreak: number; lastError: string | null; healthy: boolean; }
@@ -253,7 +253,9 @@ export function SyncStatusScreen() {
   const [data, setData] = useState<{ hubApi: SourceStatus } | null>(null);
   const [units, setUnits] = useState<HubUnit[] | null>(null);
   const [keuangan, setKeuangan] = useState<KeuanganInstallation[] | null>(null);
-  const [activeTab, setActiveTab] = useState<"datamaster" | "keuangan">("datamaster");
+  const [kiosk, setKiosk] = useState<KioskDevice[] | null>(null);
+  const [kioskMeta, setKioskMeta] = useState<KioskMeta>({ tokenLamaAktif: false, tokenLamaAda: false, tokenLamaTerakhirDipakai: null });
+  const [activeTab, setActiveTab] = useState<"datamaster" | "keuangan" | "absensi">("datamaster");
   const [error, setError] = useState("");
   const [lastCheck, setLastCheck] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -268,6 +270,14 @@ export function SyncStatusScreen() {
     if (res.success && res.data) setKeuangan(res.data);
   };
 
+  const muatKiosk = async () => {
+    const res = await api.adminKioskDevices();
+    if (res.success && res.data) {
+      setKiosk(res.data);
+      setKioskMeta({ tokenLamaAktif: !!res.tokenLamaAktif, tokenLamaAda: !!res.tokenLamaAda, tokenLamaTerakhirDipakai: res.tokenLamaTerakhirDipakai ?? null });
+    }
+  };
+
   const poll = async () => {
     const res = await api.adminSyncStatus();
     if (!res.success || !res.data) { setError("Gagal memuat status sinkronisasi."); return; }
@@ -278,25 +288,28 @@ export function SyncStatusScreen() {
   const siklus = async () => {
     await poll();
     await muatKeuangan();
+    await muatKiosk();
   };
 
   useEffect(() => {
     poll();
     muatUnits();
     muatKeuangan();
+    muatKiosk();
     timerRef.current = setInterval(siklus, POLL_MS);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
   const pendingKeuangan = (keuangan ?? []).filter((i) => !i.is_approved && !i.approved_at).length;
+  const pendingAbsensi = (kiosk ?? []).filter((d) => !d.is_approved && !d.is_blocked).length;
 
-  const tabBtn = (key: "datamaster" | "keuangan", label: string, icon: React.ReactNode, badge = 0) => (
+  const tabBtn = (key: "datamaster" | "keuangan" | "absensi", label: string, icon: React.ReactNode, badge = 0) => (
     <Pressable
       onPress={() => setActiveTab(key)}
-      className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center gap-1.5 ${activeTab === key ? "bg-card" : ""}`}
+      className={`flex-1 min-w-0 px-1.5 py-2.5 rounded-lg flex-row items-center justify-center gap-1 ${activeTab === key ? "bg-card" : ""}`}
     >
       {icon}
-      <Text className={`text-sm font-medium ${activeTab === key ? "text-foreground" : "text-muted-foreground"}`}>{label}</Text>
+      <Text numberOfLines={1} className={`text-xs font-medium ${activeTab === key ? "text-foreground" : "text-muted-foreground"}`}>{label}</Text>
       {badge > 0 ? (
         <View className="bg-amber-500 rounded-full min-w-[18px] h-[18px] px-1 items-center justify-center">
           <Text className="text-white text-[10px] font-semibold">{badge}</Text>
@@ -310,9 +323,16 @@ export function SyncStatusScreen() {
       <View className="flex-row gap-2 p-1 bg-muted rounded-xl">
         {tabBtn("datamaster", "Data Master", <Database size={15} color={activeTab === "datamaster" ? colors.primary : colors.mutedForeground} />)}
         {tabBtn("keuangan", "Keuangan", <Wallet size={15} color={activeTab === "keuangan" ? colors.primary : colors.mutedForeground} />, pendingKeuangan)}
+        {tabBtn("absensi", "Absensi", <MonitorSmartphone size={15} color={activeTab === "absensi" ? colors.primary : colors.mutedForeground} />, pendingAbsensi)}
       </View>
 
-      {activeTab === "keuangan" ? (
+      {activeTab === "absensi" ? (
+        kiosk ? (
+          <KioskPerangkatSection devices={kiosk} meta={kioskMeta} onChanged={muatKiosk} />
+        ) : (
+          <Card padding="lg"><View className="items-center py-4"><ActivityIndicator color={colors.primary} /><Text className="text-sm text-muted-foreground mt-2">Memuat...</Text></View></Card>
+        )
+      ) : activeTab === "keuangan" ? (
         keuangan ? (
           <KeuanganInstallationsSection installations={keuangan} onChanged={muatKeuangan} />
         ) : (
@@ -330,7 +350,6 @@ export function SyncStatusScreen() {
       )}
       {units && <HubUnitsSection units={units} onChanged={muatUnits} />}
       <MasalahDataSection />
-      <KioskPerangkatSection />
       </>
       )}
       {lastCheck ? (

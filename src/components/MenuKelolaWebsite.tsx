@@ -33,5 +33,9 @@ export function useAksesWebsite(): boolean {
 export function dgnMenuWebsite(kategori: MenuCategory[], boleh: boolean, onNavigate: (screen: string) => void): MenuCategory[] {
   if (!boleh || kategori.length === 0) return kategori;
   const item = { label: "Kelola Website", icon: <Globe size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("kelola-website") };
-  return kategori.map((c, i) => (i === kategori.length - 1 ? { ...c, items: [...c.items, item] } : c));
+  const sasaran = kategori.findIndex((c) => /^konten/i.test(c.title));
+  if (sasaran >= 0) return kategori.map((c, i) => (i === sasaran ? { ...c, items: [...c.items, item] } : c));
+  // Tanpa kategori konten (mis. peran tanpa berita): kategori sendiri sebelum kategori terakhir ("Akun"), bukan menempel di "Akun".
+  const sebelumAkhir = kategori.length > 1 ? kategori.length - 1 : kategori.length;
+  return [...kategori.slice(0, sebelumAkhir), { title: "Website", items: [item] }, ...kategori.slice(sebelumAkhir)];
 }

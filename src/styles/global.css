@@ -38,31 +38,32 @@
 }
 
 .dark {
-  --background: #101012;
+  /* 2026-11-26: kartu/tombol dibedakan jelas dari latar (kontras latar/kartu 1,08 -> 1,24, garis 1,33 -> 1,79), sama seperti penyempurnaan mode terang. */
+  --background: #09090B;
   --foreground: #F1F1F2;
-  --card: #19191C;
+  --card: #212127;
   --card-foreground: #F1F1F2;
-  --popover: #202024;
+  --popover: #28282F;
   --popover-foreground: #F1F1F2;
   --primary: #D0AF68;
   --primary-foreground: #1A1710;
-  --secondary: #27272B;
+  --secondary: #2D2D34;
   --secondary-foreground: #E7D7B1;
-  --muted: #242428;
-  --muted-foreground: #A3A3AA;
-  --accent: #303036;
+  --muted: #2D2D34;
+  --muted-foreground: #ABABB3;
+  --accent: #35353C;
   --accent-foreground: #F0E3C4;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.10);
+  --border: rgba(255, 255, 255, 0.18);
   --input: transparent;
-  --input-background: #222226;
+  --input-background: #28282F;
   --ring: #D0AF68;
-  --sidebar: #151518;
+  --sidebar: #131317;
   --sidebar-foreground: #ECECEF;
   --sidebar-primary: #D0AF68;
   --sidebar-primary-foreground: #1A1710;
-  --sidebar-accent: #28282D;
+  --sidebar-accent: #2D2D34;
   --sidebar-accent-foreground: #F1E4C6;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.16);
 }

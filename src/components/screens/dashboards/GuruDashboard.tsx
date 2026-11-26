@@ -119,21 +119,13 @@ export function GuruDashboard({ onNavigate, role }: Props) {
     { title: "Presensi & Wajah", items: [
       { label: isWaliKelas ? "Kehadiran Diri" : "Presensi Guru", icon: <Clock size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("presensi") },
       { label: "Pengenalan Wajah", icon: <User size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("pengenalan-wajah") },
+    ] },
+    { title: "Kehadiran & Rekap", items: [
       ...(isWaliKelas ? [
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
-        { label: "Persetujuan Izin", icon: <ClipboardCheck size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("persetujuan-izin") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
         { label: "Ringkasan Presensi", icon: <BarChart3 size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
         { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
-        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
-      ] : []),
-      ...(isKepalaSekolah ? [
-        { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
-        // Jam Keterlambatan & Lokasi Presensi (2026-09-24) - Kepsek CUMA
-        // bisa atur katalog sendiri (backend yang validasi), singkron dgn
-        // Admin IT/Admin TU katalog yang sama - bukan salinan terpisah.
-        { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
-        { label: "Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("pengaturan-lokasi") },
       ] : []),
       // Kepsek TANPA wali-kelas/TU juga butuh lihat Aduan Masuk (sejak Aduan
       // Pegawai ada, 2026-09-14) - blok isWaliKelas/isTuLike SUDAH
@@ -145,7 +137,6 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         { label: "Kehadiran Siswa", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("presensi-admin-tu") },
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
         { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
-        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
       // Kapasitas Admin TU SD/TK/Supervisor (2026-09-04, capability jamak) -
       // lihat catatan lengkap di webview GuruDashboard.tsx.
@@ -154,8 +145,33 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         { label: "Rekapitulasi Kehadiran", icon: <BarChart3 size={20} color="#4338ca" />, colorScheme: "indigo" as const, onPress: () => onNavigate("rekapitulasi-kehadiran") },
         { label: "Ringkasan Presensi", icon: <PieChart size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("ringkasan") },
         { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal" as const, onPress: () => onNavigate("performa-cari") },
+      ] : []),
+    ] },
+    { title: "Persetujuan & Aduan", items: [
+      ...(isWaliKelas ? [
+        { label: "Persetujuan Izin", icon: <ClipboardCheck size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("persetujuan-izin") },
         { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
       ] : []),
+      ...(isKepalaSekolah ? [
+        { label: "Persetujuan Izin Guru", icon: <ClipboardCheck size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-izin-guru") },
+      ] : []),
+      ...(isKepalaSekolah && !isWaliKelas && !isTuLike ? [
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
+      ...(isTuLike && !isWaliKelas ? [
+        { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("aduan-masuk") },
+      ] : []),
+    ] },
+    { title: "Pengaturan Presensi", items: [
+      ...(isKepalaSekolah ? [
+        // Jam Keterlambatan & Lokasi Presensi (2026-09-24) - Kepsek CUMA
+        // bisa atur katalog sendiri (backend yang validasi), singkron dgn
+        // Admin IT/Admin TU katalog yang sama - bukan salinan terpisah.
+        { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange" as const, onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
+        { label: "Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("pengaturan-lokasi") },
+      ] : []),
+    ] },
+    { title: "Tata Usaha & Akademik", items: [
       ...(isAdminTuCap && tampilNilai ? [
         { label: "Pengaturan Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-raport") },
       ] : []),
@@ -163,12 +179,16 @@ export function GuruDashboard({ onNavigate, role }: Props) {
         { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-psb") },
         { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("cari-siswa-guru") },
       ] : []),
+    ] },
+    { title: "Konten & Komunikasi", items: [
       // Kapasitas Admin Media SD/TK (2026-09-04).
       ...(isMediaLike ? [
         { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
         { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") },
         { label: "Pengguna Diblokir", icon: <Ban size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("blokiran-komentar") },
       ] : []),
+    ] },
+    { title: "Keuangan", items: [
       // Kapasitas Keuangan (2026-09-04).
       ...(isKeuangan ? [
         { label: "Data Pembayaran Siswa", icon: <CreditCard size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("keuangan-admin") },

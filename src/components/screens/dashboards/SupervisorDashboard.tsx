@@ -51,8 +51,10 @@ export function SupervisorDashboard({ onNavigate }: Props) {
       { label: "Pemasukan", icon: <ArrowUpCircle size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("placeholder", { title: "Pemasukan" }) },
       { label: "Pengeluaran", icon: <ArrowDownCircle size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("placeholder", { title: "Pengeluaran" }) },
     ] },
-    { title: "Operasional", items: [
+    { title: "Konten & Komunikasi", items: [
       { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+    ] },
+    { title: "Presensi", items: [
       { label: "Ringkasan Presensi", icon: <BarChart2 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },
       { label: "Performa Individu", icon: <BarChart2 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
     ] },

@@ -27,6 +27,7 @@ import { RoleHakAksesScreen } from "../components/screens/RoleHakAksesScreen";
 import { BuatPengumumanScreen } from "../components/screens/BuatPengumumanScreen";
 import { BackupDatabaseScreen } from "../components/screens/BackupDatabaseScreen";
 import { SyncStatusScreen } from "../components/screens/SyncStatusScreen";
+import { InfrastrukturScreen } from "../components/screens/InfrastrukturScreen";
 import { ServerHealthScreen } from "../components/screens/ServerHealthScreen";
 import { ActivityLogScreen } from "../components/screens/ActivityLogScreen";
 import { KeuanganAdmin } from "../components/screens/KeuanganAdmin";
@@ -416,11 +417,11 @@ export function RootNavigator() {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      background: isDark ? "#101012" : "#E6E9E2",
-      card: isDark ? "#19191C" : "#FFFFFF",
+      background: isDark ? "#09090B" : "#E6E9E2",
+      card: isDark ? "#212127" : "#FFFFFF",
       primary: isDark ? "#D0AF68" : "#356447",
       text: isDark ? "#F1F1F2" : "#17201B",
-      border: isDark ? "rgba(255,255,255,0.1)" : "rgba(33,57,41,0.22)",
+      border: isDark ? "rgba(255,255,255,0.18)" : "rgba(33,57,41,0.22)",
     },
   };
 
@@ -543,7 +544,8 @@ export function RootNavigator() {
             <Stack.Screen name="role-hak-akses" options={{ headerShown: true, title: "Role & Hak Akses" }} component={RoleHakAksesScreen} />
             <Stack.Screen name="buat-pengumuman" options={{ headerShown: true, title: "Buat Pengumuman" }} component={BuatPengumumanScreen} />
             <Stack.Screen name="backup-database" options={{ headerShown: true, title: "Backup Database" }} component={BackupDatabaseScreen} />
-            <Stack.Screen name="status-sinkronisasi" options={{ headerShown: true, title: "Status Sinkronisasi" }} component={SyncStatusScreen} />
+            <Stack.Screen name="status-sinkronisasi" options={{ headerShown: true, title: "Perangkat" }} component={SyncStatusScreen} />
+            <Stack.Screen name="infrastruktur" options={{ headerShown: true, title: "Infrastruktur" }} component={InfrastrukturScreen} />
             <Stack.Screen name="kondisi-vps" options={{ headerShown: true, title: "Kondisi VPS" }} component={ServerHealthScreen} />
             <Stack.Screen name="log-aktivitas" options={{ headerShown: true, title: "Log Aktivitas" }} component={ActivityLogScreen} />
             <Stack.Screen name="keuangan-admin" options={{ headerShown: true, title: "Keuangan" }} component={KeuanganAdmin} />

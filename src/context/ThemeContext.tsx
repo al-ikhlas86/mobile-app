@@ -99,7 +99,7 @@ const LIGHT_COLORS = {
 };
 const DARK_COLORS = {
   foreground: "#F1F1F2",
-  mutedForeground: "#A3A3AA",
+  mutedForeground: "#ABABB3",
   primary: "#D0AF68",
   primaryForeground: "#1A1710",
   destructive: "#EF4444",
