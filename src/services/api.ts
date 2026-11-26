@@ -744,6 +744,11 @@ export const api = {
       return { success: false, message: "Gagal memuat panduan. Periksa koneksi internet." };
     }
   },
+  // Pusat Kunci Layanan & Keamanan (khusus Admin IT): status kunci tanpa nilai, ringkasan keamanan, cabut sesi login pengguna.
+  adminKunciLayanan: (segarkan = false) => authedFetch(`/api/admin/keamanan/kunci${segarkan ? "?segarkan=1" : ""}`),
+  adminKeamananRingkasan: () => authedFetch("/api/admin/keamanan/ringkasan"),
+  adminCariSesi: (q: string) => authedFetch(`/api/admin/keamanan/sesi?q=${encodeURIComponent(q)}`),
+  adminCabutSesi: (id: number) => authedFetch(`/api/admin/keamanan/sesi/${id}/cabut`, { method: "POST" }),
   adminSetKioskTokenLama: (aktif: boolean, konfirmasi = false) =>
     authedFetch("/api/admin/kiosk-token-lama", { method: "PUT", body: JSON.stringify({ aktif, ...(konfirmasi ? { konfirmasi: true } : {}) }) }),
   // Masalah data dari Data Master (no HP tidak valid, dst) - khusus Admin IT.
