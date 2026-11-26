@@ -91,7 +91,7 @@ export function useTheme() {
 // aktif, krn warna itu tidak pernah ikut berubah).
 const LIGHT_COLORS = {
   foreground: "#17201B",
-  mutedForeground: "#6E776F",
+  mutedForeground: "#556057",
   primary: "#356447",
   primaryForeground: "#FFFFFF",
   destructive: "#DC2626",

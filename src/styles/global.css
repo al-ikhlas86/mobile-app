@@ -5,7 +5,9 @@
 :root {
   /* Light Theme - Layanan Digital Sekolah (sama persis dgn versi web,
      lihat src/styles/theme.css di proyek Mobile-app/webview) */
-  --background: #F7F7F3;
+  /* 2026-11-26: latar digelapkan sedikit agar kartu putih terlihat terpisah, garis tepi lebih tegas, teks redup lolos kontras 4,5
+     (nilai sama dengan web: src/styles/theme.css). */
+  --background: #E6E9E2;
   --foreground: #17201B;
   --card: #FFFFFF;
   --card-foreground: #17201B;
@@ -16,23 +18,23 @@
   --secondary: #EAF0E9;
   --secondary-foreground: #274D36;
   --muted: #EEEFEA;
-  --muted-foreground: #6E776F;
+  --muted-foreground: #556057;
   --accent: #E4ECD9;
   --accent-foreground: #31513A;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(33, 57, 41, 0.10);
+  --border: rgba(33, 57, 41, 0.22);
   --input: transparent;
-  --input-background: #F3F4EF;
+  --input-background: #F1F3EE;
   --ring: #4F7D5D;
   --radius: 16px;
-  --sidebar: #FCFCF9;
+  --sidebar: #F6F7F3;
   --sidebar-foreground: #243128;
   --sidebar-primary: #356447;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #EAF0E9;
   --sidebar-accent-foreground: #274D36;
-  --sidebar-border: rgba(33, 57, 41, 0.09);
+  --sidebar-border: rgba(33, 57, 41, 0.20);
 }
 
 .dark {

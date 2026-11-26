@@ -416,11 +416,11 @@ export function RootNavigator() {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      background: isDark ? "#101012" : "#F7F7F3",
+      background: isDark ? "#101012" : "#E6E9E2",
       card: isDark ? "#19191C" : "#FFFFFF",
       primary: isDark ? "#D0AF68" : "#356447",
       text: isDark ? "#F1F1F2" : "#17201B",
-      border: isDark ? "rgba(255,255,255,0.1)" : "rgba(33,57,41,0.1)",
+      border: isDark ? "rgba(255,255,255,0.1)" : "rgba(33,57,41,0.22)",
     },
   };
 
