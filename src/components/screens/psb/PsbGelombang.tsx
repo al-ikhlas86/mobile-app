@@ -25,6 +25,8 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
   const [tglBaru, setTglBaru] = useState("");
   const [salinan, setSalinan] = useState({ nama: "", tanggalBuka: "", tanggalTutup: "" });
   const [galat, setGalat] = useState("");
+  const [hapusPenuh_, setHapusPenuh] = useState(false);
+  const [konfirmasiHapus, setKonfirmasiHapus] = useState("");
   const tautan = g.tautan ?? "";
   const arsip = g.status === "ditutup";
 
@@ -40,8 +42,18 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
   const tutup = () => konfirmasi("Tutup lebih awal", "Tautan pendaftaran langsung mati. Bisa dibuka lagi lewat Perpanjang.", "Tutup", () => api.psbGelombangTutup(g.id), true);
   const hapus = () => Alert.alert("Hapus gelombang", `Hapus "${g.nama}" beserta formulirnya? Tidak bisa dibatalkan.`, [
     { text: "Batal", style: "cancel" },
-    { text: "Hapus", style: "destructive", onPress: async () => { setSibuk(true); const res = (await api.psbGelombangHapus(g.id)) as Res; setSibuk(false); if (!res.success) Alert.alert("Gagal", res.message || "Gagal menghapus."); else onHapus(); } },
+    { text: "Hapus", style: "destructive", onPress: async () => {
+      setSibuk(true); const res = (await api.psbGelombangHapus(g.id)) as Res; setSibuk(false);
+      if (res.success) { onHapus(); return; }
+      if (res.code === "ADA_PENDAFTAR") { setHapusPenuh(true); setGalat(res.message || ""); return; }
+      Alert.alert("Gagal", res.message || "Gagal menghapus.");
+    } },
   ]);
+  const hapusPenuh = async () => {
+    setSibuk(true); const res = (await api.psbGelombangHapus(g.id, konfirmasiHapus)) as Res; setSibuk(false);
+    if (!res.success) { setGalat(res.message || "Gagal menghapus."); return; }
+    onHapus();
+  };
   const simpanPerpanjang = async () => { setGalat(""); setSibuk(true); const res = (await api.psbGelombangPerpanjang(g.id, tglBaru.trim())) as Res; setSibuk(false); if (!res.success) { setGalat(res.message || "Gagal."); return; } setMode("lihat"); onChanged(); };
   const simpanSalinan = async () => {
     setGalat(""); setSibuk(true);
@@ -52,6 +64,17 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
     setMode("lihat"); onHapus();
   };
 
+  if (hapusPenuh_) {
+    return (
+      <View className="gap-3">
+        <Text className="font-semibold text-sm text-red-600">Hapus gelombang beserta seluruh datanya</Text>
+        <Text className="text-xs text-muted-foreground">{galat}</Text>
+        <Text className="text-xs text-foreground">SEMUA pendaftar dan berkas di gelombang ini dihapus permanen. Ketik nama gelombang untuk melanjutkan.</Text>
+        <Isian label={`Ketik: ${g.nama}`}><Kolom value={konfirmasiHapus} onChangeText={setKonfirmasiHapus} maxLength={120} autoCapitalize="none" /></Isian>
+        <View className="flex-row gap-2"><Button size="sm" variant="outline" disabled={sibuk || konfirmasiHapus !== g.nama} loading={sibuk} onPress={() => void hapusPenuh()}>Hapus permanen</Button><Button size="sm" variant="outline" disabled={sibuk} onPress={() => { setHapusPenuh(false); setGalat(""); setKonfirmasiHapus(""); }}>Batal</Button></View>
+      </View>
+    );
+  }
   if (mode === "ubah") return <FormGelombang awal={g} onBatal={() => setMode("lihat")} onSelesai={() => { setMode("lihat"); onChanged(); }} />;
   if (mode === "perpanjang") {
     return (

@@ -31,6 +31,7 @@ import { InfrastrukturScreen } from "../components/screens/InfrastrukturScreen";
 import { PsbOnlineScreen } from "../components/screens/PsbOnlineScreen";
 import { KunciLayananScreen } from "../components/screens/KunciLayananScreen";
 import { KeamananScreen } from "../components/screens/KeamananScreen";
+import { KomunikasiScreen } from "../components/screens/KomunikasiScreen";
 import { ServerHealthScreen } from "../components/screens/ServerHealthScreen";
 import { ActivityLogScreen } from "../components/screens/ActivityLogScreen";
 import { KeuanganAdmin } from "../components/screens/KeuanganAdmin";
@@ -551,6 +552,7 @@ export function RootNavigator() {
             <Stack.Screen name="infrastruktur" options={{ headerShown: true, title: "Infrastruktur" }} component={InfrastrukturScreen} />
             <Stack.Screen name="kunci-layanan" options={{ headerShown: true, title: "Kunci Layanan" }} component={KunciLayananScreen} />
             <Stack.Screen name="keamanan" options={{ headerShown: true, title: "Keamanan" }} component={KeamananScreen} />
+            <Stack.Screen name="email-kontak" options={{ headerShown: true, title: "Email & Kontak" }} component={KomunikasiScreen} />
             <Stack.Screen name="kondisi-vps" options={{ headerShown: true, title: "Kondisi VPS" }} component={ServerHealthScreen} />
             <Stack.Screen name="log-aktivitas" options={{ headerShown: true, title: "Log Aktivitas" }} component={ActivityLogScreen} />
             <Stack.Screen name="keuangan-admin" options={{ headerShown: true, title: "Keuangan" }} component={KeuanganAdmin} />

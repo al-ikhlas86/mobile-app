@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
+import { Mail, Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -84,6 +84,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Kondisi VPS", icon: <Server size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("kondisi-vps") },
       { label: "Keamanan", icon: <ShieldCheck size={20} color="#b91c1c" />, colorScheme: "red", onPress: () => onNavigate("keamanan") },
       { label: "Kunci Layanan", icon: <KeyRound size={20} color="#c2410c" />, colorScheme: "orange", onPress: () => onNavigate("kunci-layanan") },
+      { label: "Email & Kontak", icon: <Mail size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("email-kontak") },
     ] },
   ];
 
