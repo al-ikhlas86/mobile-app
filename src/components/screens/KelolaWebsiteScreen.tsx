@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { ArrowLeft, CheckSquare, ChevronDown, ChevronUp, ExternalLink, ImageIcon, Lock, Plus, RotateCcw, Save, Search, Square, Trash2, Upload, UserPlus, X, AlertTriangle, CheckCircle, BookOpen, FileCheck, GraduationCap, HelpCircle, History, Images, Info, Megaphone, Phone, Star, ThumbsUp, Type, Users } from "lucide-react-native";
+import { ArrowLeft, CheckSquare, ChevronDown, ChevronUp, ExternalLink, ImageIcon, Lock, Plus, RotateCcw, Save, Search, Square, Trash2, Upload, UserPlus, X, AlertTriangle, CheckCircle, BookOpen, ChevronRight, FileCheck, GraduationCap, HelpCircle, History, Home, Images, Info, Megaphone, Phone, Star, ThumbsUp, Type, Users } from "lucide-react-native";
 import { api } from "../../services/api";
 import { SimplePicker } from "../ui/SimplePicker";
 import { useThemeColors } from "../../context/ThemeContext";
@@ -184,6 +184,18 @@ function Foto({ label, value, onChange, ro, wajib, tampil, unggah, saran }: {
   );
 }
 
+// Dua tingkat agar admin tidak melihat semua bagian bertumpuk: MENU UTAMA dulu; sub menu (bagian yang diedit) baru tampil setelah menu utamanya
+// dipilih. `bagian` = kunci state `buka` di bawah (sama dengan versi web). Bagian baru WAJIB didaftarkan di sini, kalau tidak, ia tidak pernah tampil.
+const MENU_UTAMA: { id: string; judul: string; info: string; ikon: (warna: string) => React.ReactNode; bagian: string[] }[] = [
+  { id: "depan", judul: "Halaman depan", info: "Banner utama, perkenalan yayasan, dan empat nilai pendidikan.", ikon: (c) => <Home size={20} color={c} />, bagian: ["hero", "tentang", "nilai"] },
+  { id: "pendidikan", judul: "Pendidikan", info: "Jenjang, alasan memilih kami, dan program unggulan.", ikon: (c) => <GraduationCap size={20} color={c} />, bagian: ["jenjang", "unggul", "program"] },
+  { id: "pendaftaran", judul: "Pendaftaran siswa", info: "Ajakan mendaftar dan kolase foto pendaftaran.", ikon: (c) => <Megaphone size={20} color={c} />, bagian: ["daftar"] },
+  { id: "galeri", judul: "Galeri & Info Terbaru", info: "Foto kegiatan, spanduk, judul Info Terbaru, dan footer.", ikon: (c) => <Images size={20} color={c} />, bagian: ["galeri", "footer"] },
+  { id: "kontak", judul: "Kontak & bantuan", info: "Alamat, telepon, media sosial, dan tanya jawab (FAQ).", ikon: (c) => <Phone size={20} color={c} />, bagian: ["kontak", "faq"] },
+  { id: "profil", judul: "Profil yayasan", info: "Pengurus yayasan dan persetujuan kartu guru.", ikon: (c) => <Users size={20} color={c} />, bagian: ["pengurus", "setuju"] },
+  { id: "riwayat", judul: "Riwayat perubahan", info: "Siapa mengubah apa dan kapan, serta pengembalian versi.", ikon: (c) => <History size={20} color={c} />, bagian: ["riwayat"] },
+];
+
 function Bagian({ judul, info, ringkas, ikon, lihat, terbuka, sembunyi, onToggle, kunci, children }: { judul: string; info: string; ringkas?: string; ikon?: React.ReactNode; lihat?: string; terbuka: boolean; sembunyi: boolean; onToggle: () => void; kunci?: boolean; children: React.ReactNode }) {
   const colors = useThemeColors();
   if (sembunyi) return null;
@@ -329,6 +341,7 @@ export function KelolaWebsiteScreen() {
   const [izin, setIzin] = useState<Izin>({ global: false, umum: false, katalog: [] });
   const [semuaKatalog, setSemuaKatalog] = useState<KatalogInfo[]>([]);
   const [urlSitus, setUrlSitus] = useState("https://yayasanalikhlas86.sch.id");
+  const [menu, setMenu] = useState(""); // menu utama yang sedang dibuka ("" = daftar menu utama)
   const [buka, setBuka] = useState("");
   const [menyimpan, setMenyimpan] = useState(false);
   const [massal, setMassal] = useState("");
@@ -458,7 +471,10 @@ export function KelolaWebsiteScreen() {
   };
 
   const toggle = (k: string) => { setBuka(buka === k ? "" : k); if (k === "riwayat" && riwayat === null) void muatRiwayat(); scrollRef.current?.scrollTo?.({ y: 0, animated: false }); };
-  const sembunyi = (k: string) => buka !== "" && buka !== k;
+  const menuAktif = MENU_UTAMA.find((m) => m.id === menu);
+  // Sub menu tampil hanya bila menu utamanya dibuka; saat satu bagian diedit, hanya bagian itu.
+  const sembunyi = (k: string) => (buka !== "" ? buka !== k : !menuAktif?.bagian.includes(k));
+  const bukaMenu = (id: string) => { setMenu(id); scrollRef.current?.scrollTo?.({ y: 0, animated: false }); };
 
   if (fase === "muat") return <View className="flex-1 bg-background items-center justify-center gap-2"><ActivityIndicator /><Text className="text-sm text-muted-foreground">Memuat isi website...</Text></View>;
   if (fase === "gagal" || !draft || !asli) {
@@ -483,15 +499,34 @@ export function KelolaWebsiteScreen() {
   return (
     <View className="flex-1 bg-background">
       <KeyboardAwareScrollView ref={scrollRef as never} className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: (dirty || menyimpan ? 110 : 32) + insets.bottom, gap: 14 }} bottomOffset={20}>
-        {buka === "" ? (
-          <View className="bg-card border border-border rounded-2xl p-4 gap-2">
-            <Text className="text-sm text-foreground"><Text className="font-bold">Pilih bagian website yang mau diubah.</Text> Perubahan baru tayang setelah Anda menekan "Simpan & tayangkan" (sekitar 2-4 menit), dan tercatat siapa yang mengubah.</Text>
-            <Text className="text-xs text-muted-foreground">{peranTeks}</Text>
-            <Pressable onPress={() => void Linking.openURL(urlSitus)} className="flex-row items-center gap-1.5 self-start"><ExternalLink size={14} color={colors.primary} /><Text className="text-sm text-primary">Lihat website</Text></Pressable>
-            <Text className="text-xs text-muted-foreground">Info Terbaru di website otomatis diambil dari Berita Acara yang diterbitkan dan dicentang “Tampilkan di website”; tidak diatur di sini.</Text>
+        {buka === "" && !menuAktif ? (
+          <>
+            <View className="bg-card border border-border rounded-2xl p-4 gap-2">
+              <Text className="text-sm text-foreground"><Text className="font-bold">Pilih menu website yang mau diubah.</Text> Perubahan baru tayang setelah Anda menekan "Simpan & tayangkan" (sekitar 2-4 menit), dan tercatat siapa yang mengubah.</Text>
+              <Text className="text-xs text-muted-foreground">{peranTeks}</Text>
+              <Pressable onPress={() => void Linking.openURL(urlSitus)} className="flex-row items-center gap-1.5 self-start"><ExternalLink size={14} color={colors.primary} /><Text className="text-sm text-primary">Lihat website</Text></Pressable>
+              <Text className="text-xs text-muted-foreground">Info Terbaru di website otomatis diambil dari Berita Acara yang diterbitkan dan dicentang “Tampilkan di website”; tidak diatur di sini.</Text>
+            </View>
+            {MENU_UTAMA.map((m) => (
+              <Pressable key={m.id} onPress={() => bukaMenu(m.id)} accessibilityRole="button" accessibilityLabel={m.judul} className="bg-card border border-border rounded-2xl px-4 py-4 flex-row items-center gap-3 active:opacity-80">
+                <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">{m.ikon(colors.primary)}</View>
+                <View className="flex-1">
+                  <Text className="font-semibold text-sm text-foreground">{m.judul}</Text>
+                  <Text className="text-xs text-muted-foreground">{m.info}</Text>
+                </View>
+                {m.bagian.length > 1 ? <Text className="text-[11px] text-muted-foreground">{m.bagian.length} bagian</Text> : null}
+                <ChevronRight size={18} color={colors.mutedForeground} />
+              </Pressable>
+            ))}
+          </>
+        ) : buka === "" ? (
+          <View className="gap-2">
+            <Pressable onPress={() => bukaMenu("")} className="flex-row items-center gap-1.5 self-start"><ArrowLeft size={15} color={colors.primary} /><Text className="text-sm text-primary">Kembali ke semua menu</Text></Pressable>
+            <Text className="text-base font-semibold text-foreground">{menuAktif?.judul}</Text>
+            <Text className="text-xs text-muted-foreground">{menuAktif?.info} Pilih bagian yang mau diubah.</Text>
           </View>
         ) : (
-          <Pressable onPress={() => toggle(buka)} className="flex-row items-center gap-1.5 self-start"><ArrowLeft size={15} color={colors.primary} /><Text className="text-sm text-primary">Kembali ke semua bagian</Text></Pressable>
+          <Pressable onPress={() => toggle(buka)} className="flex-row items-center gap-1.5 self-start"><ArrowLeft size={15} color={colors.primary} /><Text className="text-sm text-primary">Kembali ke {menuAktif?.judul ?? "semua bagian"}</Text></Pressable>
         )}
 
         {pesan ? (
