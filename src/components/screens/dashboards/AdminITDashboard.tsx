@@ -64,6 +64,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
     ] },
     { title: "Akademik & Kesiswaan", items: [
       { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
+      { label: "Pendaftaran PSB", icon: <GraduationCap size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("psb-online") },
       { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
     ] },
     { title: "Presensi", items: [

@@ -749,6 +749,37 @@ export const api = {
   adminKeamananRingkasan: () => authedFetch("/api/admin/keamanan/ringkasan"),
   adminCariSesi: (q: string) => authedFetch(`/api/admin/keamanan/sesi?q=${encodeURIComponent(q)}`),
   adminCabutSesi: (id: number) => authedFetch(`/api/admin/keamanan/sesi/${id}/cabut`, { method: "POST" }),
+  // PSB internal (gelombang, form builder, pendaftar, jadwal, pengumuman, tagihan) - hak per katalog dijaga server (routes/psbAdmin.js).
+  // Pencatatan pendaftar dari HP berupa teks saja (JSON); unggah berkas dilakukan lewat versi web.
+  psbIzin: () => authedFetch("/api/psb-admin/izin"),
+  psbGoPublik: (publikAktif: boolean) => authedFetch("/api/psb-admin/pengaturan", { method: "PUT", body: JSON.stringify({ publikAktif }) }),
+  psbGelombangList: () => authedFetch("/api/psb-admin/gelombang"),
+  psbGelombangBuat: (d: unknown) => authedFetch("/api/psb-admin/gelombang", { method: "POST", body: JSON.stringify(d) }),
+  psbGelombang: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}`),
+  psbGelombangUbah: (id: number, d: unknown) => authedFetch(`/api/psb-admin/gelombang/${id}`, { method: "PUT", body: JSON.stringify(d) }),
+  psbGelombangTerbit: (id: number, terbit: boolean) => authedFetch(`/api/psb-admin/gelombang/${id}/terbit`, { method: "POST", body: JSON.stringify({ terbit }) }),
+  psbGelombangHapus: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}`, { method: "DELETE" }),
+  psbFormulirSimpan: (id: number, fields: unknown) => authedFetch(`/api/psb-admin/gelombang/${id}/formulir`, { method: "PUT", body: JSON.stringify({ fields }) }),
+  psbPendaftarList: (gelombangId: number, o: { status?: string; q?: string; halaman?: number } = {}) =>
+    authedFetch(`/api/psb-admin/pendaftar?gelombangId=${gelombangId}${o.status ? `&status=${o.status}` : ""}${o.q ? `&q=${encodeURIComponent(o.q)}` : ""}${o.halaman ? `&halaman=${o.halaman}` : ""}`),
+  psbPendaftar: (id: number) => authedFetch(`/api/psb-admin/pendaftar/${id}`),
+  psbPendaftarCatat: (gelombangId: number, jawaban: Record<string, string>) =>
+    authedFetch(`/api/psb-admin/gelombang/${gelombangId}/pendaftar`, { method: "POST", body: JSON.stringify(Object.fromEntries(Object.entries(jawaban).map(([k, v]) => [`j_${k}`, v]))) }),
+  psbStatus: (id: number, status: string, catatan?: string) => authedFetch(`/api/psb-admin/pendaftar/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, catatan }) }),
+  psbCatatan: (id: number, catatan: string) => authedFetch(`/api/psb-admin/pendaftar/${id}/catatan`, { method: "PATCH", body: JSON.stringify({ catatan }) }),
+  // Sumber gambar berkas (foto) untuk <Image>: butuh header Authorization. PDF tidak ditampilkan di HP.
+  psbBerkasSumber: (id: number, bid: number) => ({ uri: `${API_URL}/api/psb-admin/pendaftar/${id}/berkas/${bid}`, headers: { Authorization: `Bearer ${getActiveToken() ?? ""}` } }),
+  psbTagihanLunas: (id: number, metode: string, referensi: string) => authedFetch(`/api/psb-admin/pendaftar/${id}/tagihan/lunas`, { method: "POST", body: JSON.stringify({ metode, referensi }) }),
+  psbTagihanBatal: (id: number) => authedFetch(`/api/psb-admin/pendaftar/${id}/tagihan/batal`, { method: "POST" }),
+  psbJadwalList: (gelombangId: number) => authedFetch(`/api/psb-admin/gelombang/${gelombangId}/jadwal`),
+  psbJadwalBuat: (gelombangId: number, d: unknown) => authedFetch(`/api/psb-admin/gelombang/${gelombangId}/jadwal`, { method: "POST", body: JSON.stringify(d) }),
+  psbJadwalHapus: (jid: number) => authedFetch(`/api/psb-admin/jadwal/${jid}`, { method: "DELETE" }),
+  psbPeserta: (jid: number) => authedFetch(`/api/psb-admin/jadwal/${jid}/peserta`),
+  psbPesertaTambah: (jid: number, pendaftarIds: number[]) => authedFetch(`/api/psb-admin/jadwal/${jid}/peserta`, { method: "POST", body: JSON.stringify({ pendaftarIds }) }),
+  psbPesertaHapus: (jid: number, pid: number) => authedFetch(`/api/psb-admin/jadwal/${jid}/peserta/${pid}`, { method: "DELETE" }),
+  psbPengumumanList: (gelombangId: number) => authedFetch(`/api/psb-admin/gelombang/${gelombangId}/pengumuman`),
+  psbPengumumanBuat: (gelombangId: number, d: unknown) => authedFetch(`/api/psb-admin/gelombang/${gelombangId}/pengumuman`, { method: "POST", body: JSON.stringify(d) }),
+  psbPengumumanHapus: (pid: number) => authedFetch(`/api/psb-admin/pengumuman/${pid}`, { method: "DELETE" }),
   adminSetKioskTokenLama: (aktif: boolean, konfirmasi = false) =>
     authedFetch("/api/admin/kiosk-token-lama", { method: "PUT", body: JSON.stringify({ aktif, ...(konfirmasi ? { konfirmasi: true } : {}) }) }),
   // Masalah data dari Data Master (no HP tidak valid, dst) - khusus Admin IT.

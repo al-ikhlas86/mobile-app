@@ -28,6 +28,7 @@ import { BuatPengumumanScreen } from "../components/screens/BuatPengumumanScreen
 import { BackupDatabaseScreen } from "../components/screens/BackupDatabaseScreen";
 import { SyncStatusScreen } from "../components/screens/SyncStatusScreen";
 import { InfrastrukturScreen } from "../components/screens/InfrastrukturScreen";
+import { PsbOnlineScreen } from "../components/screens/PsbOnlineScreen";
 import { KunciLayananScreen } from "../components/screens/KunciLayananScreen";
 import { KeamananScreen } from "../components/screens/KeamananScreen";
 import { ServerHealthScreen } from "../components/screens/ServerHealthScreen";
@@ -592,6 +593,7 @@ export function RootNavigator() {
             <Stack.Screen name="presensi-anak" options={{ headerShown: true, title: "Kehadiran Anak" }} component={PresensiAnak} />
             <Stack.Screen name="jadwal-kerja" options={{ headerShown: true, title: "Jadwal Kerja" }} component={JadwalKerjaScreen} />
             <Stack.Screen name="cari-siswa-guru" options={{ headerShown: true, title: "Cari Siswa & Guru" }} component={CariSiswaGuruScreen} />
+            <Stack.Screen name="psb-online" options={{ headerShown: true, title: "Pendaftaran PSB" }} component={PsbOnlineScreen} />
             <Stack.Screen name="persetujuan-psb" options={{ headerShown: true, title: "Persetujuan PSB" }} component={PersetujuanPsbScreen} />
             {/* Rute generik utk menu yang GENUINELY belum dibangun (Slip
                 Gaji, Keuangan dkk, lihat catatan Projek.md 2026-08-13 & 29) -
