@@ -5,12 +5,12 @@ import { useThemeColors } from "../../../context/ThemeContext";
 // Tipe dan alat bantu bersama layar PSB Online (staf) di aplikasi HP. Bentuk data mengikuti routes/psbAdmin.js (sama dengan versi web).
 export interface Res<T = unknown> { success: boolean; data?: T; message?: string; code?: string; rincian?: Record<string, string> }
 export interface Katalog { id: number; kode: string; nama: string; kelola: boolean }
-export interface Izin { semua: boolean; katalog: Katalog[]; publikAktif: boolean; daftarOnline: boolean; kontak: string; emailTerpasang: boolean; bisaAturPublik: boolean; templateFormulir: { kunci: string; label: string; untuk?: string[] }[] }
+export interface Izin { semua: boolean; katalog: Katalog[]; kontak: string; emailTerpasang: boolean; templateFormulir: { kunci: string; label: string; untuk?: string[] }[] }
 export type StatusPendaftar = "menunggu_bayar" | "menunggu_formulir" | "baru" | "diverifikasi" | "ditolak" | "diterima" | "cadangan" | "mundur";
 export type StatusGelombang = "draft" | "belum_buka" | "terbuka" | "penuh" | "ditutup";
 export interface GelombangRingkas {
   id: number; catalogId: number; katalog?: { kode: string; nama: string }; nama: string; tahunAjaran: string; deskripsi: string | null;
-  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean; akses: "publik" | "privat"; jenis: "siswa" | "guru" | "pegawai"; ditutupManual: boolean; tautan?: string;
+  tanggalBuka: string; tanggalTutup: string; kuota: number | null; biaya: number; instruksiBayar: string | null; terbit: boolean; akses: "publik" | "privat"; jenis: "siswa" | "guru" | "pegawai"; ditutupManual: boolean; goPublik: boolean; daftarOnline: boolean; tautan?: string;
   status: StatusGelombang; hitung: Partial<Record<StatusPendaftar, number>>; jumlahAktif: number; bisaKelola: boolean;
 }
 export interface FieldForm { id?: number; kunci: string; label: string; tipe: string; wajib: boolean; sistem: boolean; opsi: string[] | null; bantuan: string | null; bagian: string | null }

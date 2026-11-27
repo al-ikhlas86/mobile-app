@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator, Alert, Pressable, Share } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraduationCap, Plus, AlertTriangle, Globe, ChevronRight } from "lucide-react-native";
+import { GraduationCap, Plus, AlertTriangle, ChevronRight } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { api, API_URL } from "../../services/api";
+import { api } from "../../services/api";
 import { useThemeColors } from "../../context/ThemeContext";
 import { PsbGelombang } from "./psb/PsbGelombang";
 import { FormGelombang } from "./psb/MFormGelombang";
@@ -13,7 +13,6 @@ import {
 } from "./psb/mShared";
 
 // PSB Online (staf) di HP: padanan layar web PsbOnlineScreen. Hak akses dijaga server per katalog.
-const LINK_PUBLIK = `${API_URL}/api/public/psb`;
 
 export function PsbOnlineScreen() {
   const insets = useSafeAreaInsets();
@@ -35,13 +34,10 @@ export function PsbOnlineScreen() {
   }, []);
   useEffect(() => { void muat(); }, [muat]);
 
-  const atur = async (d: { publikAktif?: boolean; daftarOnline?: boolean; kontak?: string }) => {
+  const atur = async (d: { kontak?: string }) => {
     setSibuk(true); const res = (await api.psbPengaturan(d)) as Res; setSibuk(false);
     if (!res.success) Alert.alert("Gagal", res.message || "Gagal mengubah pengaturan."); else void muat();
   };
-  const tanya = (judul: string, isi: string, aksi: string, d: { publikAktif?: boolean; daftarOnline?: boolean }, merusak = false) => Alert.alert(judul, isi, [
-    { text: "Batal", style: "cancel" }, { text: aksi, style: merusak ? "destructive" : "default", onPress: () => void atur(d) },
-  ]);
 
   if (galat && !izin) {
     return (
@@ -60,42 +56,13 @@ export function PsbOnlineScreen() {
   const tampil = lihatArsip ? arsip : aktif;
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }} keyboardShouldPersistTaps="handled">
-      {izin.bisaAturPublik ? (
+      {izin.semua ? (
         <Card padding="lg">
-          <View className="flex-row items-start gap-3">
-            <Globe size={20} color={colors.primary} />
-            <View className="flex-1 gap-3">
-              <View className="gap-1">
-                <Text className="font-semibold text-sm text-foreground">Pendaftaran publik</Text>
-                <Lencana jenis={izin.publikAktif ? "terbuka" : "draft"} teks={izin.publikAktif ? "Halaman terbuka untuk umum" : "Tertutup"} />
-                <Text className="text-xs text-muted-foreground mt-1">{izin.publikAktif ? "Halaman pendaftaran bisa dibuka umum dan menampilkan gelombang publik yang terbit dan masih berlaku." : "Selama tertutup, tautan publik hanya menampilkan 'belum dibuka'. Siapkan gelombang dulu, lalu tekan GO PUBLIK."}</Text>
-                <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground mt-1" style={{ fontFamily: "monospace" }}>{LINK_PUBLIK}</Text>
-                <View className="flex-row flex-wrap gap-2 mt-2">
-                  <Button size="sm" variant={izin.publikAktif ? "outline" : "primary"} disabled={sibuk} onPress={() => (izin.publikAktif
-                    ? tanya("Tutup halaman publik", "Data pendaftar yang sudah masuk tetap aman.", "Tutup", { publikAktif: false }, true)
-                    : tanya("GO PUBLIK", "Halaman pendaftaran akan bisa dibuka SIAPA PUN dan menampilkan gelombang yang terbit. Fitur daftar online tetap mengikuti saklar di bawah. Lanjutkan?", "GO PUBLIK", { publikAktif: true }))}>{izin.publikAktif ? "Tutup halaman publik" : "GO PUBLIK"}</Button>
-                  <Button size="sm" variant="outline" onPress={() => void Share.share({ message: LINK_PUBLIK })}>Bagikan tautan</Button>
-                </View>
-              </View>
-              <View className="gap-1 border-t border-border pt-3">
-                <Text className="font-semibold text-sm text-foreground">Fitur daftar online</Text>
-                <Lencana jenis={izin.daftarOnline ? "terbuka" : "penuh"} teks={izin.daftarOnline ? "Terbuka" : "Terkunci"} />
-                <Text className="text-xs text-muted-foreground mt-1">{izin.daftarOnline ? "Orang tua bisa mendaftar dan membayar lewat halaman publik." : "Terkunci: gelombang publik hanya menampilkan informasi dan nomor admin, belum bisa mendaftar. Buka kunci setelah urusan pembayaran siap. Gelombang privat tetap bisa dipakai untuk pengujian."}</Text>
-                <View className="flex-row mt-2">
-                  <Button size="sm" variant={izin.daftarOnline ? "outline" : "primary"} disabled={sibuk} onPress={() => (izin.daftarOnline
-                    ? tanya("Kunci daftar online", "Orang tua tidak bisa mendaftar baru lewat gelombang publik (yang sudah mendaftar tetap bisa melanjutkan).", "Kunci", { daftarOnline: false }, true)
-                    : tanya("Buka kunci daftar online", "Orang tua bisa mulai mendaftar dan menerima tagihan. Pastikan petunjuk pembayaran sudah terisi.", "Buka kunci", { daftarOnline: true }))}>{izin.daftarOnline ? "Kunci daftar online" : "Buka kunci daftar online"}</Button>
-                </View>
-                <View className="mt-2">
-                  <Isian label="Nomor admin saat terkunci" bantuan="Dibuka lewat WhatsApp dari halaman publik.">
-                    <Kolom value={kontak} onChangeText={setKontak} maxLength={25} keyboardType="phone-pad" />
-                  </Isian>
-                  <View className="flex-row mt-2"><Button size="sm" variant="outline" disabled={sibuk || kontak === izin.kontak} onPress={() => void atur({ kontak })}>Simpan nomor</Button></View>
-                </View>
-                <Text className="text-xs text-muted-foreground mt-2">Email konfirmasi/Key: {izin.emailTerpasang ? "terpasang" : "belum dipasang (Key tetap tampil di layar dan bisa dibuat ulang oleh staf)"}.</Text>
-              </View>
-            </View>
-          </View>
+          <Isian label="Nomor admin umum (WhatsApp)" bantuan="Ditampilkan di halaman publik bila katalog belum punya kontak sendiri. GO PUBLIK dan daftar online diatur per gelombang, di tab Pengaturan tiap gelombang.">
+            <Kolom value={kontak} onChangeText={setKontak} maxLength={25} keyboardType="phone-pad" />
+          </Isian>
+          <View className="flex-row mt-2"><Button size="sm" variant="outline" disabled={sibuk || kontak === izin.kontak} onPress={() => void atur({ kontak })}>Simpan nomor</Button></View>
+          <Text className="text-xs text-muted-foreground mt-2">Email konfirmasi/Key: {izin.emailTerpasang ? "terpasang" : "belum dipasang (Key tetap tampil di layar dan bisa dibuat ulang oleh staf)"}.</Text>
         </Card>
       ) : null}
 

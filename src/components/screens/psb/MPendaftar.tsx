@@ -23,10 +23,15 @@ export function TabPendaftar({ g, onChanged }: { g: GelombangDetail; onChanged: 
   const [mode, setMode] = useState<{ t: "daftar" } | { t: "detail"; id: number } | { t: "catat" }>({ t: "daftar" });
   if (mode.t === "detail") return <DetailPendaftar id={mode.id} onKembali={() => { setMode({ t: "daftar" }); onChanged(); }} />;
   if (mode.t === "catat") return <CatatPendaftar g={g} onSelesai={() => { setMode({ t: "daftar" }); onChanged(); }} onBatal={() => setMode({ t: "daftar" })} />;
-  return <DaftarPendaftar g={g} onBuka={(id) => setMode({ t: "detail", id })} onCatat={() => setMode({ t: "catat" })} />;
+  return <DaftarPendaftar g={g} onBuka={(id) => setMode({ t: "detail", id })} onCatat={() => setMode({ t: "catat" })} onChanged={onChanged} />;
 }
 
-function DaftarPendaftar({ g, onBuka, onCatat }: { g: GelombangDetail; onBuka: (id: number) => void; onCatat: () => void }) {
+// Ubah status massal (hasil tes) di HP: berlaku untuk SEMUA pendaftar yang cocok dengan filter saat ini.
+const AKSI_MASSAL: { s: StatusPendaftar; teks: string }[] = [
+  { s: "diverifikasi", teks: "Diverifikasi" }, { s: "diterima", teks: "Lulus (Diterima)" }, { s: "cadangan", teks: "Cadangan" }, { s: "ditolak", teks: "Tidak lulus (Ditolak)" },
+];
+
+function DaftarPendaftar({ g, onBuka, onCatat, onChanged }: { g: GelombangDetail; onBuka: (id: number) => void; onCatat: () => void; onChanged: () => void }) {
   const colors = useThemeColors();
   const [status, setStatus] = useState("");
   const [kelompok, setKelompok] = useState("");
@@ -36,6 +41,7 @@ function DaftarPendaftar({ g, onBuka, onCatat }: { g: GelombangDetail; onBuka: (
   const [halaman, setHalaman] = useState(1);
   const [d, setD] = useState<{ data: Ringkas[]; totalHalaman: number; total: number; kelasTersedia: string[] } | null>(null);
   const [galat, setGalat] = useState("");
+  const [massal, setMassal] = useState(false);
   const tunda = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => { if (tunda.current) clearTimeout(tunda.current); tunda.current = setTimeout(() => { setQAktif(q.trim()); setHalaman(1); }, 350); return () => { if (tunda.current) clearTimeout(tunda.current); }; }, [q]);
@@ -46,6 +52,21 @@ function DaftarPendaftar({ g, onBuka, onCatat }: { g: GelombangDetail; onBuka: (
   }, [g.id, status, kelompok, kelas, qAktif, halaman]);
   useEffect(() => { void muat(); }, [muat]);
 
+  const jalankanMassal = async (ke: StatusPendaftar, teks: string) => {
+    setMassal(true);
+    const res = (await api.psbStatusMassal(g.id, { status: ke, filter: { status: status || undefined, kelompok: kelompok || undefined, kelas: kelas || undefined, q: qAktif || undefined } })) as Res<{ dipilih: number; berhasil: number; berperingatan: number; dilewati: { nomor: string; nama: string; alasan: string }[] }>;
+    setMassal(false);
+    if (!res.success || !res.data) { Alert.alert("Gagal", res.message || "Gagal mengubah status."); return; }
+    const r = res.data;
+    const lewat = r.dilewati.slice(0, 6).map((x) => `- ${x.nama} (${x.nomor}): ${x.alasan}`).join("\n");
+    Alert.alert("Selesai", `${r.berhasil} dari ${r.dipilih} pendaftar diubah menjadi "${teks}".${r.berperingatan ? `\n${r.berperingatan} di antaranya tagihan pendaftarannya belum lunas.` : ""}${r.dilewati.length ? `\n\n${r.dilewati.length} dilewati:\n${lewat}${r.dilewati.length > 6 ? "\n..." : ""}` : ""}`);
+    void muat();
+    onChanged();
+  };
+  const tanyaMassal = (ke: StatusPendaftar, teks: string) => Alert.alert("Ubah status massal", `Ubah status SEMUA ${d?.total ?? 0} pendaftar yang cocok dengan filter saat ini menjadi "${teks}"? Yang statusnya belum boleh berpindah akan dilewati. Tidak ada email yang terkirim otomatis.`, [
+    { text: "Batal", style: "cancel" }, { text: "Ubah", onPress: () => void jalankanMassal(ke, teks) },
+  ]);
+
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-2"><Search size={14} color={colors.mutedForeground} /><View className="flex-1"><Kolom value={q} onChangeText={setQ} placeholder="Cari nama, nomor, atau HP" maxLength={60} accessibilityLabel="Cari pendaftar" /></View></View>
@@ -55,6 +76,12 @@ function DaftarPendaftar({ g, onBuka, onCatat }: { g: GelombangDetail; onBuka: (
         <Pressable key={k.id} onPress={() => { setKelompok(k.id); setHalaman(1); }} accessibilityRole="tab" accessibilityState={{ selected: kelompok === k.id }} className={`px-3 py-1.5 rounded-full border ${kelompok === k.id ? "bg-primary border-primary" : "border-border"}`}><Text className={`text-xs font-medium ${kelompok === k.id ? "text-primary-foreground" : "text-foreground"}`}>{k.teks}</Text></Pressable>
       ))}</View>
       {g.bisaKelola ? <View className="flex-row"><Button size="sm" variant="primary" onPress={onCatat}><UserPlus size={14} color="#fff" /> Catat pendaftar</Button></View> : null}
+      {g.bisaKelola && d && d.data.length > 0 ? (
+        <View className="gap-2 rounded-lg border border-border px-3 py-2">
+          <Text className="text-xs font-semibold text-foreground">Ubah status semua yang cocok filter ({d.total})</Text>
+          <View className="flex-row flex-wrap gap-2">{AKSI_MASSAL.map((a) => <Button key={a.s} size="sm" variant={a.s === "diterima" ? "primary" : "outline"} disabled={massal} onPress={() => tanyaMassal(a.s, a.teks)}>{a.teks}</Button>)}</View>
+        </View>
+      ) : null}
       {galat ? <Text className="text-sm text-red-600">{galat}</Text> : null}
       {!d && !galat ? <ActivityIndicator color={colors.primary} /> : null}
       {d && d.data.length === 0 ? <Text className="text-sm text-muted-foreground">Belum ada pendaftar{status || kelompok || kelas || qAktif ? " yang cocok dengan filter" : ""}.</Text> : null}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search, UserPlus, MapPin, Award } from "lucide-react-native";
+import { GraduationCap, FileText, Clock, UserCog, BarChart3, MessageSquareWarning, Search, MapPin, Award } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -35,7 +35,6 @@ export function AdminTUDashboard({ onNavigate }: Props) {
 
   const menuDasar: MenuCategory[] = [
     { title: "Kesiswaan & Akademik", items: [
-      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Pendaftaran PSB", icon: <GraduationCap size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("psb-online") },
       { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
       { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("cari-siswa-guru") },

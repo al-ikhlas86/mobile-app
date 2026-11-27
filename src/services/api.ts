@@ -752,7 +752,11 @@ export const api = {
   // PSB internal (gelombang, form builder, pendaftar, jadwal, pengumuman, tagihan) - hak per katalog dijaga server (routes/psbAdmin.js).
   // Pencatatan pendaftar dari HP berupa teks saja (JSON); unggah berkas dilakukan lewat versi web.
   psbIzin: () => authedFetch("/api/psb-admin/izin"),
-  psbPengaturan: (d: { publikAktif?: boolean; daftarOnline?: boolean; kontak?: string }) => authedFetch("/api/psb-admin/pengaturan", { method: "PUT", body: JSON.stringify(d) }),
+  psbPengaturan: (d: { kontak?: string }) => authedFetch("/api/psb-admin/pengaturan", { method: "PUT", body: JSON.stringify(d) }),
+  // Saklar per gelombang: goPublik (hanya Admin IT) dan daftarOnline.
+  psbSaklar: (id: number, d: { goPublik?: boolean; daftarOnline?: boolean }) => authedFetch(`/api/psb-admin/gelombang/${id}/saklar`, { method: "PATCH", body: JSON.stringify(d) }),
+  // Ubah status banyak pendaftar: `ids` terpilih, atau tanpa ids = semua yang cocok dengan `filter`.
+  psbStatusMassal: (id: number, d: { status: string; ids?: number[]; filter?: { status?: string; kelompok?: string; kelas?: string; q?: string }; catatan?: string }) => authedFetch(`/api/psb-admin/gelombang/${id}/status-massal`, { method: "POST", body: JSON.stringify(d) }),
   psbGelombangList: () => authedFetch("/api/psb-admin/gelombang"),
   psbGelombangBuat: (d: unknown) => authedFetch("/api/psb-admin/gelombang", { method: "POST", body: JSON.stringify(d) }),
   psbGelombang: (id: number) => authedFetch(`/api/psb-admin/gelombang/${id}`),

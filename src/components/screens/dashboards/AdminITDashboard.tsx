@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Mail, Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, UserPlus, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
+import { Mail, Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -63,7 +63,6 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },
     { title: "Akademik & Kesiswaan", items: [
-      { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("persetujuan-psb") },
       { label: "Pendaftaran PSB", icon: <GraduationCap size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("psb-online") },
       { label: "Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple", onPress: () => onNavigate("nilai-raport") },
     ] },

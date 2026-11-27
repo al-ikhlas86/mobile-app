@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, DeviceEventEmitter } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart, MessageSquareWarning, UserPlus, Search, Ban, CreditCard, ClipboardList, ScanFace, GraduationCap } from "lucide-react-native";
+import { Clock, Calendar, FileText, User, CheckCircle, Award, Users, ClipboardCheck, BarChart3, PieChart, MessageSquareWarning, Search, Ban, CreditCard, ClipboardList, ScanFace, GraduationCap } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -142,7 +142,6 @@ export function PegawaiDashboard({ onNavigate }: Props) {
         { label: "Pengaturan Nilai Raport", icon: <Award size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("nilai-raport") },
       ] : []),
       ...(isTuLike ? [
-        { label: "Persetujuan PSB", icon: <UserPlus size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("persetujuan-psb") },
         { label: "Pendaftaran PSB", icon: <GraduationCap size={20} color="#15803d" />, colorScheme: "green" as const, onPress: () => onNavigate("psb-online") },
         { label: "Cari Siswa & Guru", icon: <Search size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => onNavigate("cari-siswa-guru") },
       ] : []),

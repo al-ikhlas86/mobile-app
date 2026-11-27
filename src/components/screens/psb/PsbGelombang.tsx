@@ -18,7 +18,7 @@ type Tab = "pendaftar" | "formulir" | "jadwal" | "pengumuman" | "pengaturan";
 const TABS: { id: Tab; teks: string }[] = [{ id: "pendaftar", teks: "Pendaftar" }, { id: "formulir", teks: "Formulir" }, { id: "jadwal", teks: "Jadwal" }, { id: "pengumuman", teks: "Pengumuman" }, { id: "pengaturan", teks: "Pengaturan" }];
 const hariIni = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 
-function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChanged: () => void; onHapus: () => void }) {
+function TabPengaturan({ g, bisaGoPublik, onChanged, onHapus }: { g: GelombangDetail; bisaGoPublik: boolean; onChanged: () => void; onHapus: () => void }) {
   const [mode, setMode] = useState<"lihat" | "ubah" | "salin" | "perpanjang">("lihat");
   const [sibuk, setSibuk] = useState(false);
   const [tampilQr, setTampilQr] = useState(false);
@@ -39,6 +39,7 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
     { text: "Batal", style: "cancel" }, { text: aksi, style: merusak ? "destructive" : "default", onPress: () => void jalankan(fn) },
   ]);
   const terbit = (nilai: boolean) => konfirmasi(nilai ? "Terbitkan gelombang" : "Tarik dari publik", nilai ? "Setelah GO PUBLIK dibuka, orang tua bisa mendaftar selama masa pendaftaran." : "Tautan pendaftaran langsung mati; data pendaftar tetap ada.", nilai ? "Terbitkan" : "Tarik", () => api.psbGelombangTerbit(g.id, nilai));
+  const saklar = (judul: string, isi: string, aksi: string, d: { goPublik?: boolean; daftarOnline?: boolean }, merusak = false) => konfirmasi(judul, isi, aksi, () => api.psbSaklar(g.id, d), merusak);
   const tutup = () => konfirmasi("Tutup lebih awal", "Tautan pendaftaran langsung mati. Bisa dibuka lagi lewat Perpanjang.", "Tutup", () => api.psbGelombangTutup(g.id), true);
   const hapus = () => Alert.alert("Hapus gelombang", `Hapus "${g.nama}" beserta formulirnya? Tidak bisa dibatalkan.`, [
     { text: "Batal", style: "cancel" },
@@ -113,6 +114,32 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
           <Button size="sm" variant="outline" disabled={sibuk} onPress={hapus}>Hapus</Button>
         </View>
       ) : <Text className="text-xs text-muted-foreground">Anda hanya bisa melihat gelombang ini.</Text>}
+      {g.akses === "publik" ? (
+        <View className="rounded-lg border border-border p-3 gap-3">
+          <View className="gap-1">
+            <Text className="text-sm font-semibold text-foreground">Halaman pendaftaran umum</Text>
+            <Lencana jenis={g.goPublik ? "terbuka" : "draft"} teks={g.goPublik ? "GO PUBLIK" : "Belum GO PUBLIK"} />
+            <Text className="text-xs text-muted-foreground">{g.goPublik ? "Gelombang ini tampil di halaman pendaftaran umum selama diterbitkan dan masih berlaku." : "Selama belum GO PUBLIK, gelombang ini tidak tampil di halaman umum dan tautannya hanya menampilkan 'belum dibuka'. Gelombang lain tidak terpengaruh."}</Text>
+            {g.bisaKelola && bisaGoPublik ? (
+              <View className="flex-row mt-1"><Button size="sm" variant={g.goPublik ? "outline" : "primary"} disabled={sibuk || (!g.goPublik && !g.terbit)} onPress={() => (g.goPublik
+                ? saklar("Tutup dari halaman umum", "Data pendaftar yang sudah masuk tetap aman.", "Tutup", { goPublik: false }, true)
+                : saklar("GO PUBLIK", "Gelombang ini akan tampil dan bisa dibuka SIAPA PUN yang punya tautan halaman pendaftaran. Lanjutkan?", "GO PUBLIK", { goPublik: true }))}>{g.goPublik ? "Tutup dari halaman umum" : "GO PUBLIK"}</Button></View>
+            ) : null}
+            {g.bisaKelola && !bisaGoPublik ? <Text className="text-xs text-muted-foreground">GO PUBLIK hanya bisa ditekan Admin IT.</Text> : null}
+            {g.bisaKelola && bisaGoPublik && !g.goPublik && !g.terbit ? <Text className="text-xs text-muted-foreground">Terbitkan gelombang dulu sebelum GO PUBLIK.</Text> : null}
+          </View>
+          <View className="gap-1 border-t border-border pt-3">
+            <Text className="text-sm font-semibold text-foreground">Daftar online</Text>
+            <Lencana jenis={g.daftarOnline ? "terbuka" : "penuh"} teks={g.daftarOnline ? "Terbuka" : "Terkunci"} />
+            <Text className="text-xs text-muted-foreground">{g.daftarOnline ? "Orang tua bisa mendaftar dan membayar lewat halaman gelombang ini." : "Terkunci: halaman gelombang ini hanya menampilkan informasi dan nomor admin, belum bisa mendaftar. Buka kunci setelah urusan pembayaran siap."}</Text>
+            {g.bisaKelola ? (
+              <View className="flex-row mt-1"><Button size="sm" variant={g.daftarOnline ? "outline" : "primary"} disabled={sibuk} onPress={() => (g.daftarOnline
+                ? saklar("Kunci daftar online", "Orang tua tidak bisa mendaftar baru (yang sudah mendaftar tetap bisa melanjutkan).", "Kunci", { daftarOnline: false }, true)
+                : saklar("Buka kunci daftar online", "Orang tua bisa mendaftar dan membayar lewat halaman gelombang ini.", "Buka kunci", { daftarOnline: true }))}>{g.daftarOnline ? "Kunci daftar online" : "Buka kunci daftar online"}</Button></View>
+            ) : null}
+          </View>
+        </View>
+      ) : <Text className="text-xs text-muted-foreground">Gelombang privat tidak memakai GO PUBLIK dan kunci daftar online: cukup bagikan tautan berkodenya.</Text>}
       <Text className="text-sm text-foreground">Periode {g.tanggalBuka} s.d. {g.tanggalTutup} · Kuota {g.kuota ?? "tanpa batas"} · Biaya {g.biaya > 0 ? rupiah(g.biaya) : "gratis"}</Text>
       {g.deskripsi ? <Text className="text-sm text-muted-foreground">{g.deskripsi}</Text> : null}
       {g.instruksiBayar ? <Text className="text-sm text-foreground"><Text className="font-semibold">Petunjuk pembayaran: </Text>{g.instruksiBayar}</Text> : null}
@@ -121,13 +148,13 @@ function TabPengaturan({ g, onChanged, onHapus }: { g: GelombangDetail; onChange
         <Text selectable className="bg-muted rounded-lg px-2.5 py-2 text-xs text-foreground" style={{ fontFamily: "monospace" }}>{tautan}</Text>
         <View className="flex-row flex-wrap gap-2"><Button size="sm" variant="outline" onPress={() => void Share.share({ message: tautan })}>Bagikan tautan</Button><Button size="sm" variant="outline" onPress={() => setTampilQr((x) => !x)}>{tampilQr ? "Sembunyikan QR" : "Tampilkan QR"}</Button></View>
         {tampilQr ? <Image source={api.psbQrSumber(g.id)} accessibilityLabel="QR formulir pendaftaran" style={{ width: 220, height: 220, backgroundColor: "#fff", borderRadius: 8, marginTop: 8 }} resizeMode="contain" /> : null}
-        <Text className="text-xs text-muted-foreground">Gelombang publik bisa dibuka setelah diterbitkan dan Admin IT menekan GO PUBLIK serta membuka daftar online. Gelombang privat tidak bergantung pada kedua saklar itu.</Text>
+        <Text className="text-xs text-muted-foreground">Gelombang publik bisa dibuka setelah diterbitkan, GO PUBLIK ditekan Admin IT, dan daftar online dibuka (keduanya di gelombang ini). Gelombang privat tidak bergantung pada kedua saklar itu.</Text>
       </View>
     </View>
   );
 }
 
-export function PsbGelombang({ id, onKembali }: { id: number; izin?: Izin; onKembali: () => void }) {
+export function PsbGelombang({ id, izin, onKembali }: { id: number; izin?: Izin; onKembali: () => void }) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const [g, setG] = useState<GelombangDetail | null>(null);
@@ -170,7 +197,7 @@ export function PsbGelombang({ id, onKembali }: { id: number; izin?: Izin; onKem
         {tab === "formulir" ? <TabFormulir g={g} onChanged={() => void muat()} /> : null}
         {tab === "jadwal" ? <TabJadwal g={g} /> : null}
         {tab === "pengumuman" ? <TabPengumuman g={g} /> : null}
-        {tab === "pengaturan" ? <TabPengaturan g={g} onChanged={() => void muat()} onHapus={onKembali} /> : null}
+        {tab === "pengaturan" ? <TabPengaturan g={g} bisaGoPublik={izin?.semua ?? false} onChanged={() => void muat()} onHapus={onKembali} /> : null}
       </Card>
     </ScrollView>
   );
