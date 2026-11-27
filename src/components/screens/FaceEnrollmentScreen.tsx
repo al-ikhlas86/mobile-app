@@ -1,57 +1,52 @@
 // ============================================================
-// PENGENALAN WAJAH - Daftarkan wajah lewat kamera. Alur 3 tahap (redesain
-// 2026-10-01, port dari webview FaceEnrollmentScreen.tsx - JAGA KEDUANYA
-// TETAP SEJAJAR), SEMUA MUAT SATU LAYAR TANPA SCROLL:
+// PENGENALAN WAJAH - Daftarkan wajah lewat kamera. Gaya CINCIN (2026-11-27, port dari webview FaceEnrollmentScreen.tsx - JAGA KEDUANYA
+// TETAP SEJAJAR): tidak ada lagi geser kepala kiri/kanan. Pengguna cukup menaruh wajah di dalam lingkaran; cincin tanda-tanda terisi
+// hijau seiring tiga foto depan (front_1..front_3) tersimpan otomatis. Semua muat satu layar tanpa scroll.
 //   1. MENU    - status terdaftar/belum + tombol "Mulai"/"Lanjutkan" atau "Daftar Ulang"
-//   2. PINDAI  - kamera mengisi sisa layar dgn PANDUAN: bingkai oval + siku, panah
-//                arah putar kepala, indikator langkah, meter putaran, status langsung
-//   3. BERHASIL - layar sukses, "Selesai" kembali ke MENU
+//   2. PINDAI  - lingkaran + cincin progres + petunjuk satu kalimat
+//   3. BERHASIL - layar sukses
 //
-// LOGIKA DETEKSI TIDAK DIUBAH (hanya tampilan): polling /api/face/analyze, ambang
-// yaw/ukuran/ketajaman, tanda yaw, cooldown, penyimpanan sampel PERSIS seperti
-// versi yang dikalibrasi lewat pengujian nyata. Tombol "Ambil Manual" DIHAPUS
-// (permintaan user) setelah bug kontrak /analyze diperbaiki di backend.
+// Aturan KUALITAS sama dgn server/kiosk/web: |yaw| <= 12, lebar wajah >= 120 px, ketajaman >= 30. Letak/ukuran terhadap lingkaran memakai
+// cx, cy, w dari /analyze. Petunjuk arah geser horizontal sengaja netral ("Pusatkan wajah"): arah cermin hasil foto kamera depan
+// bergantung perangkat dan belum diuji di HP nyata.
 // ============================================================
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ActivityIndicator, Animated, Vibration, Pressable } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
-import Svg, { Defs, Mask, Rect, Ellipse, G, Path } from "react-native-svg";
-import { CheckCircle2, Circle, Camera, AlertCircle, ScanFace, ArrowLeft, ArrowRight, X } from "lucide-react-native";
+import Svg, { Defs, Mask, Rect, Circle as SvgCircle, Line } from "react-native-svg";
+import { CheckCircle2, Camera, AlertCircle, ScanFace, X } from "lucide-react-native";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { ChildSwitcher, type ChildOption } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
-import { geometriOval } from "../../utils/faceOverlay";
 
 interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
   target?: "self" | "child";
 }
 
-// `angle` = ID internal yg dikirim ke server (left/right dicek thresholdnya);
-// label/instruction = teks utk user. Step ber-`angle:"left"` SECARA FISIK
-// berhasil begitu user menoleh ke KANAN (preview kamera depan di-mirror).
-// `arah` = panah petunjuk di layar. Kalau diubah lagi, PERCAYA pengujian nyata
-// di HP, JANGAN nebak dari nama field.
-const STEPS: { angle: string; label: string; instruction: string; arah: "depan" | "kanan" | "kiri" }[] = [
-  { angle: "front", label: "Hadap Depan", instruction: "Lihat lurus ke kamera", arah: "depan" },
-  { angle: "left", label: "Hadap Kanan", instruction: "Putar wajah sedikit ke kanan", arah: "kanan" },
-  { angle: "right", label: "Hadap Kiri", instruction: "Putar wajah sedikit ke kiri", arah: "kiri" },
-];
-
-const ANALYZE_INTERVAL_MS = 600; // sedikit lebih longgar dari web (300ms) - takePictureAsync jauh lebih berat drpd snapshot canvas dari stream langsung
-const COOLDOWN_MS = 800;
-const HOLD_MS = 200;
-const YAW_TARGET = 12; // derajat - sama dgn validator server (check_quality_acceptable)
+const TOTAL_FOTO = 3;
+const ANALYZE_INTERVAL_MS = 600; // lebih longgar dari web (300ms): takePictureAsync jauh lebih berat drpd snapshot canvas
+const COOLDOWN_MS = 900;
+const HOLD_MS = 700;
+const YAW_MAKS = 12;
+const UKURAN_MIN_PX = 120;
+const BLUR_MIN = 30;
+const PUSAT_X_TOL = 0.13;
+const PUSAT_Y_TARGET = 0.46;
+const PUSAT_Y_TOL = 0.15;
+const LEBAR_MIN = 0.2;
+const LEBAR_MAKS = 0.52;
+const TIK = 60;
 
 type StatusKind = "idle" | "warn" | "ok" | "busy" | "error";
 interface StatusInfo { kind: StatusKind; text: string }
 
-const WARNA_CINCIN: Record<StatusKind, string> = {
-  idle: "rgba(255,255,255,0.92)",
+const WARNA: Record<StatusKind, string> = {
+  idle: "rgba(255,255,255,0.55)",
   warn: "#f59e0b",
   ok: "#22c55e",
   busy: "#22c55e",
@@ -73,16 +68,14 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [complete, setComplete] = useState(false);
-  const [doneAngles, setDoneAngles] = useState<Set<string>>(new Set());
+  const [terkumpul, setTerkumpul] = useState(0); // foto depan tersimpan (0..TOTAL_FOTO)
   const [cameraActive, setCameraActive] = useState(false);
-  // `starting` = tombol Mulai/Daftar Ulang sudah ditekan tapi kamera belum aktif (izin kamera dsb).
-  // Layar pemindaian langsung tampil dgn "Menyiapkan kamera..." - tanpa ini layar sempat "berkedip" ke
-  // menu lama selama menunggu kamera.
+  // `starting` = tombol sudah ditekan tapi kamera belum aktif (izin kamera dsb): layar pindai langsung tampil, tanpa berkedip ke menu lama.
   const [starting, setStarting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [status, setStatus] = useState<StatusInfo>({ kind: "idle", text: "Posisikan wajah di dalam bingkai" });
-  const [yaw, setYaw] = useState<number | null>(null);
+  const [status, setStatus] = useState<StatusInfo>({ kind: "idle", text: "Posisikan wajah di dalam lingkaran" });
+  const [isiHold, setIsiHold] = useState(0);
   const [ukuranKamera, setUkuranKamera] = useState({ w: 0, h: 0 });
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
@@ -92,21 +85,10 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   const conditionMetSinceRef = useRef(0);
   const lastCaptureTimeRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const terkumpulRef = useRef(0);
+  terkumpulRef.current = terkumpul;
 
-  // Animasi panah (native driver - tidak membebani JS thread yang sedang sibuk polling).
-  const nudge = useRef(new Animated.Value(0)).current;
   const pop = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!cameraActive) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(nudge, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(nudge, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [cameraActive, nudge]);
   useEffect(() => {
     if (showSuccess) {
       pop.setValue(0);
@@ -125,7 +107,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     setLoading(false);
     if (res.success && res.data) {
       setComplete(res.data.complete);
-      setDoneAngles(new Set((res.data.samples as string[]).map((s) => s.split("_")[0])));
+      setTerkumpul(Math.min(TOTAL_FOTO, (res.data.samples as string[]).filter((s) => /^front_\d+$/.test(s)).length));
     } else {
       setError(res.message ?? "Gagal memuat status.");
     }
@@ -151,15 +133,13 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
 
-  // Ganti anak aktif - progres pendaftaran wajah TERPISAH per anak, jadi
-  // status/langkah lokal dimuat ulang dari nol. Kamera ditutup dulu kalau
-  // sedang aktif - cegah foto anak A tersubmit atas nama anak B.
+  // Ganti anak aktif - progres TERPISAH per anak; kamera ditutup dulu supaya foto anak A tidak tersubmit atas nama anak B.
   async function handleSelectChild(id: number) {
     stopCamera();
     setShowSuccess(false);
     setActiveChildId(id);
     setComplete(false);
-    setDoneAngles(new Set());
+    setTerkumpul(0);
     setError("");
     await loadStatus(id);
   }
@@ -172,15 +152,15 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anakTerpilih, children]);
 
-  const nextStep = STEPS.find((s) => !doneAngles.has(s.angle));
+  const masihAda = terkumpul < TOTAL_FOTO;
 
   // Mengembalikan true kalau kamera berhasil diaktifkan.
   async function startCamera(): Promise<boolean> {
     setError("");
     setShowSuccess(false);
     setStarting(true);
-    ubahStatus("idle", "Posisikan wajah di dalam bingkai");
-    setYaw(null);
+    ubahStatus("idle", "Posisikan wajah di dalam lingkaran");
+    setIsiHold(0);
     if (!permission?.granted) {
       const res = await requestPermission();
       if (!res.granted) {
@@ -198,12 +178,11 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     setCameraActive(false);
     setStarting(false);
     conditionMetSinceRef.current = 0;
+    setIsiHold(0);
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
   }
 
-  // Downscale ke max 800px sisi terpanjang SEBELUM base64 - takePictureAsync
-  // skipProcessing:true menangkap resolusi SENSOR ASLI (12MP+), payload base64
-  // bisa tembus ~5MB tanpa ini.
+  // Downscale ke max 800px sisi terpanjang SEBELUM base64 - takePictureAsync skipProcessing menangkap resolusi SENSOR ASLI (12MP+).
   const captureFrame = useCallback(async (): Promise<string | null> => {
     if (!cameraRef.current) return null;
     try {
@@ -221,14 +200,15 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     }
   }, []);
 
-  const submitSample = useCallback(async (angle: string, imageBase64: string) => {
+  const submitSample = useCallback(async (imageBase64: string) => {
+    const nomor = terkumpulRef.current + 1; // front_1, front_2, front_3
     setCapturing(true);
     ubahStatus("busy", "Menyimpan foto...");
-    const res = isChild ? await api.faceChildEnrollSample(angle, 1, imageBase64, activeChildId ?? undefined) : await api.faceEnrollSample(angle, 1, imageBase64);
+    const res = isChild ? await api.faceChildEnrollSample("front", nomor, imageBase64, activeChildId ?? undefined) : await api.faceEnrollSample("front", nomor, imageBase64);
     setCapturing(false);
     if (res.success) {
-      setDoneAngles((prev) => new Set(prev).add(angle));
-      ubahStatus("ok", "Berhasil!");
+      setTerkumpul((n) => Math.max(n, nomor));
+      ubahStatus("ok", "Bagus!");
       Vibration.vibrate(40);
     } else {
       const reason = res.data?.reason || res.data?.detail || res.data?.message || res.message || "Foto tidak memenuhi syarat, coba lagi.";
@@ -236,34 +216,32 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
     }
   }, [isChild, activeChildId, ubahStatus]);
 
-  // Semua langkah selesai -> tutup kamera & tampilkan layar BERHASIL. Lengkap/
-  // tidaknya dari progres LOKAL sesi ini, bukan tanya server lagi (saat "Daftar
-  // Ulang" sampel lama masih ada di server & akan dilaporkan "lengkap" lebih awal).
+  // Semua foto selesai -> tutup kamera & tampilkan layar BERHASIL (dari progres LOKAL sesi ini, bukan tanya server).
   useEffect(() => {
-    if (cameraActive && doneAngles.size >= STEPS.length) {
+    if (cameraActive && terkumpul >= TOTAL_FOTO) {
       setComplete(true);
       stopCamera();
       setShowSuccess(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doneAngles, cameraActive]);
+  }, [terkumpul, cameraActive]);
 
   async function handleReenroll() {
     // Status lama disimpan: kalau izin kamera ditolak, pendaftaran yang SUDAH ADA tidak boleh tampak hilang.
-    const cadangan = { complete, selesai: doneAngles };
-    setDoneAngles(new Set());
+    const cadangan = { complete, terkumpul };
+    setTerkumpul(0);
     setComplete(false);
     const ok = await startCamera();
     if (!ok) {
       setComplete(cadangan.complete);
-      setDoneAngles(cadangan.selesai);
+      setTerkumpul(cadangan.terkumpul);
     }
   }
 
-  // Polling otomatis - sama persis logikanya dgn versi web (lihat komentar di
-  // sana soal tanda yaw yang sudah dikalibrasi ke validator server ASLI).
+  // Polling otomatis - logika sama dgn versi web (lihat komentar di sana).
   useEffect(() => {
-    if (!cameraActive || !nextStep || complete) return;
+    if (!cameraActive || !masihAda || complete) return;
+    const reset = () => { conditionMetSinceRef.current = 0; setIsiHold(0); };
     intervalRef.current = setInterval(async () => {
       if (busyRef.current) return;
       const now = Date.now();
@@ -275,61 +253,44 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
         const res = await api.faceAnalyze(frame);
         const data = res.data;
 
-        // Gagal jaringan/server dibedakan dari "memang tidak ada wajah".
-        if (!res.success) {
-          conditionMetSinceRef.current = 0;
-          setYaw(null);
-          ubahStatus("error", res.message ?? "Gagal menghubungi server, mencoba lagi...");
-          return;
-        }
-        if (!data?.face_detected) {
-          conditionMetSinceRef.current = 0;
-          setYaw(null);
-          ubahStatus("warn", "Wajah tidak terdeteksi - posisikan di tengah bingkai");
-          return;
-        }
-        if (data.face_count > 1) {
-          conditionMetSinceRef.current = 0;
-          setYaw(null);
-          ubahStatus("warn", "Terdeteksi lebih dari 1 wajah");
-          return;
-        }
+        if (!res.success) { reset(); ubahStatus("error", res.message ?? "Gagal menghubungi server, mencoba lagi..."); return; }
+        if (!data?.face_detected) { reset(); ubahStatus("warn", "Wajah belum terlihat - masuk ke lingkaran"); return; }
+        if (data.face_count > 1) { reset(); ubahStatus("warn", "Hanya satu wajah dalam lingkaran"); return; }
 
-        const yawNow = data.yaw ?? 0;
-        setYaw(yawNow);
+        const yaw = data.yaw ?? 0;
         const faceSize = data.face_size ?? 0;
         const blur = data.blur;
+        const cx = data.cx as number | undefined;
+        const cy = data.cy as number | undefined;
+        const lebar = data.w as number | undefined;
 
-        let angleOk = false;
-        if (nextStep.angle === "front" && Math.abs(yawNow) <= YAW_TARGET) angleOk = true;
-        if (nextStep.angle === "left" && yawNow <= -YAW_TARGET) angleOk = true;
-        if (nextStep.angle === "right" && yawNow >= YAW_TARGET) angleOk = true;
+        let petunjuk = "";
+        if (faceSize < UKURAN_MIN_PX || (lebar !== undefined && lebar < LEBAR_MIN)) petunjuk = "Dekatkan wajah";
+        else if (lebar !== undefined && lebar > LEBAR_MAKS) petunjuk = "Mundur sedikit";
+        else if (cx !== undefined && Math.abs(cx - 0.5) > PUSAT_X_TOL) petunjuk = "Pusatkan wajah di dalam lingkaran";
+        else if (cy !== undefined && cy < PUSAT_Y_TARGET - PUSAT_Y_TOL) petunjuk = "Turunkan sedikit";
+        else if (cy !== undefined && cy > PUSAT_Y_TARGET + PUSAT_Y_TOL) petunjuk = "Naikkan sedikit";
+        else if (Math.abs(yaw) > YAW_MAKS) petunjuk = "Hadap lurus ke kamera";
+        else if (blur !== null && blur !== undefined && blur < BLUR_MIN) petunjuk = "Diam sebentar";
 
-        const sizeOk = faceSize >= 120;
-        const blurOk = blur === null || blur === undefined || blur >= 30;
+        if (petunjuk) { reset(); ubahStatus("warn", petunjuk); return; }
 
-        if (angleOk && sizeOk && blurOk) {
-          ubahStatus("ok", "Tahan posisi...");
-          if (conditionMetSinceRef.current === 0) conditionMetSinceRef.current = Date.now();
-          if (Date.now() - conditionMetSinceRef.current >= HOLD_MS) {
-            conditionMetSinceRef.current = 0;
-            lastCaptureTimeRef.current = Date.now();
-            await submitSample(nextStep.angle, frame);
-          }
-        } else {
+        ubahStatus("ok", "Tahan posisi...");
+        if (conditionMetSinceRef.current === 0) conditionMetSinceRef.current = Date.now();
+        const lama = Date.now() - conditionMetSinceRef.current;
+        setIsiHold(Math.min(1, lama / HOLD_MS));
+        if (lama >= HOLD_MS) {
           conditionMetSinceRef.current = 0;
-          const hints: string[] = [];
-          if (!angleOk) hints.push(nextStep.instruction);
-          if (!sizeOk) hints.push("Dekatkan wajah");
-          if (!blurOk) hints.push("Diam sebentar");
-          ubahStatus("warn", hints.join(" • "));
+          lastCaptureTimeRef.current = Date.now();
+          await submitSample(frame);
+          setIsiHold(0);
         }
       } finally {
         busyRef.current = false;
       }
     }, ANALYZE_INTERVAL_MS);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [cameraActive, nextStep, complete, captureFrame, submitSample, ubahStatus]);
+  }, [cameraActive, masihAda, complete, captureFrame, submitSample, ubahStatus]);
 
   if (loading) {
     return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
@@ -337,40 +298,31 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
 
   const childLabel = children.find((c) => c.id === activeChildId)?.nama ?? "anak Anda";
   const subjek = isChild ? childLabel : "Anda";
-  const sebagian = !complete && doneAngles.size > 0;
+  const sebagian = !complete && terkumpul > 0;
 
   // ============================ TAHAP 2 - PINDAI ============================
   if (cameraActive || starting) {
-    const langkahKe = nextStep ? STEPS.findIndex((s) => s.angle === nextStep.angle) : STEPS.length - 1;
-    const warna = WARNA_CINCIN[status.kind];
-    let meter = 0;
-    if (nextStep && yaw !== null) {
-      if (nextStep.angle === "left") meter = Math.max(0, Math.min(1, -yaw / YAW_TARGET));
-      if (nextStep.angle === "right") meter = Math.max(0, Math.min(1, yaw / YAW_TARGET));
-    }
-    const arahTranslasi = nudge.interpolate({ inputRange: [0, 1], outputRange: [0, nextStep?.arah === "kiri" ? -8 : 8] });
-    const arahOpacity = nudge.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
+    const warna = WARNA[status.kind];
     const { w, h } = ukuranKamera;
-    const g = geometriOval(w, h);
+    const cx = w / 2;
+    const cy = h * 0.46;
+    const r = Math.max(10, Math.min(w, h) * 0.36);
+    const progres = Math.min(1, (terkumpul + (masihAda ? isiHold : 0)) / TOTAL_FOTO);
+    const terisi = Math.round(progres * TIK);
 
     return (
       <View className="flex-1 bg-background" style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 12 }}>
-        {/* Indikator langkah + tombol batal */}
-        <View className="flex-row items-start" style={{ gap: 12 }}>
-          <View className="flex-1 flex-row" style={{ gap: 8 }}>
-            {STEPS.map((s, i) => (
-              <View key={s.angle} className="flex-1">
-                <View className={`h-1.5 rounded-full ${doneAngles.has(s.angle) ? "bg-green-500" : i === langkahKe ? "bg-primary" : "bg-muted"}`} />
-                <Text className={`mt-1 text-[10px] text-center ${i === langkahKe ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
-          <Pressable onPress={stopCamera} accessibilityLabel="Batal" className="p-1.5 rounded-full bg-muted" style={{ marginTop: -4 }}>
+        <View className="flex-row items-center" style={{ gap: 12 }}>
+          <Text className="flex-1 text-sm text-foreground">
+            <Text className="font-bold">Foto {Math.min(terkumpul + 1, TOTAL_FOTO)} dari {TOTAL_FOTO}</Text>
+            <Text className="text-muted-foreground"> · taruh wajah di dalam lingkaran</Text>
+          </Text>
+          <Pressable onPress={stopCamera} accessibilityLabel="Batal" className="p-1.5 rounded-full bg-muted">
             <X size={16} color={colors.mutedForeground} />
           </Pressable>
         </View>
 
-        {/* Kamera + panduan oval - mengisi seluruh sisa tinggi layar */}
+        {/* Kamera + lingkaran - mengisi seluruh sisa tinggi layar */}
         <View
           className="flex-1 w-full self-center rounded-3xl overflow-hidden bg-black"
           style={{ maxWidth: 384 }}
@@ -379,38 +331,26 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
             setUkuranKamera((p) => (Math.round(p.w) === Math.round(width) && Math.round(p.h) === Math.round(height) ? p : { w: width, h: height }));
           }}
         >
-          {/* animateShutter=false - akar masalah layar "kedip-kedip": expo-camera
-              menyalakan animasi kilat tiap takePictureAsync() (default true) dan
-              captureFrame() dipanggil berulang selama auto-scan. */}
+          {/* animateShutter=false - akar masalah layar "kedip-kedip": expo-camera menyalakan animasi kilat tiap takePictureAsync(). */}
           {cameraActive && <CameraView ref={cameraRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} facing="front" animateShutter={false} />}
           {w > 0 && (
             <Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ position: "absolute", top: 0, left: 0 }} pointerEvents="none">
               <Defs>
-                <Mask id="fe-oval-mask">
+                <Mask id="fe-lingkar-mask">
                   <Rect width={w} height={h} fill="white" />
-                  <Ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill="black" />
+                  <SvgCircle cx={cx} cy={cy} r={r} fill="black" />
                 </Mask>
               </Defs>
-              <Rect width={w} height={h} fill="rgba(0,0,0,0.5)" mask="url(#fe-oval-mask)" />
-              <Ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill="none" stroke={warna} strokeWidth="4" />
-              <G fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                <Path d={`M ${g.pad} ${g.pad + g.panjang} V ${g.pad} H ${g.pad + g.panjang}`} />
-                <Path d={`M ${w - g.pad - g.panjang} ${g.pad} H ${w - g.pad} V ${g.pad + g.panjang}`} />
-                <Path d={`M ${g.pad} ${h - g.pad - g.panjang} V ${h - g.pad} H ${g.pad + g.panjang}`} />
-                <Path d={`M ${w - g.pad - g.panjang} ${h - g.pad} H ${w - g.pad} V ${h - g.pad - g.panjang}`} />
-              </G>
+              <Rect width={w} height={h} fill="rgba(0,0,0,0.55)" mask="url(#fe-lingkar-mask)" />
+              <SvgCircle cx={cx} cy={cy} r={r} fill="none" stroke={warna} strokeWidth="3" />
+              {Array.from({ length: TIK }, (_, i) => {
+                const a = (i / TIK) * Math.PI * 2 - Math.PI / 2;
+                return (
+                  <Line key={i} x1={cx + Math.cos(a) * (r + 8)} y1={cy + Math.sin(a) * (r + 8)} x2={cx + Math.cos(a) * (r + 20)} y2={cy + Math.sin(a) * (r + 20)}
+                    stroke={i < terisi ? "#22c55e" : "rgba(255,255,255,0.35)"} strokeWidth="3" strokeLinecap="round" />
+                );
+              })}
             </Svg>
-          )}
-
-          {nextStep?.arah === "kanan" && (
-            <Animated.View pointerEvents="none" style={{ position: "absolute", right: 12, top: "50%", marginTop: -17, opacity: arahOpacity, transform: [{ translateX: arahTranslasi }] }}>
-              <ArrowRight size={34} color="#ffffff" strokeWidth={3} />
-            </Animated.View>
-          )}
-          {nextStep?.arah === "kiri" && (
-            <Animated.View pointerEvents="none" style={{ position: "absolute", left: 12, top: "50%", marginTop: -17, opacity: arahOpacity, transform: [{ translateX: arahTranslasi }] }}>
-              <ArrowLeft size={34} color="#ffffff" strokeWidth={3} />
-            </Animated.View>
           )}
 
           {(capturing || !cameraActive) && (
@@ -421,24 +361,13 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
           )}
         </View>
 
-        {/* Instruksi + status (ringkas) */}
+        {/* Petunjuk satu kalimat */}
         <View className="w-full self-center items-center" style={{ maxWidth: 384, gap: 8 }}>
-          {nextStep && (
-            <Text className="text-sm text-foreground text-center">
-              <Text className="font-bold">{nextStep.label}</Text>
-              <Text className="text-muted-foreground"> · {nextStep.instruction}</Text>
-            </Text>
-          )}
-          {nextStep && nextStep.arah !== "depan" && (
-            <View className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-              <View className="h-full bg-primary rounded-full" style={{ width: `${Math.round(meter * 100)}%` }} />
-            </View>
-          )}
           <View className={`max-w-full px-3.5 py-1.5 rounded-full flex-row items-center ${CHIP[status.kind].box}`} style={{ gap: 6 }}>
             {status.kind === "ok" || status.kind === "busy"
               ? <CheckCircle2 size={14} color="#16a34a" />
               : status.kind === "idle" ? <ScanFace size={14} color={colors.mutedForeground} /> : <AlertCircle size={14} color={status.kind === "error" ? "#dc2626" : "#d97706"} />}
-            <Text numberOfLines={1} className={`text-xs font-medium shrink ${CHIP[status.kind].txt}`}>{cameraActive ? status.text : "Menyiapkan kamera..."}</Text>
+            <Text numberOfLines={1} className={`text-sm font-medium shrink ${CHIP[status.kind].txt}`}>{cameraActive ? status.text : "Menyiapkan kamera..."}</Text>
           </View>
         </View>
       </View>
@@ -492,17 +421,9 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
               {complete
                 ? `Wajah ${subjek} sudah bisa dikenali presensi otomatis.`
                 : sebagian
-                  ? `Baru ${doneAngles.size} dari 3 sudut untuk ${subjek}.`
-                  : `Daftarkan wajah ${subjek} dari 3 sudut agar bisa dikenali presensi otomatis.`}
+                  ? `Baru ${terkumpul} dari ${TOTAL_FOTO} foto untuk ${subjek}.`
+                  : `Cukup taruh wajah ${subjek} di dalam lingkaran, foto diambil otomatis.`}
             </Text>
-          </View>
-          <View className="flex-row" style={{ gap: 20 }}>
-            {STEPS.map((s) => (
-              <View key={s.angle} className="items-center" style={{ gap: 4 }}>
-                {doneAngles.has(s.angle) ? <CheckCircle2 size={20} color="#22c55e" /> : <Circle size={20} color={colors.mutedForeground} />}
-                <Text className={`text-[11px] ${doneAngles.has(s.angle) ? "text-foreground" : "text-muted-foreground"}`}>{s.label.replace("Hadap ", "")}</Text>
-              </View>
-            ))}
           </View>
         </View>
       </Card>
