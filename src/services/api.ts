@@ -358,10 +358,6 @@ export const api = {
   myChildren: () => authedFetch("/api/students/my-children"),
   students: () => authedFetch("/api/students"),
   employees: () => authedFetch("/api/employees"),
-  psbList: (status?: "menunggu" | "diterima" | "ditolak" | "semua") => authedFetch(`/api/psb${status ? `?status=${status}` : ""}`),
-  psbKelas: () => authedFetch("/api/psb/kelas"),
-  psbKeputusan: (hubId: number, body: { keputusan: "terima" | "tolak"; nis?: string; kelasSourceId?: number; catatan?: string }) =>
-    authedFetch(`/api/psb/${hubId}/keputusan`, { method: "POST", body: JSON.stringify(body) }),
   // anak=true -> pakai token akun Orang Tua tertaut (notifikasi sisi anak, digabung ke daftar/lencana notifikasi staf).
   notifications: (anak = false) => authedFetch("/api/notifications", {}, FETCH_TIMEOUT_MS, anak),
   notificationsUnreadCount: (anak = false) => authedFetch("/api/notifications/unread-count", {}, FETCH_TIMEOUT_MS, anak),
