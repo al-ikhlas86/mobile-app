@@ -6,9 +6,9 @@
 //   2. PINDAI  - lingkaran + cincin progres + petunjuk satu kalimat
 //   3. BERHASIL - layar sukses
 //
-// Aturan KUALITAS sama dgn server/kiosk/web: |yaw| <= 12, lebar wajah >= 120 px, ketajaman >= 30. Letak/ukuran terhadap lingkaran memakai
-// cx, cy, w dari /analyze. Petunjuk arah geser horizontal sengaja netral ("Pusatkan wajah"): arah cermin hasil foto kamera depan
-// bergantung perangkat dan belum diuji di HP nyata.
+// Penilaian posisi: utils/faceGeometry.ts (salinan identik dgn webview): koordinat wajah dari server dipetakan ke tampilan sebenarnya, pose 3D InsightFace
+// untuk hadap/dongak/miring, penahan yang tidak buyar karena satu frame buruk. Petunjuk geser horizontal sengaja netral ("Pusatkan wajah"): arah cermin hasil
+// foto kamera depan bergantung perangkat dan belum diuji di HP nyata.
 // ============================================================
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ActivityIndicator, Animated, Vibration, Pressable } from "react-native";
@@ -22,6 +22,7 @@ import { ChildSwitcher, type ChildOption } from "../ChildSwitcher";
 import { api } from "../../services/api";
 import { pilihAnak, useAnakTerpilih } from "../../services/anakTerpilihService";
 import { useThemeColors } from "../../context/ThemeContext";
+import { nilaiPosisi, PenahanPosisi } from "../../utils/faceGeometry";
 
 interface Props {
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -29,17 +30,10 @@ interface Props {
 }
 
 const TOTAL_FOTO = 3;
-const ANALYZE_INTERVAL_MS = 600; // lebih longgar dari web (300ms): takePictureAsync jauh lebih berat drpd snapshot canvas
+const ANALYZE_INTERVAL_MS = 500; // takePictureAsync jauh lebih berat daripada snapshot canvas web; putaran berikut menunggu yang sebelumnya selesai
 const COOLDOWN_MS = 900;
 const HOLD_MS = 700;
-const YAW_MAKS = 12;
-const UKURAN_MIN_PX = 120;
-const BLUR_MIN = 30;
-const PUSAT_X_TOL = 0.13;
-const PUSAT_Y_TARGET = 0.46;
-const PUSAT_Y_TOL = 0.15;
-const LEBAR_MIN = 0.2;
-const LEBAR_MAKS = 0.52;
+const LEBAR_FRAME = 640;       // frame analisis/foto: cukup untuk deteksi 640 px server dan lebih ringan daripada 800
 const TIK = 60;
 
 type StatusKind = "idle" | "warn" | "ok" | "busy" | "error";
@@ -82,11 +76,14 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
 
   const cameraRef = useRef<CameraView>(null);
   const busyRef = useRef(false);
-  const conditionMetSinceRef = useRef(0);
+  const frameUkuranRef = useRef({ w: 0, h: 0 });
+  const penahanRef = useRef(new PenahanPosisi(HOLD_MS));
   const lastCaptureTimeRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const terkumpulRef = useRef(0);
   terkumpulRef.current = terkumpul;
+  const kameraUkuranRef = useRef({ w: 0, h: 0 });
+  kameraUkuranRef.current = ukuranKamera;
 
   const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -177,7 +174,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   function stopCamera() {
     setCameraActive(false);
     setStarting(false);
-    conditionMetSinceRef.current = 0;
+    penahanRef.current.reset();
     setIsiHold(0);
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
   }
@@ -191,9 +188,10 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
       if (!photo?.uri) return null;
       const manipulated = await ImageManipulator.manipulateAsync(
         photo.uri,
-        [{ resize: { width: 800 } }],
+        [{ resize: { width: LEBAR_FRAME } }],
         { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       );
+      frameUkuranRef.current = { w: manipulated.width, h: manipulated.height };
       return manipulated.base64 ? `data:image/jpeg;base64,${manipulated.base64}` : null;
     } catch {
       return null;
@@ -241,7 +239,7 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
   // Polling otomatis - logika sama dgn versi web (lihat komentar di sana).
   useEffect(() => {
     if (!cameraActive || !masihAda || complete) return;
-    const reset = () => { conditionMetSinceRef.current = 0; setIsiHold(0); };
+    const reset = () => { penahanRef.current.reset(); setIsiHold(0); };
     intervalRef.current = setInterval(async () => {
       if (busyRef.current) return;
       const now = Date.now();
@@ -254,33 +252,18 @@ export function FaceEnrollmentScreen({ onNavigate: _onNavigate, target = "self" 
         const data = res.data;
 
         if (!res.success) { reset(); ubahStatus("error", res.message ?? "Gagal menghubungi server, mencoba lagi..."); return; }
-        if (!data?.face_detected) { reset(); ubahStatus("warn", "Wajah belum terlihat - masuk ke lingkaran"); return; }
-        if (data.face_count > 1) { reset(); ubahStatus("warn", "Hanya satu wajah dalam lingkaran"); return; }
+        if (!data?.face_detected) { const r = penahanRef.current.catat(false, Date.now()); setIsiHold(r.isi); ubahStatus("warn", "Wajah belum terlihat - masuk ke lingkaran"); return; }
+        if (data.face_count > 1) { const r = penahanRef.current.catat(false, Date.now()); setIsiHold(r.isi); ubahStatus("warn", "Hanya satu wajah dalam lingkaran"); return; }
 
-        const yaw = data.yaw ?? 0;
-        const faceSize = data.face_size ?? 0;
-        const blur = data.blur;
-        const cx = data.cx as number | undefined;
-        const cy = data.cy as number | undefined;
-        const lebar = data.w as number | undefined;
-
-        let petunjuk = "";
-        if (faceSize < UKURAN_MIN_PX || (lebar !== undefined && lebar < LEBAR_MIN)) petunjuk = "Dekatkan wajah";
-        else if (lebar !== undefined && lebar > LEBAR_MAKS) petunjuk = "Mundur sedikit";
-        else if (cx !== undefined && Math.abs(cx - 0.5) > PUSAT_X_TOL) petunjuk = "Pusatkan wajah di dalam lingkaran";
-        else if (cy !== undefined && cy < PUSAT_Y_TARGET - PUSAT_Y_TOL) petunjuk = "Turunkan sedikit";
-        else if (cy !== undefined && cy > PUSAT_Y_TARGET + PUSAT_Y_TOL) petunjuk = "Naikkan sedikit";
-        else if (Math.abs(yaw) > YAW_MAKS) petunjuk = "Hadap lurus ke kamera";
-        else if (blur !== null && blur !== undefined && blur < BLUR_MIN) petunjuk = "Diam sebentar";
-
-        if (petunjuk) { reset(); ubahStatus("warn", petunjuk); return; }
+        // Letak di lingkaran dinilai di koordinat TAMPILAN (pratinjau memotong frame object-cover). Cermin tidak memengaruhi besar simpangan.
+        const nilai = nilaiPosisi(data, frameUkuranRef.current, kameraUkuranRef.current, { cermin: false, arahHorizontal: false, potong: true });
+        const r = penahanRef.current.catat(nilai.petunjuk === null, Date.now());
+        setIsiHold(r.isi);
+        if (nilai.petunjuk) { ubahStatus("warn", nilai.petunjuk); return; }
 
         ubahStatus("ok", "Tahan posisi...");
-        if (conditionMetSinceRef.current === 0) conditionMetSinceRef.current = Date.now();
-        const lama = Date.now() - conditionMetSinceRef.current;
-        setIsiHold(Math.min(1, lama / HOLD_MS));
-        if (lama >= HOLD_MS) {
-          conditionMetSinceRef.current = 0;
+        if (r.siap) {
+          penahanRef.current.reset();
           lastCaptureTimeRef.current = Date.now();
           await submitSample(frame);
           setIsiHold(0);

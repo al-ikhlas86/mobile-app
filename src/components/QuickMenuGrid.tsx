@@ -70,11 +70,15 @@ export const MENU_BG_COLORS: Record<string, string> = {
 };
 
 // Tombol menu BESAR gaya referensi (2026-10-04): ubin ikon 72dp + label di bawah, 3 kolom (tiap tombol = 1/3 lebar baris).
+// Tiap menu berupa kartu berbatas + bayangan tipis (2026-11-27): sebelumnya ubin menyatu dengan latar halaman. Sama dengan QuickMenuGrid web.
+const KARTU_MENU = { paddingVertical: 10, paddingHorizontal: 2, shadowColor: "#122518", shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 } as const;
+
 export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
   const iconSource = iconSourceUntukLabel(item.label);
   const ikonCadangan = React.isValidElement(item.icon) ? React.cloneElement(item.icon as React.ReactElement<{ size?: number }>, { size: 30 }) : item.icon;
   return (
-    <Pressable onPress={item.onPress} className="items-center active:opacity-70" style={{ width: "33.3333%", paddingVertical: 6, paddingHorizontal: 2 }}>
+    <Pressable onPress={item.onPress} className="active:opacity-70" style={{ width: "33.3333%", padding: 4 }}>
+     <View className="items-center rounded-2xl border border-border bg-card" style={KARTU_MENU}>
       <View className="relative">
         {iconSource ? (
           <View className="w-[72px] h-[72px] rounded-2xl items-center justify-center bg-muted">
@@ -92,6 +96,7 @@ export function QuickMenuButton({ item }: { item: QuickMenuItem }) {
         )}
       </View>
       <Text numberOfLines={2} className="mt-1.5 text-center text-[11.5px] font-medium text-foreground" style={{ width: "100%" }}>{item.label}</Text>
+     </View>
     </Pressable>
   );
 }
@@ -105,11 +110,13 @@ export function QuickMenuGrid({ items, onSeeAll }: { items: QuickMenuItem[]; onS
       {preview.map((item, idx) => (
         <QuickMenuButton key={idx} item={item} />
       ))}
-      <Pressable onPress={onSeeAll} className="items-center active:opacity-70" style={{ width: "33.3333%", paddingVertical: 6, paddingHorizontal: 2 }}>
-        <View className="w-[72px] h-[72px] rounded-2xl items-center justify-center bg-secondary/60 border border-dashed border-primary/40">
+      <Pressable onPress={onSeeAll} className="active:opacity-70" style={{ width: "33.3333%", padding: 4 }}>
+       <View className="items-center rounded-2xl border border-border bg-card" style={KARTU_MENU}>
+        <View className="w-[72px] h-[72px] rounded-2xl items-center justify-center bg-secondary border border-dashed border-primary/40">
           <Grid3x3 size={30} color={colors.primary} />
         </View>
         <Text className="mt-1.5 text-center text-[11.5px] font-medium text-foreground">Semua Menu</Text>
+       </View>
       </Pressable>
     </View>
   );
