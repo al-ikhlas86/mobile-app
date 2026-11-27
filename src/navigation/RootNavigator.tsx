@@ -90,7 +90,7 @@ const Stack = createNativeStackNavigator();
 // nav lagi (dihapus dari MainTabs, akses lewat bel di header Beranda /
 // tap notifikasi push saja), sekarang Stack.Screen level-atas biasa spt
 // "ubah-password" dkk.
-const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "chatbot", "profil"]);
+const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "profil"]);
 
 function navigateTo(navigation: { navigate: (name: string, params?: unknown) => void } | null | undefined, screen: string, params?: Record<string, unknown>) {
   if (!navigation) return;

@@ -2,14 +2,13 @@ import React from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Home, FileText, Clock, User, Sun, Moon, MessageCircle } from "lucide-react-native";
+import { Home, FileText, Clock, User, Sun, Moon } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import { DashboardScreen } from "../components/screens/DashboardScreen";
 import { BeritaAcaraScreen } from "../components/screens/BeritaAcaraScreen";
 import { PresensiScreen } from "../components/screens/PresensiScreen";
 import { PresensiAnak } from "../components/screens/PresensiAnak";
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
-import { ChatbotScreen } from "../components/screens/ChatbotScreen";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
 import { ProfilScreen } from "../components/screens/ProfilScreen";
 import { getActiveSession, type RoleName } from "../services/authService";
@@ -150,12 +149,6 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
         options={{ title: "Presensi", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={Clock} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <PresensiTab role={role} onNavigate={onNavigateStack} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="chatbot"
-        options={{ title: "Chatbot", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={MessageCircle} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
-      >
-        {() => <ChatbotScreen />}
       </Tab.Screen>
       <Tab.Screen
         name="profil"

@@ -333,32 +333,6 @@ export async function refreshSessionFromServer() {
 
 export const api = {
   me: () => authedFetch("/api/auth/me"),
-  chatbotStatus: () => authedFetch("/api/chatbot/status"),
-  chatbotMessages: () => authedFetch("/api/chatbot/messages"),
-  chatbotResetMessages: () => authedFetch("/api/chatbot/messages", { method: "DELETE" }),
-  // Timeout 65 detik (port 1:1 dari webview) - model AI gratisan kadang
-  // butuh lebih lama dari default 15 detik, lihat catatan lengkap di
-  // services/api.ts webview + backend/src/services/chatbotAi.js.
-  chatbotSend: (message: string) => authedFetch("/api/chatbot/messages", { method: "POST", body: JSON.stringify({ message }) }, 65000),
-  chatbotTraining: () => authedFetch("/api/chatbot/training"),
-  // catalogId (2026-09-24, Sistem Katalog) - HANYA berpengaruh utk Admin IT
-  // (opsional, kosong = berlaku semua katalog). Pelatih biasa dikunci server
-  // ke katalognya sendiri, argumen ini diabaikan backend kalau bukan admin_it.
-  chatbotAddTraining: (content: string, catalogId?: number | null) =>
-    authedFetch("/api/chatbot/training", { method: "POST", body: JSON.stringify({ content, ...(catalogId !== undefined ? { catalog_id: catalogId } : {}) }) }),
-  chatbotEditTraining: (id: number, content: string) => authedFetch(`/api/chatbot/training/${id}`, { method: "PUT", body: JSON.stringify({ content }) }),
-  chatbotDeleteTraining: (id: number) => authedFetch(`/api/chatbot/training/${id}`, { method: "DELETE" }),
-  // Kelola Pelatih (2026-09-21) - sebelumnya cuma ada di webview, sekarang
-  // di-port ke sini juga supaya Admin IT bisa tambah/hapus Pelatih dari HP.
-  // Cari Guru/Pegawai utk ditambah jadi Pelatih - port 1:1 dari webview,
-  // lihat catatan lengkap di sana + backend routes/chatbot.js.
-  chatbotSearchPegawai: (q: string) => authedFetch(`/api/chatbot/pegawai?q=${encodeURIComponent(q)}`),
-  chatbotTrainers: () => authedFetch("/api/chatbot/trainers"),
-  chatbotAddTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "POST" }),
-  chatbotRemoveTrainer: (userId: number) => authedFetch(`/api/chatbot/trainers/${userId}`, { method: "DELETE" }),
-  chatbotGetSettings: () => authedFetch("/api/chatbot/settings"),
-  chatbotSaveSettings: (data: { baseUrl: string; apiKey?: string; model: string }) => authedFetch("/api/chatbot/settings", { method: "PUT", body: JSON.stringify(data) }),
-  chatbotListModels: (data: { baseUrl?: string; apiKey?: string }) => authedFetch("/api/chatbot/settings/models", { method: "POST", body: JSON.stringify(data) }),
   tahunAjaranPilihan: () => authedFetch("/api/tahun-ajaran/pilihan"),
   uploadAvatar: (uri: string, mimeType: string) => {
     const form = new FormData();

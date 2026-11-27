@@ -28,7 +28,7 @@ const BADGE: Record<Tagihan["status"], { teks: string; box: string; txt: string 
 // Rincian Biaya orang tua (2026-10-01) - port dari webview (DetailPembayaran.tsx).
 // HANYA membaca salinan data yang dikirim aplikasi Keuangan sekolah (sumber
 // kebenaran ada di sana); "diperbarui" selalu tampil karena PC Keuangan bisa
-// sempat offline. Nominal tidak pernah masuk ke chatbot AI.
+// sempat offline. Nominal tidak pernah dikirim ke layanan pihak ketiga.
 export function DetailPembayaran() {
   const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
