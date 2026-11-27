@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Mail, Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
+import { QrCode, Mail, Users, Shield, HardDrive, FileText, CreditCard, Clock, RefreshCw, GraduationCap, UserCog, MessageCircle, Megaphone, Ban, Activity, History, BarChart3, MessageSquareWarning, MapPin, Users2, Server, Award, Globe, Download, KeyRound, ShieldCheck } from "lucide-react-native";
 import { SummaryCard } from "../../SummaryCard";
 import { QuickMenuGrid, type MenuCategory } from "../../QuickMenuGrid";
 import { SemuaMenuView } from "../../SemuaMenuView";
@@ -73,6 +73,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
       { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
       { label: "Pengaturan Lokasi Presensi", icon: <MapPin size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("pengaturan-lokasi") },
       { label: "Jam Keterlambatan", icon: <Clock size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("pengaturan-jam-keterlambatan") },
+      { label: "Titik Scan", icon: <QrCode size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("titik-scan") },
     ] },
     { title: "Keuangan", items: [
       { label: "Keuangan", icon: <CreditCard size={20} color="#15803d" />, colorScheme: "green", onPress: () => onNavigate("keuangan-admin") },

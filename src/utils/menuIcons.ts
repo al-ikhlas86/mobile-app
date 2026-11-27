@@ -17,6 +17,7 @@ const PETA: Record<string, string> = {
   "Performa Individu": "performa-individu",
   "Jam Keterlambatan": "jam-keterlambatan",
   "Lokasi Presensi": "lokasi-presensi",
+  "Titik Scan": "lokasi-presensi",
   "Pengaturan Lokasi Presensi": "lokasi-presensi",
   "Aduan Masuk": "aduan-masuk",
   "Kalender Kegiatan": "kalender-kegiatan",

@@ -10,6 +10,8 @@ import { PresensiScreen } from "../components/screens/PresensiScreen";
 import { PresensiAnak } from "../components/screens/PresensiAnak";
 import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PlaceholderScreen } from "../components/screens/PlaceholderScreen";
+import { ScanScreen } from "../components/screens/ScanScreen";
+import { ScanTabBar } from "./ScanTabBar";
 import { ProfilScreen } from "../components/screens/ProfilScreen";
 import { getActiveSession, type RoleName } from "../services/authService";
 
@@ -112,6 +114,7 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
   return (
     <Tab.Navigator
       backBehavior="history"
+      tabBar={(p) => <ScanTabBar {...p} onOpenSwitcher={onOpenSwitcher} />}
       screenOptions={{
         headerShown: true,
         headerStyle: { backgroundColor: bg },
@@ -143,6 +146,12 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
         options={{ title: "Berita", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={FileText} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <BeritaAcaraScreen onNavigate={onNavigateStack} />}
+      </Tab.Screen>
+      <Tab.Screen
+        name="scan"
+        options={{ title: "Scan" }}
+      >
+        {() => <ScanScreen />}
       </Tab.Screen>
       <Tab.Screen
         name="presensi"

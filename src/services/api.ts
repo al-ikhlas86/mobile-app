@@ -331,8 +331,23 @@ export async function refreshSessionFromServer() {
   }, accountId);
 }
 
+// Lokasi GPS yang menyertai scan (tiga lapis anti-curang diputuskan server).
+export interface ScanLokasi { lat: number; lng: number; accuracy?: number; location_timestamp?: number; is_mocked?: boolean }
+
 export const api = {
   me: () => authedFetch("/api/auth/me"),
+  // Scan universal (2026-11-27): tombol Scan di bottom bar. QR titik (KLS/CHK) + Mode Wajah Siswa (guru); admin kelola titik. Lihat backend routes/scan.js.
+  scanTitik: (payload: string, lok: ScanLokasi) => authedFetch("/api/scan/titik", { method: "POST", body: JSON.stringify({ payload, ...lok }) }, 20000),
+  scanWajahSiswa: (imageBase64: string, mode: "masuk" | "pulang", lok: ScanLokasi) =>
+    authedFetch("/api/scan/wajah-siswa", { method: "POST", body: JSON.stringify({ image_base64: imageBase64, mode, ...lok }) }, 25000),
+  scanRiwayat: () => authedFetch("/api/scan/riwayat"),
+  scanAdminTitik: () => authedFetch("/api/scan-admin/titik"),
+  scanAdminBuat: (data: Record<string, unknown>) => authedFetch("/api/scan-admin/titik", { method: "POST", body: JSON.stringify(data) }),
+  scanAdminUbah: (id: number, data: Record<string, unknown>) => authedFetch(`/api/scan-admin/titik/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  scanAdminHapus: (id: number) => authedFetch(`/api/scan-admin/titik/${id}`, { method: "DELETE" }),
+  scanAdminBuatUlang: (id: number) => authedFetch(`/api/scan-admin/titik/${id}/buat-ulang`, { method: "POST", body: JSON.stringify({}) }),
+  scanAdminQr: (id: number) => authedFetch(`/api/scan-admin/titik/${id}/qr`),
+  scanAdminRekap: (tanggal?: string) => authedFetch(`/api/scan-admin/rekap${tanggal ? `?tanggal=${encodeURIComponent(tanggal)}` : ""}`),
   tahunAjaranPilihan: () => authedFetch("/api/tahun-ajaran/pilihan"),
   uploadAvatar: (uri: string, mimeType: string) => {
     const form = new FormData();

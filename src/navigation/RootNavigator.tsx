@@ -14,6 +14,7 @@ import { PresensiAdminTU } from "../components/screens/PresensiAdminTU";
 import { PersetujuanIzinScreen } from "../components/screens/PersetujuanIzinScreen";
 import { PersetujuanIzinGuruScreen } from "../components/screens/PersetujuanIzinGuruScreen";
 import { PengaturanLokasiScreen } from "../components/screens/PengaturanLokasiScreen";
+import { TitikScanScreen } from "../components/screens/TitikScanScreen";
 import { PengaturanJamKeterlambatanScreen } from "../components/screens/PengaturanJamKeterlambatanScreen";
 import { RingkasanScreen } from "../components/screens/RingkasanScreen";
 import { PerformaCariScreen } from "../components/screens/PerformaCariScreen";
@@ -90,7 +91,7 @@ const Stack = createNativeStackNavigator();
 // nav lagi (dihapus dari MainTabs, akses lewat bel di header Beranda /
 // tap notifikasi push saja), sekarang Stack.Screen level-atas biasa spt
 // "ubah-password" dkk.
-const TAB_SCREENS = new Set(["dashboard", "berita-acara", "presensi", "profil"]);
+const TAB_SCREENS = new Set(["dashboard", "berita-acara", "scan", "presensi", "profil"]);
 
 function navigateTo(navigation: { navigate: (name: string, params?: unknown) => void } | null | undefined, screen: string, params?: Record<string, unknown>) {
   if (!navigation) return;
@@ -520,6 +521,11 @@ export function RootNavigator() {
               name="pengaturan-lokasi"
               options={{ headerShown: true, title: "Pengaturan Lokasi Presensi" }}
               component={PengaturanLokasiScreen}
+            />
+            <Stack.Screen
+              name="titik-scan"
+              options={{ headerShown: true, title: "Titik Scan" }}
+              component={TitikScanScreen}
             />
             <Stack.Screen
               name="pengaturan-jam-keterlambatan"
