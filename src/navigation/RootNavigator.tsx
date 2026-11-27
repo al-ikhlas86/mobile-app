@@ -567,7 +567,7 @@ export function RootNavigator() {
             <Stack.Screen name="blokiran-komentar" options={{ headerShown: true, title: "Pengguna Diblokir" }} component={BlokiranKomentarScreen} />
             <Stack.Screen name="kelola-website" options={{ headerShown: true, title: "Kelola Website" }} component={KelolaWebsiteScreen} />
             <Stack.Screen name="kartu-profil" options={{ headerShown: true, title: "Kartu Profil Website" }} component={KartuProfilScreen} />
-            <Stack.Screen name="berita-acara-admin" options={{ headerShown: true, title: "Kelola Berita Acara" }}>
+            <Stack.Screen name="berita-acara-admin" options={{ headerShown: true, title: "Kelola Berita" }}>
               {({ navigation }) => <BeritaAcaraAdmin role={session.role} onNavigate={(screen, params) => navigateTo(navigation, screen, params)} />}
             </Stack.Screen>
             <Stack.Screen name="berita-acara-viewer" options={{ headerShown: true, title: "Detail Berita" }}>

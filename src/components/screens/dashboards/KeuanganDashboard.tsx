@@ -32,7 +32,9 @@ export function KeuanganDashboard({ onNavigate }: Props) {
       { label: "Riwayat Transaksi", icon: <History size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("placeholder", { title: "Riwayat Transaksi" }) },
     ] },
     { title: "Konten & Komunikasi", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      // Keuangan menulis berita KEUANGAN (info pembayaran, kenaikan, VA, seragam) untuk katalog yang ditautkan; server menjaganya.
+      { label: "Kelola Berita", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara-admin") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },
     { title: "Presensi", items: [

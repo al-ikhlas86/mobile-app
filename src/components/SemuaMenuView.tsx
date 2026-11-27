@@ -89,7 +89,7 @@ export function SemuaMenuView({ categories, onBack, hasBerita = false }: { categ
 
           {hasBerita && (
             <View className="rounded-xl border border-border bg-card p-3 gap-2">
-              <Text className="text-xs font-semibold text-foreground">Berita Acara di Beranda</Text>
+              <Text className="text-xs font-semibold text-foreground">Berita di Beranda</Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-foreground">Berita Terbaru</Text>
                 <Switch value={!draftHideTerbaru} onValueChange={(v) => setDraftHideTerbaru(!v)} trackColor={{ true: colors.primary }} />

@@ -50,7 +50,8 @@ export function PegawaiDashboard({ onNavigate }: Props) {
   // Sistem Katalog) - lihat catatan sama di GuruDashboard.tsx.
   const isTuLike = hasCap("admin_tu") || hasCap("supervisor");
   // Supervisor (capability) juga lolos requireManage di backend routes/beritaAcara.js - lihat GuruDashboard.tsx.
-  const isMediaLike = hasCap("admin_media") || hasCap("supervisor");
+  // Kelola Berita: admin_media (berita acara) dan keuangan/supervisor (berita keuangan); server beritaAcara.js menjaga haknya per kategori dan katalog.
+  const isMediaLike = hasCap("admin_media") || hasCap("supervisor") || hasCap("keuangan");
   // Pengaturan Nilai Raport: backend (routes/raport.js) hanya admin_it/admin_tu - supervisor TIDAK termasuk.
   const isAdminTuCap = hasCap("admin_tu");
   const isKeuangan = hasCap("keuangan");
@@ -149,10 +150,11 @@ export function PegawaiDashboard({ onNavigate }: Props) {
     { title: "Konten & Komunikasi", items: [
       // Kapasitas Admin Media SD/TK (2026-09-04).
       ...(isMediaLike ? [
-        { label: "Kelola Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
-        { label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") },
+        { label: "Kelola Berita", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue" as const, onPress: () => onNavigate("berita-acara-admin") },
         { label: "Pengguna Diblokir", icon: <Ban size={20} color="#dc2626" />, colorScheme: "red" as const, onPress: () => onNavigate("blokiran-komentar") },
       ] : []),
+      // Statistik Konten khusus berita ACARA (Admin Media); Keuangan/Supervisor tidak mengelola berita acara.
+      ...(hasCap("admin_media") ? [{ label: "Statistik Konten", icon: <BarChart3 size={20} color="#7c3aed" />, colorScheme: "purple" as const, onPress: () => onNavigate("statistik-konten") }] : []),
     ] },
     { title: "Keuangan", items: [
       // Kapasitas Keuangan (2026-09-04).
@@ -172,7 +174,7 @@ export function PegawaiDashboard({ onNavigate }: Props) {
       { label: "Tampilan Orang Tua", icon: <Users size={20} color="#0f766e" />, colorScheme: "teal" as const, onPress: () => { const o = getLinkedParentAccount(); if (o) DeviceEventEmitter.emit(GANTI_AKUN_EVENT, o.id); } },
     ] }] : []),
     { title: "Informasi", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
     ] },
     { title: "Administrasi", items: [
       { label: "Slip Gaji", icon: <Award size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("slip-gaji") },

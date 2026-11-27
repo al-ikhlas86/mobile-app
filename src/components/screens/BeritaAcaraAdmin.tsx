@@ -31,17 +31,21 @@ function myAdminMediaCatalogIds(): number[] {
 // dgn perbaikan Keuangan di PresensiAdminTU.tsx.
 function isGlobalBeritaAdmin(): boolean {
   const session = getActiveSession();
-  return session?.role === "Admin IT" || session?.role === "Supervisor" || (session?.capabilities ?? []).includes("supervisor");
+  // Berita ACARA lintas katalog ("Semua Katalog") hanya Admin IT (server beritaAcara.js adalahAdminIt); Supervisor kini hanya berita keuangan.
+  return session?.role === "Admin IT" || (session?.capabilities ?? []).includes("admin_it");
 }
 
 type AdminView = "list" | "form";
 type Status = "draft" | "terkirim" | "disetujui";
+// Dua kategori: acara (kegiatan, Admin Media) dan keuangan (info pembayaran/kenaikan/VA/seragam, Keuangan + Supervisor). Server menjaga haknya per katalog.
+type Kategori = "acara" | "keuangan";
+const NAMA_KATEGORI: Record<Kategori, string> = { acara: "Berita Acara", keuangan: "Berita Keuangan" };
 interface Media { id: number; media_type: "thumbnail" | "activity"; filename: string; url: string; }
 interface LinkItem { id: number; url: string; }
 interface BeritaItem {
   id: number; title: string; category: string | null; description: string | null; author_name: string | null;
   activity_date: string | null; catalog_id: number | null; tampil_di_website?: number | boolean; status: Status; created_by_name: string; created_at: string;
-  approved_at: string | null; media: Media[]; links: LinkItem[];
+  approved_at: string | null; media: Media[]; links: LinkItem[]; kategori?: Kategori; katalog?: Catalog[];
 }
 interface Catalog { id: number; kode: string; nama: string; }
 
@@ -86,13 +90,26 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
   const [formCatalogId, setFormCatalogId] = useState<number | null>(null);
   const [formActivityDate, setFormActivityDate] = useState(getTodayLocal());
   const [formTampilWebsite, setFormTampilWebsite] = useState(true);
+  const [kategori, setKategori] = useState<Kategori>("acara");
+  const [akses, setAkses] = useState<{ acara: boolean; keuangan: boolean } | null>(null);
+  const [formKatalogIds, setFormKatalogIds] = useState<number[]>([]);
+  const [formSemuaKatalog, setFormSemuaKatalog] = useState(false);
   const [formSaving, setFormSaving] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingActivity, setUploadingActivity] = useState(false);
 
   const load = async () => { setLoading(true); const res = await api.beritaAcaraList(); if (res.success) setItems(res.data); setLoading(false); };
-  useEffect(() => { load(); api.beritaAcaraCatalogs().then((res) => { if (res.success) setCatalogs(res.data); }); }, []);
+  useEffect(() => {
+    load();
+    api.beritaAcaraAkses().then((res) => {
+      if (!res.success) return;
+      setAkses(res.data);
+      if (!res.data.acara && res.data.keuangan) setKategori("keuangan"); // hanya boleh menulis berita keuangan
+    });
+  }, []);
+  // Katalog yang boleh dipilih bergantung pada kategori (Admin Media: katalog medianya; Keuangan/Supervisor: katalog keuangannya).
+  useEffect(() => { api.beritaAcaraCatalogs(kategori).then((res) => { if (res.success) setCatalogs(res.data); }); }, [kategori]);
 
   function resetForm() {
     setEditingId(null); setEditingMedia([]); setEditingLinks([]); setNewLinkUrl("");
@@ -105,6 +122,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
     setFormCategory(CATEGORIES[0]);
     setFormCatalogId(isGlobalBeritaAdmin() ? null : (myIds[0] ?? null));
     setFormActivityDate(getTodayLocal()); setFormTampilWebsite(true); setFormMessage("");
+    setFormKatalogIds([]); setFormSemuaKatalog(false);
   }
   function openCreate() { resetForm(); setView("form"); }
   function openEdit(item: BeritaItem) {
@@ -112,13 +130,18 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
     setFormTitle(item.title); setFormDescription(item.description ?? ""); setFormAuthorName(item.author_name ?? "");
     setFormCategory(item.category ?? CATEGORIES[0]); setFormCatalogId(item.catalog_id);
     setFormActivityDate(item.activity_date ?? getTodayLocal()); setFormTampilWebsite(Boolean(item.tampil_di_website));
+    setFormKatalogIds((item.katalog ?? []).map((k) => k.id)); setFormSemuaKatalog(false);
     setFormMessage(""); setView("form");
   }
 
   async function saveOrCreate(): Promise<number | null> {
     if (!formTitle.trim()) { setFormMessage("Isi judul dulu."); return null; }
     setFormSaving(true); setFormMessage("");
-    const payload = { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, catalog_id: formCatalogId, tampil_di_website: formTampilWebsite };
+    if (kategori === "keuangan" && !formSemuaKatalog && formKatalogIds.length === 0) { setFormMessage("Pilih katalog tujuan berita."); setFormSaving(false); return null; }
+    // Berita keuangan: tujuan = satu/beberapa katalog (atau semua yang ditautkan), tidak pernah tampil di website. Berita acara: seperti sebelumnya.
+    const payload = kategori === "keuangan"
+      ? { title: formTitle.trim(), description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, ...(formSemuaKatalog ? { semua_katalog: true } : { catalog_ids: formKatalogIds }), ...(editingId ? {} : { kategori: "keuangan" as const }) }
+      : { title: formTitle.trim(), category: formCategory, description: formDescription, author_name: formAuthorName.trim(), activity_date: formActivityDate, catalog_id: formCatalogId, tampil_di_website: formTampilWebsite, ...(editingId ? {} : { kategori: "acara" as const }) };
     const res = editingId ? await api.beritaAcaraUpdate(editingId, payload) : await api.beritaAcaraCreate(payload);
     setFormSaving(false);
     if (!res.success) { setFormMessage(res.message ?? "Gagal menyimpan."); return null; }
@@ -231,13 +254,15 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
 
   const thumbnail = editingMedia.find((m) => m.media_type === "thumbnail");
   const activityImages = editingMedia.filter((m) => m.media_type === "activity");
-  const filtered = statusFilter === "all" ? items : items.filter((p) => p.status === statusFilter);
+  const deKategori = items.filter((p) => (p.kategori ?? "acara") === kategori);
+  const filtered = statusFilter === "all" ? deKategori : deKategori.filter((p) => p.status === statusFilter);
+  const bisaTulis = akses ? akses[kategori] : true;
 
   if (view === "form") {
     return (
       <KeyboardAwareScrollView className="flex-1 bg-background px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 16 }} bottomOffset={20}>
         <Pressable onPress={() => setView("list")} className="flex-row items-center gap-1.5 -ml-1"><ArrowLeft size={16} color={colors.mutedForeground} /><Text className="text-sm text-muted-foreground">Kembali ke Daftar</Text></Pressable>
-        <Text className="text-lg font-bold text-foreground">{editingId ? "Edit Berita" : "Buat Berita Baru"}</Text>
+        <Text className="text-lg font-bold text-foreground">{editingId ? "Edit" : "Buat"} {NAMA_KATEGORI[kategori]}{editingId ? "" : " Baru"}</Text>
 
         {formMessage ? (
           <View className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-4 py-3 flex-row items-center gap-2">
@@ -270,6 +295,23 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
           <Text className="text-sm font-medium text-foreground">Nama Penulis (opsional)</Text>
           <TextInput value={formAuthorName} onChangeText={setFormAuthorName} placeholder="Kosongkan utk pakai nama akun ini" className="bg-input-background border border-border rounded-xl px-4 py-3 text-foreground" />
         </View>
+        {kategori === "keuangan" ? (
+          <View className="gap-2 border border-border rounded-xl p-4">
+            <Text className="text-sm font-medium text-foreground">Tujuan katalog</Text>
+            <Pressable onPress={() => setFormSemuaKatalog((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: formSemuaKatalog }} className="flex-row items-center gap-2">
+              <CheckCircle size={20} color={formSemuaKatalog ? "#16a34a" : "#9ca3af"} />
+              <Text className="text-sm text-foreground">Semua katalog yang saya kelola ({catalogs.length})</Text>
+            </Pressable>
+            {!formSemuaKatalog ? catalogs.map((c) => (
+              <Pressable key={c.id} onPress={() => setFormKatalogIds((ids) => (ids.includes(c.id) ? ids.filter((x) => x !== c.id) : [...ids, c.id]))} accessibilityRole="checkbox" accessibilityState={{ checked: formKatalogIds.includes(c.id) }} className="flex-row items-center gap-2">
+                <CheckCircle size={20} color={formKatalogIds.includes(c.id) ? "#16a34a" : "#9ca3af"} />
+                <Text className="text-sm text-foreground">{c.nama}</Text>
+              </Pressable>
+            )) : null}
+            {catalogs.length === 0 ? <Text className="text-xs text-muted-foreground">Anda belum ditautkan ke katalog untuk berita keuangan. Hubungi Admin IT.</Text> : null}
+            <Text className="text-xs text-muted-foreground">Berita keuangan hanya dibaca orang di katalog tujuan dan tidak tampil di website yayasan.</Text>
+          </View>
+        ) : (
         <View className="flex-row gap-3">
           <View className="flex-1 gap-1.5"><Text className="text-sm font-medium text-foreground">Kategori</Text><SimplePicker value={formCategory} options={CATEGORY_OPTIONS} onChange={setFormCategory} /></View>
           <View className="flex-1 gap-1.5">
@@ -287,10 +329,12 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
             />
           </View>
         </View>
+        )}
         <View className="gap-1.5">
           <Text className="text-sm font-medium text-foreground">Tanggal Kegiatan (YYYY-MM-DD)</Text>
           <TextInput value={formActivityDate} onChangeText={setFormActivityDate} placeholder="2026-08-21" className="bg-input-background border border-border rounded-xl px-4 py-3 text-foreground" />
         </View>
+        {kategori === "acara" ? (
         <Pressable onPress={() => setFormTampilWebsite((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: formTampilWebsite }} className="flex-row items-start gap-3 border border-border rounded-xl p-4">
           <CheckCircle size={22} color={formTampilWebsite ? "#16a34a" : "#9ca3af"} />
           <View className="flex-1 gap-0.5">
@@ -298,6 +342,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
             <Text className="text-xs text-muted-foreground">Setelah diterbitkan, berita ini ikut tampil di bagian Info Terbaru website (yayasanalikhlas86.sch.id) dan dapat dilihat siapa saja tanpa login. Matikan untuk berita internal, atau yang memuat foto/data siswa.</Text>
           </View>
         </Pressable>
+        ) : null}
 
         <View className="border border-border rounded-xl p-4 gap-3">
           <View className="flex-row items-center gap-1.5"><ImageIcon size={14} color={colors.foreground} /><Text className="text-sm font-semibold text-foreground">Media</Text></View>
@@ -352,9 +397,18 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 + insets.bottom, gap: 12 }}>
       <View className="flex-row items-center justify-between">
-        <Text className="text-base font-bold text-foreground">Kelola Berita Acara</Text>
-        <Pressable onPress={openCreate} className="flex-row items-center gap-1.5 bg-primary px-3 py-2 rounded-xl"><Plus size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">Tambah</Text></Pressable>
+        <Text className="text-base font-bold text-foreground">Kelola Berita</Text>
+        {bisaTulis ? <Pressable onPress={openCreate} className="flex-row items-center gap-1.5 bg-primary px-3 py-2 rounded-xl"><Plus size={15} color={colors.primaryForeground} /><Text className="text-sm font-semibold text-primary-foreground">Tambah</Text></Pressable> : null}
       </View>
+      {akses?.acara && akses?.keuangan ? (
+        <View className="flex-row gap-2" accessibilityRole="tablist">
+          {(["acara", "keuangan"] as const).map((k) => (
+            <Pressable key={k} onPress={() => { setKategori(k); setStatusFilter("all"); }} accessibilityRole="tab" accessibilityState={{ selected: kategori === k }} className={`flex-1 items-center py-2.5 rounded-xl border ${kategori === k ? "bg-primary border-primary" : "bg-card border-border"}`}>
+              <Text className={`text-sm font-semibold ${kategori === k ? "text-primary-foreground" : "text-foreground"}`}>{NAMA_KATEGORI[k]}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : <Text className="text-xs text-muted-foreground">{NAMA_KATEGORI[kategori]}</Text>}
       <View className="flex-row gap-2">
         {(["all", "disetujui", "draft"] as const).map((f) => (
           <Pressable key={f} onPress={() => setStatusFilter(f)} className={`px-3 py-1.5 rounded-full ${statusFilter === f ? "bg-primary" : "bg-secondary"}`}>
@@ -380,6 +434,7 @@ export function BeritaAcaraAdmin({ onNavigate }: { onNavigate: (screen: string, 
                   <View className="flex-row items-center gap-2 mb-1">
                     <StatusBadge status={item.status} />
                     {item.category ? <Text className="text-xs text-muted-foreground">{item.category}</Text> : null}
+                    {item.kategori === "keuangan" && item.katalog ? <Text className="text-xs text-muted-foreground">Untuk: {item.katalog.map((k) => k.kode).join(", ")}</Text> : null}
                   </View>
                   <Text numberOfLines={2} className="font-semibold text-foreground text-sm">{item.title}</Text>
                   <Text className="text-xs text-muted-foreground mt-1">{item.approved_at ? `Terbit: ${formatDate(item.approved_at)}` : `Dibuat: ${formatDate(item.created_at)}`}</Text>

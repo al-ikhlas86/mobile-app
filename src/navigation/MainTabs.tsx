@@ -141,7 +141,7 @@ export function MainTabs({ role, onLogout, onAvatarChanged, onOpenSwitcher, onOp
       </Tab.Screen>
       <Tab.Screen
         name="berita-acara"
-        options={{ title: "Berita Acara", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={FileText} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
+        options={{ title: "Berita", tabBarIcon: ({ color, focused }) => <TabIcon IconCmp={FileText} focused={focused} color={color} activeColor={activeColor} isDark={isDark} /> }}
       >
         {() => <BeritaAcaraScreen onNavigate={onNavigateStack} />}
       </Tab.Screen>

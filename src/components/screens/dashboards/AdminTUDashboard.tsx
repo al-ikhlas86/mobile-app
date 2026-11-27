@@ -48,7 +48,7 @@ export function AdminTUDashboard({ onNavigate }: Props) {
       { label: "Performa Individu", icon: <BarChart3 size={20} color="#0d9488" />, colorScheme: "teal", onPress: () => onNavigate("performa-cari") },
     ] },
     { title: "Konten & Komunikasi", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("berita-acara") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },
   ];

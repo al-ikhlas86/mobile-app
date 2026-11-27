@@ -52,7 +52,7 @@ export function SupervisorDashboard({ onNavigate }: Props) {
       { label: "Pengeluaran", icon: <ArrowDownCircle size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("placeholder", { title: "Pengeluaran" }) },
     ] },
     { title: "Konten & Komunikasi", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
     ] },
     { title: "Presensi", items: [
       { label: "Ringkasan Presensi", icon: <BarChart2 size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("ringkasan") },

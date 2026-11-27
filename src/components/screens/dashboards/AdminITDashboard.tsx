@@ -58,7 +58,7 @@ export function AdminITDashboard({ onNavigate }: Props) {
     ] },
     { title: "Konten & Komunikasi", items: [
       { label: "Buat Pengumuman", icon: <Megaphone size={20} color="#b45309" />, colorScheme: "orange", onPress: () => onNavigate("buat-pengumuman") },
-      { label: "Berita Acara", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#1d4ed8" />, colorScheme: "blue", onPress: () => onNavigate("berita-acara") },
       { label: "Kelola Website", icon: <Globe size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("kelola-website") },
       { label: "Aduan Masuk", icon: <MessageSquareWarning size={20} color="#dc2626" />, colorScheme: "red", onPress: () => onNavigate("aduan-masuk") },
     ] },

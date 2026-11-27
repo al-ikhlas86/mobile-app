@@ -16,7 +16,7 @@ const ROLES: { name: string; desc: string; auto?: string }[] = [
   // jg wajib didaftarkan eksplisit spt Admin TU/Media, katalog baru TIDAK
   // otomatis ke-cover sampai ditambahkan manual ke definisinya).
   { name: "Admin TU", desc: "Kelola administrasi & presensi katalog (unit) yang ditentukan lewat Tambah Role." },
-  { name: "Admin Media", desc: "Kelola Berita Acara & media katalog (unit) yang ditentukan lewat Tambah Role." },
+  { name: "Admin Media", desc: "Kelola Berita Acara (kegiatan) & media katalog (unit) yang ditentukan lewat Tambah Role." },
   { name: "Keuangan", desc: "Akses data pembayaran & tagihan katalog (unit) yang ditentukan lewat Tambah Role - bisa mengapit >1 katalog sekaligus dalam 1 role." },
   { name: "Supervisor", desc: "Memantau data katalog (unit) yang ditentukan lewat Tambah Role - bisa mengapit >1 katalog sekaligus dalam 1 role." },
   { name: "Guru", desc: "Akses presensi & data mengajar sendiri. Guru yang berstatus wali kelas otomatis mendapat menu tambahan (data siswa kelasnya, persetujuan izin, dst).", auto: "Otomatis dari jabatan pegawai (guru_kelas/guru_bidang) di Hub API - status wali kelas sendiri BUKAN role terpisah, tambahan otomatis dari penetapan Wali Kelas di Data Master" },

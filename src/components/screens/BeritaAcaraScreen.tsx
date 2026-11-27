@@ -14,6 +14,8 @@ interface BeritaItem {
   activity_date: string | null;
   created_by_name: string;
   author_name: string | null;
+  kategori?: "acara" | "keuangan";
+  katalog?: { id: number; kode: string; nama: string }[]; // tujuan berita keuangan
   media: Media[];
   likes_count: number;
   liked_by_me: boolean;
@@ -47,8 +49,11 @@ function CaptionText({ text, colors }: { text: string; colors: { primary: string
   );
 }
 
+const BAGIAN: { id: "acara" | "keuangan"; teks: string }[] = [{ id: "acara", teks: "Berita Acara" }, { id: "keuangan", teks: "Berita Keuangan" }];
+
 export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string, params?: Record<string, unknown>) => void }) {
   const colors = useThemeColors();
+  const [kategori, setKategori] = useState<"acara" | "keuangan">("acara");
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<BeritaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +90,8 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
     }
   }
 
-  const filtered = items.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
+  const hitung = (k: "acara" | "keuangan") => items.filter((item) => (item.kategori ?? "acara") === k).length;
+  const filtered = items.filter((item) => (item.kategori ?? "acara") === kategori && item.title.toLowerCase().includes(search.toLowerCase()));
 
   if (loading) return <View className="flex-1 items-center justify-center bg-background"><ActivityIndicator color={colors.primary} /></View>;
 
@@ -97,14 +103,22 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
       keyExtractor={(item) => String(item.id)}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
       ListHeaderComponent={
-        <View className="mb-1">
-          <Input placeholder="Cari berita acara..." value={search} onChangeText={setSearch} icon={<Search size={18} color={colors.mutedForeground} />} />
+        <View className="mb-1 gap-3">
+          <View className="flex-row gap-2" accessibilityRole="tablist">
+            {BAGIAN.map((b) => (
+              <Pressable key={b.id} onPress={() => setKategori(b.id)} accessibilityRole="tab" accessibilityState={{ selected: kategori === b.id }}
+                className={`flex-1 items-center py-2.5 rounded-xl border ${kategori === b.id ? "bg-primary border-primary" : "bg-card border-border"}`}>
+                <Text className={`text-sm font-semibold ${kategori === b.id ? "text-primary-foreground" : "text-foreground"}`}>{b.teks}{hitung(b.id) > 0 ? ` (${hitung(b.id)})` : ""}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Input placeholder={kategori === "keuangan" ? "Cari berita keuangan..." : "Cari berita acara..."} value={search} onChangeText={setSearch} icon={<Search size={18} color={colors.mutedForeground} />} />
         </View>
       }
       ListEmptyComponent={
         <View className="items-center py-16 gap-3">
           <View className="w-16 h-16 rounded-full bg-muted items-center justify-center"><FileText size={24} color={colors.mutedForeground} /></View>
-          <Text className="text-sm text-muted-foreground">Belum ada berita yang diterbitkan.</Text>
+          <Text className="text-sm text-muted-foreground">{kategori === "keuangan" ? "Belum ada berita keuangan." : "Belum ada berita acara yang diterbitkan."}</Text>
         </View>
       }
       // Kartu feed gaya Facebook (poin #13) - SEBELUMNYA kartu link sederhana
@@ -117,7 +131,7 @@ export function BeritaAcaraScreen({ onNavigate }: { onNavigate: (screen: string,
             <Pressable onPress={() => onNavigate("berita-acara-viewer", { newsId: item.id })} className="p-4 pb-1">
               <Text numberOfLines={2} className="text-base font-bold text-foreground">{item.title}</Text>
               <Text numberOfLines={1} className="text-xs text-muted-foreground mt-1">
-                {item.activity_date ? `${formatDate(item.activity_date)} · ` : ""}Oleh {item.author_name || item.created_by_name}
+                {item.kategori === "keuangan" && item.katalog && item.katalog.length > 0 ? `${item.katalog.map((k) => k.kode).join(", ")} · ` : ""}{item.activity_date ? `${formatDate(item.activity_date)} · ` : ""}Oleh {item.author_name || item.created_by_name}
               </Text>
             </Pressable>
 

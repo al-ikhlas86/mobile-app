@@ -153,7 +153,7 @@ export function OrangTuaDashboard({ onNavigate }: Props) {
       { label: "Seragam", icon: <Shirt size={20} color="#c2410c" />, colorScheme: "orange", onPress: () => onNavigate("placeholder", { title: "Seragam (segera hadir)" }) },
     ] },
     { title: "Informasi", items: [
-      { label: "Berita Acara", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
+      { label: "Berita", icon: <FileText size={20} color="#0f766e" />, colorScheme: "teal", onPress: () => onNavigate("berita-acara") },
     ] },
     { title: "Akun", items: [
       { label: "Profil", icon: <User size={20} color="#4338ca" />, colorScheme: "indigo", onPress: () => onNavigate("profil") },

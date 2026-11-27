@@ -20,7 +20,7 @@ interface Media { id: number; media_type: "thumbnail" | "activity"; url: string;
 interface LinkItem { id: number; url: string; thumbnail_url: string | null; }
 interface BeritaDetail {
   id: number; title: string; category: string | null; description: string | null; author_name: string | null;
-  activity_date: string | null; approved_at: string | null; created_by_name: string; media: Media[]; links: LinkItem[];
+  activity_date: string | null; approved_at: string | null; created_by_name: string; kategori?: "acara" | "keuangan"; katalog?: { id: number; kode: string; nama: string }[]; media: Media[]; links: LinkItem[];
   likes_count: number; liked_by_me: boolean; blocked_from_commenting: boolean;
 }
 interface CommentItem {
@@ -212,6 +212,9 @@ export function BeritaAcaraViewer({ newsId, onNavigate, sebagaiOrtu = false }: {
           </View>
         ) : null}
 
+        {post.kategori === "keuangan" ? (
+          <View className="self-start px-2.5 py-1 rounded-full bg-primary/10"><Text className="text-xs font-semibold text-primary">Berita Keuangan{post.katalog && post.katalog.length > 0 ? ` · ${post.katalog.map((k) => k.nama).join(", ")}` : ""}</Text></View>
+        ) : null}
         <Text className="text-xl font-bold text-foreground">{post.title}</Text>
 
         <View className="gap-1.5">
