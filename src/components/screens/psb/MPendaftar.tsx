@@ -17,6 +17,8 @@ interface Detail extends Omit<Ringkas, "tagihan"> {
   berkas: { id: number; kunci: string; tipe: string; ukuran: number }[];
   riwayat: { dari: string | null; ke: string; catatan: string | null; created_at: string; oleh: string | null }[];
   tagihan: Tagihan[]; jadwal: { id: number; judul: string; jenis: string; mulai: string; lokasi: string | null }[]; bisaResetKey: boolean;
+  // Tagihan awal di Keuangan (calon yang diterima): null = belum ada kabar dari Keuangan.
+  tagihanAwal: { status: string; total: number; dibayar: number } | null;
 }
 
 export function TabPendaftar({ g, onChanged }: { g: GelombangDetail; onChanged: () => void }) {
@@ -191,6 +193,18 @@ function DetailPendaftar({ id, onKembali }: { id: number; onKembali: () => void 
           </View>
         ))}
       </View>
+
+      {p.status === "diterima" && (
+        <View className="gap-1 rounded-lg border border-border p-3">
+          <Text className="text-sm font-semibold text-foreground">Tagihan awal (Keuangan)</Text>
+          {p.tagihanAwal ? (
+            <View className="flex-row items-center gap-2 flex-wrap">
+              <Lencana jenis={p.tagihanAwal.status === "lunas" ? "terbuka" : p.tagihanAwal.status === "sebagian" ? "draft" : "penuh"} teks={({ lunas: "Lunas", sebagian: "Sebagian", belum: "Belum dibayar", tanpa_tagihan: "Tanpa tagihan awal" } as Record<string, string>)[p.tagihanAwal.status] ?? p.tagihanAwal.status} />
+              {p.tagihanAwal.total > 0 ? <Text className="text-sm text-foreground">{rupiah(p.tagihanAwal.dibayar)} dari {rupiah(p.tagihanAwal.total)}</Text> : null}
+            </View>
+          ) : <Text className="text-xs text-muted-foreground">Belum ada kabar dari Keuangan. Tagihan awal dibuat otomatis di Keuangan setelah calon diterima; calon baru bisa masuk kelas setelah lunas.</Text>}
+        </View>
+      )}
 
       {tagihan ? (
         <View className="gap-2">
